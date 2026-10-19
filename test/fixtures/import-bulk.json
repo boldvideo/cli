@@ -1,0 +1,34 @@
+{
+	"healthy": {
+		"source_url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+		"data": {
+			"internal_id": "bulk-healthy",
+			"title": "Workshop follow-up",
+			"status": "queued",
+			"ready": false
+		}
+	},
+	"failed": {
+		"source_url": "https://www.youtube.com/watch?v=ScMzIvxBSi4",
+		"data": {
+			"internal_id": "bulk-failed",
+			"title": "Workshop audio",
+			"status": "queued",
+			"ready": false
+		}
+	},
+	"stalled": {
+		"source_url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+		"data": {
+			"internal_id": "bulk-stalled",
+			"title": "Long workshop",
+			"status": "queued",
+			"ready": false
+		}
+	},
+	"rejected": {
+		"source_url": "https://www.youtube.com/watch?v=private2026",
+		"error": "validation_failed",
+		"details": { "source_url": ["Video is private."] }
+	}
+}

@@ -74,13 +74,35 @@ export async function getRun(
 	key: string,
 	id: string,
 	page = 1,
+	signal?: AbortSignal,
 ): Promise<ImportRun> {
 	// TODO(bold-js): use the SDK when it exposes import runs and their video pages.
+	const path = `/admin/imports/${encodeURIComponent(id)}`;
 	return importRun(
-		await request("GET", `/admin/imports/${encodeURIComponent(id)}`, {
-			key,
-			query: { page },
-		}),
+		signal
+			? (
+					await importResponse(
+						"GET",
+						key,
+						`${path}?page=${page}`,
+						undefined,
+						signal,
+					)
+				).data
+			: await request("GET", path, {
+					key,
+					query: { page },
+				}),
+	);
+}
+
+export async function getVideo(key: string, id: string, signal?: AbortSignal) {
+	const path = `/admin/videos/${encodeURIComponent(id)}`;
+	// TODO(bold-js): use the SDK when it exposes admin readiness and failure_reason.
+	return importVideo(
+		signal
+			? (await importResponse("GET", key, path, undefined, signal)).data
+			: await request("GET", path, { key }),
 	);
 }
 
@@ -88,7 +110,8 @@ export async function resolveCollections(
 	key: string,
 	values: string[],
 ): Promise<string[]> {
-	if (!values.length) return [];
+	const uuid = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
+	if (values.every((value) => uuid.test(value))) return values;
 	// TODO(bold-js): use the SDK when it exposes collection lookup at the API cap.
 	const body = await request("GET", "/collections", {
 		key,
@@ -104,6 +127,7 @@ export async function resolveCollections(
 			"boldvideo collections list",
 		);
 	return values.map((value) => {
+		if (uuid.test(value)) return value;
 		const byId = collections.find(
 			(collection) => collection.id === value || collection.slug === value,
 		);
@@ -128,16 +152,25 @@ export async function resolveCollections(
 	});
 }
 
-// request() discards the status (200 already-active vs 202 created) and 422
-// details. Keep this POST transport local, as videos does for raw transcripts.
-export async function postImport(key: string, path: string, body?: unknown) {
-	const signal = AbortSignal.timeout(30_000);
+// request() discards response status and 422 details and cannot abort a read
+// at the wait deadline. Keep that transport here, without changing shared API code.
+export async function importResponse(
+	method: "GET" | "POST",
+	key: string,
+	path: string,
+	body?: unknown,
+	waitSignal?: AbortSignal,
+) {
+	const signal = AbortSignal.any([
+		AbortSignal.timeout(30_000),
+		...(waitSignal ? [waitSignal] : []),
+	]);
 	let response: Response;
 	let text: string;
 	try {
 		// TODO(bold-js): use the SDK when it exposes admin imports and response status.
 		response = await fetch(`${apiUrl()}${path}`, {
-			method: "POST",
+			method,
 			headers: {
 				Authorization: `Bearer ${key}`,
 				Accept: "application/json",

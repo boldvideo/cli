@@ -1,17 +1,18 @@
+import { readFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
-import { request } from "../api";
 import type { Credential } from "../auth";
 import { type CliError, error, writeError } from "../errors";
 import {
 	getRun,
+	getVideo,
 	type ImportRun,
+	importResponse,
 	importRun,
 	importVideo,
-	postImport,
 	resolveCollections,
 } from "../import-api";
-import { hint, output } from "../output";
-import type { Command, Context, Flag, Flags } from "../spec";
+import { hint, output, table } from "../output";
+import type { Command, Flag, Flags } from "../spec";
 import { videoText } from "./videos";
 
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
@@ -37,6 +38,12 @@ const waitFlags: Flag[] = [
 	},
 ];
 const metadataFlags: Flag[] = [
+	{
+		name: "from",
+		type: "string",
+		description:
+			"Read URLs one per line from a file instead of a positional URL or stdin.",
+	},
 	{
 		name: "title",
 		type: "string",
@@ -203,8 +210,9 @@ function resumeCommand(id: string, flags: Flags) {
 async function waitFor<T>(
 	flags: Flags,
 	resume: string,
-	poll: () => Promise<T | undefined>,
+	poll: (signal: AbortSignal) => Promise<T | undefined>,
 ): Promise<T> {
+	const controller = new AbortController();
 	const interrupted = () => {
 		writeError(
 			error(
@@ -215,28 +223,31 @@ async function waitFor<T>(
 		);
 		process.exit(130);
 	};
-	// Enforce the wait deadline even during an in-flight request. Exiting this
-	// CLI stops observation only; it never cancels the server-side import.
+	// Abort observation, not the remote import. Bulk callers can report this
+	// item's timeout and continue with the remaining URLs.
 	const timeout = setTimeout(() => {
-		process.exit(
-			writeError(
-				error(
-					"timed_out",
-					"Timed out waiting for imported videos to become ready.",
-					resume,
-					5,
-				),
+		controller.abort(
+			error(
+				"timed_out",
+				"Timed out waiting for imported videos to become ready.",
+				resume,
+				5,
 			),
 		);
 	}, Number(flags.timeout) * 1000);
 	process.on("SIGINT", interrupted);
 	try {
 		for (;;) {
-			const result = await poll();
+			controller.signal.throwIfAborted();
+			const result = await poll(controller.signal);
+			controller.signal.throwIfAborted();
 			if (result !== undefined) return result;
-			await sleep(Number(flags["poll-interval"]) * 1000);
+			await sleep(Number(flags["poll-interval"]) * 1000, undefined, {
+				signal: controller.signal,
+			});
 		}
 	} catch (cause) {
+		if (controller.signal.aborted) throw controller.signal.reason;
 		if ((cause as CliError)?.code === "timed_out")
 			throw { ...(cause as CliError), hint: resume };
 		throw cause;
@@ -244,13 +255,6 @@ async function waitFor<T>(
 		clearTimeout(timeout);
 		process.removeListener("SIGINT", interrupted);
 	}
-}
-
-async function getVideo(key: string, id: string) {
-	// TODO(bold-js): use the SDK when it exposes admin readiness and failure_reason.
-	return importVideo(
-		await request("GET", `/admin/videos/${encodeURIComponent(id)}`, { key }),
-	);
 }
 
 function failed(video: Record<string, unknown>) {
@@ -267,9 +271,9 @@ async function waitSingle(
 	flags: Flags,
 ) {
 	const resume = resumeCommand(String(video.internal_id), flags);
-	return waitFor(flags, resume, async () => {
+	return waitFor(flags, resume, async (signal) => {
 		if (video.ready !== true && !failed(video))
-			video = await getVideo(key, String(video.internal_id));
+			video = await getVideo(key, String(video.internal_id), signal);
 		if (failed(video))
 			throw error(
 				"import_failed",
@@ -288,9 +292,9 @@ async function waitRun(key: string, id: string, flags: Flags) {
 	let ready = 0;
 	let failures = 0;
 	let reason = "";
-	return waitFor(flags, resume, async () => {
+	return waitFor(flags, resume, async (signal) => {
 		if (!terminal) {
-			const run = await getRun(key, id);
+			const run = await getRun(key, id, 1, signal);
 			if (["queued", "running"].includes(run.status)) {
 				hint(
 					`${run.counts.done}/${run.counts.total ?? "?"} done, 0 ready, ${run.counts.failed} failed`,
@@ -311,7 +315,7 @@ async function waitRun(key: string, id: string, flags: Flags) {
 				}
 				if (page.meta.page >= page.meta.total_pages) break;
 				const next = page.meta.page + 1;
-				page = await getRun(key, id, next);
+				page = await getRun(key, id, next, signal);
 				if (page.meta.page !== next)
 					throw error(
 						"api_error",
@@ -321,7 +325,7 @@ async function waitRun(key: string, id: string, flags: Flags) {
 			}
 		}
 		for (const videoId of pending) {
-			const video = await getVideo(key, videoId);
+			const video = await getVideo(key, videoId, signal);
 			if (failed(video)) {
 				failures++;
 				reason ||= String(video.failure_reason ?? video.status);
@@ -345,9 +349,8 @@ async function waitRun(key: string, id: string, flags: Flags) {
 	});
 }
 
-function showRun(
+function runResult(
 	run: ImportRun,
-	ctx: Context,
 	flags: Flags,
 	extra: Record<string, unknown> = {},
 ) {
@@ -356,19 +359,94 @@ function showRun(
 			? `${resumeCommand(run.run_id, flags)} --page ${run.meta.page + 1}`
 			: undefined;
 	const data = { ...run, ...extra, ...(next ? { next } : {}) };
-	output(
+	if (next) hint(`More results: ${next}`);
+	return {
 		data,
-		videoText({
+		text: videoText({
 			run_id: run.run_id,
 			status: run.status,
 			counts: run.counts,
 			status_url: run.status_url,
 			...(run.readiness ? { readiness: run.readiness } : {}),
 		}),
-		ctx.json,
-	);
-	if (next) hint(`More results: ${next}`);
+	};
 }
+
+async function sourceUrls(args: string[], flags: Flags) {
+	if (args[0] !== undefined) {
+		if (flags.from !== undefined)
+			usage("Choose a positional URL or --from, not both.");
+		return { sources: [args[0]], bulk: false };
+	}
+	let text = "";
+	if (flags.from !== undefined) {
+		try {
+			text = await readFile(String(flags.from), "utf8");
+		} catch {
+			usage(`Could not read URL file '${flags.from}'.`);
+		}
+	} else {
+		if (process.stdin.isTTY)
+			usage("Supply a URL, pipe URLs on stdin, or use --from <file>.");
+		process.stdin.setEncoding("utf8");
+		for await (const chunk of process.stdin) text += chunk;
+	}
+	const sources = text
+		.replace(/^\uFEFF/, "")
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+	if (!sources.length) usage("No URLs were supplied.");
+	return { sources, bulk: true };
+}
+
+async function importSource(
+	key: string,
+	source: string,
+	youtubeOnly: boolean,
+	flags: Flags,
+) {
+	const plan = importRequest(source, youtubeOnly, flags);
+	if (flags["dry-run"])
+		return {
+			isRun: plan.isRun,
+			data: { dry_run: true, method: "POST", path: plan.path, body: plan.body },
+			text: `POST ${plan.path}\n${JSON.stringify(plan.body, null, 2)}`,
+		};
+	const response = await importResponse("POST", key, plan.path, plan.body);
+	if (plan.isRun) {
+		let run = importRun(response.data);
+		const alreadyActive = response.status === 200;
+		if (alreadyActive)
+			hint(`Import ${run.run_id} is already active; reusing it.`);
+		if (flags.wait) run = await waitRun(key, run.run_id, flags);
+		return {
+			isRun: true,
+			...runResult(run, flags, { already_active: alreadyActive }),
+		};
+	}
+	let video = importVideo(response.data);
+	const deduplicated =
+		(response.data as { deduplicated?: boolean }).deduplicated === true;
+	if (deduplicated)
+		hint("Source already imported; reusing the existing video (deduplicated).");
+	if (flags.wait) video = await waitSingle(key, video, flags);
+	return {
+		isRun: false,
+		data: { ...video, deduplicated },
+		text: videoText(video),
+	};
+}
+
+type BulkResult =
+	| {
+			source_url: string;
+			ok: true;
+			video?: Record<string, unknown>;
+			run?: Record<string, unknown>;
+			dry_run?: boolean;
+	  }
+	| { source_url: string; ok: false; error: Omit<CliError, "exitCode"> };
 
 function sourceCommand(name: "youtube" | "url"): Command {
 	return {
@@ -379,7 +457,14 @@ function sourceCommand(name: "youtube" | "url"): Command {
 				: "Import a direct video URL or a YouTube/Vimeo video.",
 		auth: "admin",
 		write: true,
-		args: [{ name: "source_url", description: "HTTP or HTTPS source URL." }],
+		args: [
+			{
+				name: "source_url",
+				required: false,
+				description:
+					"HTTP or HTTPS source URL; otherwise read one URL per line from stdin or --from.",
+			},
+		],
 		flags: metadataFlags,
 		examples:
 			name === "youtube"
@@ -406,40 +491,90 @@ function sourceCommand(name: "youtube" | "url"): Command {
 		seeAlso: ["boldvideo import status --help", "boldvideo videos get --help"],
 		async run(ctx, args, flags) {
 			validateWait(flags);
-			const plan = importRequest(args[0] as string, name === "youtube", flags);
+			const { sources, bulk } = await sourceUrls(args, flags);
 			const { key } = ctx.credential as Credential;
 			if (flags.collection)
-				plan.body.collection_ids = await resolveCollections(
+				flags = {
+					...flags,
+					collection: await resolveCollections(
+						key,
+						flags.collection as string[],
+					),
+				};
+			if (!bulk) {
+				const result = await importSource(
 					key,
-					flags.collection as string[],
+					sources[0] as string,
+					name === "youtube",
+					flags,
 				);
-			if (flags["dry-run"]) {
-				output(
-					{ dry_run: true, method: "POST", path: plan.path, body: plan.body },
-					`POST ${plan.path}\n${JSON.stringify(plan.body, null, 2)}`,
-					ctx.json,
-				);
+				output(result.data, result.text, ctx.json);
 				return;
 			}
-			const response = await postImport(key, plan.path, plan.body);
-			if (plan.isRun) {
-				let run = importRun(response.data);
-				const alreadyActive = response.status === 200;
-				if (alreadyActive)
-					hint(`Import ${run.run_id} is already active; reusing it.`);
-				if (flags.wait) run = await waitRun(key, run.run_id, flags);
-				showRun(run, ctx, flags, { already_active: alreadyActive });
-			} else {
-				let video = importVideo(response.data);
-				const deduplicated =
-					(response.data as { deduplicated?: boolean }).deduplicated === true;
-				if (deduplicated)
-					hint(
-						"Source already imported; reusing the existing video (deduplicated).",
+			const results: BulkResult[] = [];
+			for (const source of sources) {
+				try {
+					const result = await importSource(
+						key,
+						source,
+						name === "youtube",
+						flags,
 					);
-				if (flags.wait) video = await waitSingle(key, video, flags);
-				output({ ...video, deduplicated }, videoText(video), ctx.json);
+					results.push({
+						source_url: source,
+						ok: true,
+						...(flags["dry-run"]
+							? result.data
+							: result.isRun
+								? { run: result.data }
+								: { video: result.data }),
+					});
+				} catch (cause) {
+					const failure = (cause as CliError)?.code
+						? (cause as CliError)
+						: error(
+								"internal_error",
+								cause instanceof Error
+									? cause.message
+									: "An unexpected error occurred.",
+								`boldvideo import ${name} --help`,
+							);
+					const { exitCode: _, ...fields } = failure;
+					results.push({
+						source_url: source,
+						ok: false,
+						error: {
+							...fields,
+							message: fields.message.replace(/[\r\n]+/g, " "),
+						},
+					});
+				}
 			}
+			output(
+				results,
+				flags["dry-run"]
+					? results.map((result) => videoText(result)).join("\n\n")
+					: table(
+							results.map((result) => ({
+								source_url: result.source_url,
+								ok: result.ok,
+								id: result.ok
+									? (result.video?.internal_id ?? result.run?.run_id ?? "")
+									: "",
+								status: result.ok
+									? (result.video?.status ?? result.run?.status ?? "dry-run")
+									: `${result.error.code}: ${result.error.message}`,
+							})),
+						),
+				ctx.json,
+			);
+			const failures = results.filter((result) => !result.ok);
+			if (failures.length)
+				throw error(
+					"bulk_failed",
+					`${failures.length} import operation(s) failed.`,
+					`boldvideo import ${name} --help`,
+				);
 		},
 	};
 }
@@ -510,7 +645,11 @@ export const imports: Command = {
 					output(video, videoText(video), ctx.json);
 					return;
 				}
-				showRun(flags.wait ? await waitRun(key, id, flags) : run, ctx, flags);
+				const result = runResult(
+					flags.wait ? await waitRun(key, id, flags) : run,
+					flags,
+				);
+				output(result.data, result.text, ctx.json);
 			},
 		},
 		{
@@ -541,7 +680,8 @@ export const imports: Command = {
 					);
 					return;
 				}
-				const response = await postImport(
+				const response = await importResponse(
+					"POST",
 					(ctx.credential as Credential).key,
 					path,
 				);

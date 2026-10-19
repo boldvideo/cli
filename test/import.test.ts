@@ -1,7 +1,8 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import bulkFixtures from "./fixtures/import-bulk.json";
 import collections from "./fixtures/import-collections.json";
 import fixtures from "./fixtures/imports.json";
 import me from "./fixtures/me.json";
@@ -19,6 +20,7 @@ let failure = false;
 let stalled = false;
 let slow = false;
 let mixed = false;
+let bulk = false;
 let terminalStatus = "completed";
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -48,6 +50,24 @@ const server = Bun.serve({
 			});
 		if (path === "/collections") return Response.json(collections);
 		if (request.method === "POST") {
+			if (bulk && path === "/admin/videos") {
+				const source = JSON.parse(body).source_url;
+				if (source === bulkFixtures.rejected.source_url)
+					return Response.json(bulkFixtures.rejected, {
+						status: 422,
+						headers: { "x-request-id": "req_bulk_rejected" },
+					});
+				const item = [
+					bulkFixtures.healthy,
+					bulkFixtures.failed,
+					bulkFixtures.stalled,
+				].find((item) => item.source_url === source);
+				if (item)
+					return Response.json(
+						{ data: item.data, deduplicated: false },
+						{ status: 201 },
+					);
+			}
 			if (postError)
 				return Response.json(
 					postError === 422
@@ -95,6 +115,19 @@ const server = Bun.serve({
 				return Response.json({ message: "Video not found." }, { status: 404 });
 			const count = (videoPolls.get(id) ?? 0) + 1;
 			videoPolls.set(id, count);
+			if (bulk && id.startsWith("bulk-")) {
+				if (id === "bulk-stalled") {
+					await Bun.sleep(2000);
+					return Response.json(bulkFixtures.stalled);
+				}
+				const state =
+					count === 1
+						? fixtures.processing
+						: id === "bulk-failed"
+							? fixtures.failed
+							: fixtures.ready;
+				return Response.json({ data: { ...state.data, internal_id: id } });
+			}
 			let result: typeof fixtures.ready | typeof fixtures.failed =
 				stalled || count === 1 ? fixtures.processing : fixtures.ready;
 			if (failure) {
@@ -109,7 +142,7 @@ const server = Bun.serve({
 });
 beforeEach(() => {
 	calls.length = 0;
-	dedupe = active = preflight = failure = stalled = slow = mixed = false;
+	dedupe = active = preflight = failure = stalled = slow = mixed = bulk = false;
 	postError = runPolls = 0;
 	videoPolls = new Map();
 	terminalStatus = "completed";
@@ -527,6 +560,16 @@ test("collections resolve exact names, IDs and slugs with one lookup; missing an
 		"b1c5296d-caf9-4bf4-a037-dcf191650350",
 		"3df0cf1c-b63d-4ab4-b9e1-e2767f2cd075",
 	]);
+	const uuid = await run([
+		...channel,
+		"--collection",
+		"8bb820da-d9b6-4fd2-8e05-a3ecf8477252",
+		"--dry-run",
+	]);
+	expect(uuid.status).toBe(0);
+	expect(JSON.parse(uuid.stdout).body.collection_ids).toEqual([
+		"8bb820da-d9b6-4fd2-8e05-a3ecf8477252",
+	]);
 	expect(calls.filter((call) => call.path.startsWith("/collections"))).toEqual([
 		{ method: "GET", path: "/collections?limit=1000", body: undefined },
 	]);
@@ -580,4 +623,197 @@ test("status accepts video identifiers, waits for readiness and preserves not-fo
 	expect(JSON.parse(timeout.stderr).hint).toBe(
 		"boldvideo import status 'paid-workshops'",
 	);
+});
+
+test("stdin imports preserve input order and duplicates, resolve collections once and continue after per-URL errors", async () => {
+	bulk = true;
+	const urls = [
+		bulkFixtures.healthy.source_url,
+		"not-a-url",
+		bulkFixtures.rejected.source_url,
+		bulkFixtures.healthy.source_url,
+	];
+	const result = await run(["youtube", "--collection", "Coaching"], {
+		input: `  ${urls.join("  \r\n\n")}  \r\n`,
+	});
+	expect(result.status).toBe(1);
+	const items = JSON.parse(result.stdout);
+	expect(
+		items.map((item: { source_url: string; ok: boolean }) => [
+			item.source_url,
+			item.ok,
+		]),
+	).toEqual(urls.map((url, index) => [url, index === 0 || index === 3]));
+	expect(items[0].video).toEqual({
+		...bulkFixtures.healthy.data,
+		deduplicated: false,
+	});
+	expect(items[1].error.code).toBe("usage_error");
+	expect(items[2].error).toMatchObject({
+		code: "validation_error",
+		message: "Import validation failed: source_url.",
+		request_id: "req_bulk_rejected",
+		docs: "https://docs.boldvideo.com/cli#validation-error",
+	});
+	expect(items[2].error.exitCode).toBeUndefined();
+	expect(JSON.parse(result.stderr).code).toBe("bulk_failed");
+	expect(
+		calls.filter((call) => call.path.startsWith("/collections")),
+	).toHaveLength(1);
+	expect(
+		calls.filter((call) => call.method === "POST").map((call) => call.body),
+	).toEqual(
+		[urls[0], urls[2], urls[3]].map((source_url) => ({
+			source_url,
+			privacy: "unlisted",
+			collection_ids: ["3df0cf1c-b63d-4ab4-b9e1-e2767f2cd075"],
+		})),
+	);
+});
+
+test("bulk wait reports a failed video and timed-out read without abandoning later videos or runs", async () => {
+	bulk = true;
+	const urls = [
+		bulkFixtures.failed.source_url,
+		bulkFixtures.stalled.source_url,
+		bulkFixtures.healthy.source_url,
+		channel[1],
+	];
+	const result = await run(
+		["youtube", "--wait", "--timeout", "0.3", "--poll-interval", "0.01"],
+		{ input: urls.join("\n") },
+	);
+	expect(result.status).toBe(1);
+	const items = JSON.parse(result.stdout);
+	expect(items.map((item: { ok: boolean }) => item.ok)).toEqual([
+		false,
+		false,
+		true,
+		true,
+	]);
+	expect(items[0].error).toMatchObject({
+		code: "import_failed",
+		message: expect.stringContaining("Audio could not be transcribed."),
+	});
+	expect(items[1].error).toMatchObject({
+		code: "timed_out",
+		hint: "boldvideo import status 'bulk-stalled'",
+	});
+	expect(items[2].video).toMatchObject({
+		internal_id: "bulk-healthy",
+		ready: true,
+	});
+	expect(items[3].run).toMatchObject({
+		status: "completed",
+		readiness: { ready: 2, failed: 0 },
+	});
+	expect(JSON.parse(result.stderr)).toMatchObject({
+		code: "bulk_failed",
+		message: "2 import operation(s) failed.",
+	});
+});
+
+test("file URL imports work on a terminal, ignore stdin and preview every request", async () => {
+	const file = join(temporary, "workshop-urls.txt");
+	const urls = [
+		"https://cdn.example.com/first.mp4",
+		"https://cdn.example.com/second.mp4",
+	];
+	writeFileSync(file, `\uFEFF${urls.join("\r\n")}\r\n\n`);
+	const preview = await run(
+		["url", "--from", file, "--title", "Paid workshops", "--dry-run"],
+		{ input: "not-a-url" },
+	);
+	expect(preview.status).toBe(0);
+	expect(preview.stderr).toBe("");
+	expect(JSON.parse(preview.stdout)).toEqual(
+		urls.map((source_url) => ({
+			source_url,
+			ok: true,
+			dry_run: true,
+			method: "POST",
+			path: "/admin/videos",
+			body: { source_url, privacy: "unlisted", title: "Paid workshops" },
+		})),
+	);
+	expect(calls.every((call) => call.path === "/me")).toBe(true);
+	const terminalPreview = await run(
+		["url", "--from", file, "--title", "Paid workshops", "--dry-run"],
+		{ tty: true },
+	);
+	expect(terminalPreview.status).toBe(0);
+	expect(terminalPreview.stdout).toContain("/admin/videos");
+	for (const url of urls)
+		expect(terminalPreview.stdout).toContain(`"source_url":"${url}"`);
+	expect(calls.some((call) => call.method === "POST")).toBe(false);
+	const terminal = await run(
+		["url", "--from", file, "--title", "Paid workshops"],
+		{ tty: true },
+	);
+	expect(terminal.status).toBe(0);
+	expect(terminal.stdout).toContain("SOURCE_URL");
+	for (const url of urls) expect(terminal.stdout).toContain(url);
+	expect(terminal.stdout.match(/true/g)).toHaveLength(2);
+	expect(
+		calls
+			.filter((call) => call.method === "POST")
+			.map((call) => (call.body as { source_url: string }).source_url),
+	).toEqual(urls);
+	const positional = await run(single, { input: "not-a-url" });
+	expect(positional.status).toBe(0);
+	expect(Array.isArray(JSON.parse(positional.stdout))).toBe(false);
+});
+
+test("file and stdin YouTube imports work without wait; one input still returns an array", async () => {
+	const file = join(temporary, "channel-urls.txt");
+	writeFileSync(file, channel[1] as string);
+	for (const args of [["youtube", "--from", file], ["youtube"]]) {
+		const result = await run(args, { input: channel[1] });
+		expect(result.status).toBe(0);
+		expect(result.stderr).toBe("");
+		expect(JSON.parse(result.stdout)).toEqual([
+			{
+				source_url: channel[1],
+				ok: true,
+				run: { ...fixtures.queued.data, already_active: false },
+			},
+		]);
+	}
+	const direct = await run(["url", "--title", "Paid workshops"], {
+		input: single[1],
+	});
+	expect(direct.status).toBe(0);
+	expect(JSON.parse(direct.stdout)).toEqual([
+		{
+			source_url: single[1],
+			ok: true,
+			video: { ...fixtures.created.data, deduplicated: false },
+		},
+	]);
+});
+
+test("empty, conflicting and unreadable inputs fail before writing; missing collection fails the whole batch", async () => {
+	const empty = join(temporary, "empty-urls.txt");
+	writeFileSync(empty, " \r\n\n");
+	for (const args of [
+		["url"],
+		["youtube", "--from", empty],
+		[...single, "--from", empty],
+		["url", "--from", join(temporary, "absent.txt")],
+	]) {
+		const result = await run(args);
+		expect(result.status).toBe(2);
+		expect(result.stdout).toBe("");
+		expect(JSON.parse(result.stderr).code).toBe("usage_error");
+	}
+	const terminal = await run(["youtube"], { tty: true });
+	expect(terminal.status).toBe(2);
+	expect(terminal.stdout).toContain("Supply a URL");
+	const missing = await run(["youtube", "--collection", "Missing collection"], {
+		input: `${channel[1]}\n${channel[1]}`,
+	});
+	expect(missing.status).toBe(4);
+	expect(missing.stdout).toBe("");
+	expect(JSON.parse(missing.stderr).hint).toBe("boldvideo collections list");
+	expect(calls.some((call) => call.method === "POST")).toBe(false);
 });

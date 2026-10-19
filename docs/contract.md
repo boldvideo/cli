@@ -71,6 +71,18 @@ Terminal stderr prints the same fields on separate lines; the hint is visibly
 set apart. Failures do not produce success output. `--json` does not change error
 stream selection.
 
+Bulk imports from stdin or `--from` are the partial-success exception: stdout
+contains one ordered array of per-URL results, even for one URL. Successes have
+`source_url`, `ok: true` and `video` or `run`; failures have `source_url`,
+`ok: false` and `error` with the standard fields (without `exitCode`). Dry-run
+successes contain `dry_run`, `method`, `path` and `body` instead. Every URL is
+attempted sequentially, including repeated URLs. Any item failure produces an
+aggregate `bulk_failed` error on stderr and exit 1 after all results are printed.
+With `--wait`, each item's readiness wait has its own timeout; a timeout is a
+per-item failure, not a reason to abandon the rest. Positional single-URL imports
+retain their record output and specific failure exit codes. Input/authentication
+and collection-resolution errors before processing remain command-wide failures.
+
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
 adapter uses `body.request_id`. It reads `body.error.message` for nested errors
