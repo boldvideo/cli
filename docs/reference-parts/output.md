@@ -1,4 +1,4 @@
-## Output and safety contract
+### Output and safety contract
 
 - Success is one JSON value on stdout when piped or when `--json` is passed;
   terminals receive readable text or tables. IDs are never truncated.
@@ -8,9 +8,6 @@
   A page is `{ "items": [], "has_more": false }`; when more exists, `has_more`
   is true and `next` contains the exact command for the next page. Follow it
   explicitly; the CLI does not silently fetch the whole library.
-- Errors are one JSON object on nonterminal stderr: `code`, `message`, `hint`,
-  `docs`, and `request_id` when available. Terminal errors show the same fields
-  as text. `--json` affects success output, not stderr formatting.
 - Progress and continuation hints go to terminal stderr only. `--debug` never
   dumps API keys. Nonempty `NO_COLOR` disables color; pipes never receive ANSI
   color escapes.
