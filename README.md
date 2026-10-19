@@ -49,7 +49,10 @@ npx ./boldvideo-0.1.0.tgz --help
 
 The Node-targeted build is one bundled executable; end users do not need Bun or
 TypeScript. CI smoke-tests the packed package on Node 22 and 24. No publish
-workflow is configured. Dependency declaration checking is skipped because Bun
+workflow for npm is configured; the tag-triggered binary release pipeline is
+prepared but has not been run. See [install paths and release preparation](docs/install.md)
+for npm, Homebrew, and the install script (not yet live).
+Dependency declaration checking is skipped because Bun
 and Node ambient declarations overlap; all source and tests remain strict.
 
 MIT.

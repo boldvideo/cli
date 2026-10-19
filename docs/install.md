@@ -1,0 +1,101 @@
+# Install boldvideo
+
+**Preparation only:** standalone assets and the tap are not live until the first
+stable tagged release and formula PR are published/merged. The intended script
+URL, `https://boldvideo.com/install.sh`, is **not yet live**. No release or npm
+publication is performed by this change.
+
+All paths install the same CLI. Version 0.1.0 includes help and version commands;
+use `boldvideo --help` to see what is available. Piped help/version return JSON.
+
+| Path | Best for | Requirements |
+| --- | --- | --- |
+| npm | Agents and developers already using Node | Node 22+ and npm |
+| Homebrew | People who want managed installs and upgrades | Homebrew; no Node or Bun |
+| Install script | Machines without Node or Homebrew | macOS or glibc Linux, curl, sha256sum or shasum |
+
+## npm
+
+Once the npm package is published:
+
+```sh
+npm install -g boldvideo
+boldvideo --help
+# Or run without a global install:
+npx boldvideo --help
+```
+
+Only `dist/boldvideo.js` is shipped in the npm package, not the standalone
+executables. Node is required at runtime; Bun is not.
+
+## Homebrew (after the first release)
+
+```sh
+brew tap boldvideo/tap
+brew install boldvideo/tap/boldvideo
+boldvideo --version
+# Later:
+brew upgrade boldvideo
+```
+
+The `boldvideo/homebrew-tap` repository is currently private: you need repository
+access and Git authentication to tap it until it is made public. The formula
+selects macOS or Linux and arm64 or x64, downloads one executable from the tagged
+GitHub release, and verifies its SHA-256. No Node or Bun runtime is needed.
+
+## Install script (intended URL, not yet live)
+
+After `packaging/install.sh` is hosted at the URL below:
+
+```sh
+curl -fsSL https://boldvideo.com/install.sh | sh
+```
+
+The script resolves the latest stable GitHub release once, downloads the matching
+macOS/Linux arm64/x64 executable and `checksums.txt`, and verifies SHA-256 before
+replacing anything. Linux binaries require glibc (not Alpine/musl). It installs
+to `~/.local/bin` without sudo and prints a PATH hint if needed:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+boldvideo --help
+```
+
+To use `/usr/local/bin`, if your account can write there:
+
+```sh
+curl -fsSL https://boldvideo.com/install.sh | BOLDVIDEO_INSTALL_DIR=/usr/local/bin sh
+```
+
+To inspect before running, download the script to a file, read it, then run
+`sh install.sh`. Rerun to upgrade; checksum or download failures leave an existing
+installation intact. The script never invokes sudo. GitHub assets must be
+publicly downloadable for this unauthenticated script to work.
+
+## Release preparation (maintainers)
+
+- `bun run build:binaries` cross-compiles four executables into `dist/bin` and
+  writes the sha256sum-compatible `checksums.txt`. The x64 Linux build uses Bun's
+  baseline CPU target. `bun run build` still produces the Node/npm bundle.
+- On a future `vX.Y.Z` tag, `release.yml` checks that the stable tag matches
+  `package.json`, runs checks, builds binaries, smoke-tests the Linux x64 host,
+  and creates/updates the GitHub release with all five assets. npm publishing
+  is separate (BOLD-2043's branch was absent when this was prepared).
+- Set the CLI repo's **`TAP_GITHUB_TOKEN` Actions secret** to a token with Contents
+  read/write and Pull requests read/write on `boldvideo/homebrew-tap`. Without it,
+  the workflow skips the tap update with a notice. With it, the workflow updates
+  the formula and opens a tap PR; it never merges it. If the tap cannot be cloned,
+  it instead commits `Formula/boldvideo.rb` to the CLI repo's `homebrew-tap` branch
+  using the workflow's `GITHUB_TOKEN`. No force-pushes are used.
+- The checked-in formula is a preparation template. Its initial hashes come from
+  the local preparation build, not a published release; the release job replaces
+  them with that release's actual hashes before opening the tap update PR.
+- To regenerate manually:
+
+  ```sh
+  bun scripts/update-formula.ts v0.1.0 dist/bin/checksums.txt packaging/homebrew/boldvideo.rb
+  ```
+
+- Host `packaging/install.sh` as `https://boldvideo.com/install.sh` over HTTPS
+  before advertising the one-liner. Do not tag, publish, or merge as part of this
+  preparation ticket.
