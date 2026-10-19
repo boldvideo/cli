@@ -96,10 +96,15 @@ function run(
 		...args,
 	];
 	const quote = (word: string) => `'${word.replaceAll("'", "'\\''")}'`;
+	const macTTY = options.tty && process.platform === "darwin";
+	// Bun async stdio uses sockets; BSD script needs a pipe for its stdin ioctl.
+	// cat forwards interactive input through a real pipe without blocking Bun's server.
 	const child = spawn(
-		options.tty ? "script" : "node",
+		macTTY ? "sh" : options.tty ? "script" : "node",
 		options.tty
-			? ["-qefc", argv.map(quote).join(" "), "/dev/null"]
+			? macTTY
+				? ["-c", `cat | script -q /dev/null ${argv.map(quote).join(" ")}`]
+				: ["-qefc", argv.map(quote).join(" "), "/dev/null"]
 			: argv.slice(1),
 		{
 			env: {
@@ -135,9 +140,16 @@ function run(
 			stderr += data;
 		});
 		child.once("error", reject);
-		child.once("close", (status) =>
-			resolve({ status, stdout: stdout.replaceAll("\r\n", "\n"), stderr }),
-		);
+		child.once("close", (status) => {
+			stdout = stdout.replaceAll("\r\n", "\n");
+			if (
+				options.tty &&
+				process.platform === "darwin" &&
+				stdout.startsWith("^D")
+			)
+				stdout = stdout.slice(stdout.startsWith("^D\b\b") ? 4 : 2);
+			resolve({ status, stdout, stderr });
+		});
 		if (!options.tty || options.input === undefined)
 			child.stdin.end(options.input ?? "");
 	});
@@ -155,7 +167,7 @@ test("env authentication works alone and whoami formats JSON and terminal tables
 		api_url: base,
 	});
 	const terminal = await run(["whoami"], { key: tenant, tty: true });
-	expect(terminal.status).toBe(0);
+	expect(terminal).toMatchObject({ status: 0 });
 	expect(terminal.stdout).toContain(
 		"ACCOUNT_SLUG  ACCOUNT_NAME  KEY_KIND  PROFILE  API_URL\nacme          Acme Academy  tenant",
 	);
@@ -363,7 +375,7 @@ test("profile pagination, dry-run, removal and logout preserve unrelated keys", 
 
 test("terminal login hides input and cancellation does not save a key", async () => {
 	const result = await run(["login"], { tty: true, input: `${tenant}\n` });
-	expect(result.status).toBe(0);
+	expect(result).toMatchObject({ status: 0 });
 	expect(result.stdout).toContain("API key (input hidden):");
 	expect(result.stdout).toContain("Active profile: acme.");
 	expect(result.stdout + result.stderr).not.toContain(tenant);
