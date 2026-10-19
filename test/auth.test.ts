@@ -99,7 +99,9 @@ function run(
 	const child = spawn(
 		options.tty ? "script" : "node",
 		options.tty
-			? ["-qefc", argv.map(quote).join(" "), "/dev/null"]
+			? process.platform === "darwin"
+				? ["-q", "/dev/null", ...argv]
+				: ["-qefc", argv.map(quote).join(" "), "/dev/null"]
 			: argv.slice(1),
 		{
 			env: {
@@ -135,9 +137,16 @@ function run(
 			stderr += data;
 		});
 		child.once("error", reject);
-		child.once("close", (status) =>
-			resolve({ status, stdout: stdout.replaceAll("\r\n", "\n"), stderr }),
-		);
+		child.once("close", (status) => {
+			stdout = stdout.replaceAll("\r\n", "\n");
+			if (
+				options.tty &&
+				process.platform === "darwin" &&
+				stdout.startsWith("^D")
+			)
+				stdout = stdout.slice(stdout.startsWith("^D\b\b") ? 4 : 2);
+			resolve({ status, stdout, stderr });
+		});
 		if (!options.tty || options.input === undefined)
 			child.stdin.end(options.input ?? "");
 	});
