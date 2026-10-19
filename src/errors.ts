@@ -10,6 +10,14 @@ export interface CliError {
 	request_id?: string;
 }
 
+/** Pair a known documentation page with its shell equivalent. */
+export function docsHint(url: string, topic: string): string {
+	const argument = /^[a-zA-Z0-9/_-]+$/.test(topic)
+		? topic
+		: `'${topic.replaceAll("'", "'\\''")}'`;
+	return `${url} (boldvideo docs ${argument})`;
+}
+
 export function error(
 	code: string,
 	message: string,

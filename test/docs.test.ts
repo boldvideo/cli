@@ -2,6 +2,8 @@ import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { docsMarkdown } from "../src/docs-markdown";
+import type { Command } from "../src/spec";
 import { run } from "./run";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-docs-"));
@@ -260,27 +262,129 @@ test("wraps markdown only with explicit --json and preserves an existing canonic
 	}
 });
 
-test("unavailable markdown and the cli alias exit 4 with a browser URL hint", async () => {
+test("unavailable remote markdown exits 4 with the browser URL and known topic command", async () => {
 	responses.delete("/preview/guides/quickstart.md");
 	responses.delete("/preview/llms-full.txt");
-	for (const topic of ["guides/quickstart", "cli"]) {
-		const result = await execute([topic]);
-		expect(result.status).toBe(4);
-		expect(result.stdout).toBe("");
-		expect(JSON.parse(result.stderr)).toMatchObject({
-			code: "not_found",
-			hint: expect.stringContaining(`${base}/${topic}`),
-			docs: "https://docs.boldvideo.com/cli#not-found",
+	const result = await execute(["guides/quickstart"]);
+	expect(result.status).toBe(4);
+	expect(result.stdout).toBe("");
+	expect(JSON.parse(result.stderr)).toMatchObject({
+		code: "not_found",
+		hint: expect.stringContaining(`${url} (boldvideo docs guides/quickstart)`),
+		docs: "https://docs.boldvideo.com/cli#not-found",
+	});
+});
+
+test("cli renders every installed command from the help tree without any network request", async () => {
+	const help = await run(
+		["node", resolve("dist/boldvideo.js"), "help", "--json"],
+		{
+			env: { XDG_CONFIG_HOME: temporary, APPDATA: temporary },
+		},
+	);
+	expect(help.status).toBe(0);
+	const tree: Command = JSON.parse(help.stdout);
+	const result = await execute(["cli"]);
+	expect(result.status).toBe(0);
+	expect(result.stderr).toBe("");
+	expect(result.stdout).toStartWith(
+		`<!-- ${base}/cli -->\n# boldvideo CLI reference\n`,
+	);
+	expect(result.stdout).toContain("npm install -g boldvideo");
+	expect(result.stdout).toContain("## Authentication");
+	expect(result.stdout).toContain("BOLDVIDEO_API_KEY takes precedence");
+	expect(result.stdout).toContain("boldvideo profiles use <name> [flags]");
+	expect(result.stdout).toContain("boldvideo docs [topic] [flags]");
+	expect(result.stdout).toContain("boldvideo profiles <command> [flags]");
+	expect(result.stdout).toContain("| --limit | number | 20 |");
+	expect(result.stdout).toContain("## Exit codes");
+	expect(result.stdout).toContain("| 3 | Not authenticated or not permitted |");
+	expect(result.stdout).toContain("| 5 | Timed out while waiting |");
+	function check(command: Command, path: string[]) {
+		const invocation = [...path, command.name];
+		expect(result.stdout).toContain(`### ${invocation.join(" ")}\n`);
+		expect(result.stdout).toContain(command.summary);
+		for (const flag of command.flags ?? [])
+			expect(result.stdout).toContain(`| --${flag.name} | ${flag.type} |`);
+		for (const example of command.examples) {
+			expect(result.stdout).toContain(`\n${example.cmd}\n`);
+			expect(result.stdout).toContain(example.note);
+		}
+		for (const child of command.subcommands ?? []) check(child, invocation);
+	}
+	check(tree, []);
+	for (const tty of [false, true]) {
+		const wrapped = await execute(["cli", "--json"], tty);
+		expect(wrapped.status).toBe(0);
+		expect(JSON.parse(wrapped.stdout)).toEqual({
+			url: `${base}/cli`,
+			title: "CLI Reference",
+			markdown: result.stdout.trimEnd(),
 		});
 	}
-	responses.set("/preview/cli.md", new Response("# Command reference\n"));
-	expect((await execute(["cli"])).stdout).toBe(
-		`<!-- ${base}/cli -->\n# Command reference\n`,
+	expect(requests).toEqual([]);
+});
+
+test("offline remote topics fail clearly while cli still succeeds", async () => {
+	const unavailable = Bun.serve({
+		hostname: "127.0.0.1",
+		port: 0,
+		fetch: () => new Response("Unexpected request"),
+	});
+	const offlineBase = `http://127.0.0.1:${unavailable.port}`;
+	unavailable.stop(true);
+	const env = {
+		BOLDVIDEO_DOCS_URL: offlineBase,
+		XDG_CONFIG_HOME: temporary,
+		APPDATA: temporary,
+	};
+	const failure = await run(
+		["node", resolve("dist/boldvideo.js"), "docs", "guides/quickstart"],
+		{ env },
 	);
-	responses.delete("/preview/llms.txt");
-	expect((await execute(["cli"])).status).toBe(0);
-	const failure = await execute([]);
 	expect(failure.status).toBe(1);
 	expect(failure.stdout).toBe("");
-	expect(JSON.parse(failure.stderr).code).toBe("docs_error");
+	expect(JSON.parse(failure.stderr)).toMatchObject({
+		code: "docs_error",
+		message: "Could not load the documentation index.",
+		hint: expect.stringContaining(
+			"Network access is required for remote topics.",
+		),
+	});
+	expect(JSON.parse(failure.stderr).hint).toContain("boldvideo docs cli");
+	const local = await run(
+		["node", resolve("dist/boldvideo.js"), "docs", "cli"],
+		{ env },
+	);
+	expect(local.status).toBe(0);
+	expect(local.stderr).toBe("");
+	expect(local.stdout).toContain("# boldvideo CLI reference");
+});
+
+test("the reusable renderer accepts serialized metadata and escapes markdown table cells", () => {
+	const tree: Command = {
+		name: "boldvideo",
+		summary: "Inspect the installed library.",
+		flags: [
+			{
+				name: "format",
+				type: "string",
+				default: "<json|text>",
+				required: true,
+				description: "JSON | text\nChoose a format.",
+			},
+		],
+		examples: [
+			{ cmd: "boldvideo --format=json", note: "Inspect JSON." },
+			{ cmd: "boldvideo --format=text", note: "Inspect text." },
+		],
+		seeAlso: [],
+	};
+	const markdown = docsMarkdown(JSON.parse(JSON.stringify(tree)));
+	expect(markdown).toContain("### boldvideo\n\nInspect the installed library.");
+	expect(markdown).toContain(
+		'| --format | string | "&lt;json\\|text&gt;" | JSON \\| text<br>Choose a format. (required) |',
+	);
+	expect(markdown).toContain("```sh\nboldvideo --format=json\n```");
+	expect(markdown).not.toContain("### boldvideo whoami");
 });

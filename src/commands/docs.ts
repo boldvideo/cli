@@ -1,4 +1,6 @@
-import { error } from "../errors";
+import { docsMarkdown } from "../docs-markdown";
+import { docsHint, error } from "../errors";
+import { commandTree, rootCommand } from "../help";
 import { output, outputList } from "../output";
 import type { Command } from "../spec";
 
@@ -73,7 +75,7 @@ export const docs: Command = {
 	name: "docs",
 	summary: "List documentation topics or print a page as markdown.",
 	description:
-		"Resolve an exact topic, then a unique prefix or substring. Pages print raw markdown even when piped; --json returns {url, title, markdown}. BOLDVIDEO_DOCS_URL overrides https://docs.boldvideo.com. Requests time out after 10 seconds and never send API credentials.",
+		"Resolve an exact topic, then a unique prefix or substring. The cli topic renders the installed command tree offline, without network requests. Other topics require network access. Pages print raw markdown even when piped; --json returns {url, title, markdown}. BOLDVIDEO_DOCS_URL overrides https://docs.boldvideo.com. Requests time out after 10 seconds and never send API credentials.",
 	auth: "none",
 	list: true,
 	args: [
@@ -107,7 +109,7 @@ export const docs: Command = {
 		},
 	],
 	seeAlso: ["boldvideo docs --help", "boldvideo help --json"],
-	async run(_ctx, args, flags) {
+	async run(ctx, args, flags) {
 		const base = (
 			process.env.BOLDVIDEO_DOCS_URL || "https://docs.boldvideo.com"
 		).replace(/\/+$/, "");
@@ -119,15 +121,15 @@ export const docs: Command = {
 				"boldvideo docs --help",
 				2,
 			);
-		const index = await fetchText(`${base}/llms.txt`);
-		if (!index && args[0] !== "cli")
+		const index = args[0] === "cli" ? "" : await fetchText(`${base}/llms.txt`);
+		if (index === null)
 			throw error(
 				"docs_error",
 				"Could not load the documentation index.",
-				`Run boldvideo docs again or open ${base}/llms.txt in a browser.`,
+				`Network access is required for remote topics. Run boldvideo docs cli for the offline reference; retry boldvideo docs or open ${base}/llms.txt in a browser.`,
 			);
 		const topics: Topic[] = [];
-		for (const match of (index ?? "").matchAll(
+		for (const match of index.matchAll(
 			/^- \[([^\]]+)\]\((https?:\/\/[^\s)]+)\)(?:\s+[—–-]\s+(.*))?$/gm,
 		)) {
 			const url = new URL(match[2] as string);
@@ -190,7 +192,10 @@ export const docs: Command = {
 				4,
 			);
 		let markdown =
-			(await fetchText(`${page.url}.md`)) ?? (await fetchText(page.url, true));
+			page.topic === "cli"
+				? docsMarkdown(commandTree(rootCommand(ctx.commands)))
+				: ((await fetchText(`${page.url}.md`)) ??
+					(await fetchText(page.url, true)));
 		if (!markdown) {
 			const full = await fetchText(`${base}/llms-full.txt`);
 			if (full) markdown = pageSection(full, page, topics);
@@ -199,7 +204,7 @@ export const docs: Command = {
 			throw error(
 				"not_found",
 				`Markdown is not available for '${page.topic}'.`,
-				`Open ${page.url} in a browser; run boldvideo docs to find other topics.`,
+				`Open ${docsHint(page.url, page.topic)} in a browser; run boldvideo docs to find other topics.`,
 				4,
 			);
 		markdown = markdown.trim();
