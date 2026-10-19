@@ -63,8 +63,9 @@ function run(
 	if (result.error) throw result.error;
 	let stdout = result.stdout.replaceAll("\r\n", "\n");
 	if (options.tty && process.platform === "darwin") {
-		// BSD script echoes and erases EOF when its input pipe closes.
-		if (stdout.startsWith("^D\b\b")) stdout = stdout.slice(4);
+		// BSD script echoes EOF, sometimes followed by two erasing backspaces.
+		if (stdout.startsWith("^D"))
+			stdout = stdout.slice(stdout.startsWith("^D\b\b") ? 4 : 2);
 	}
 	return {
 		status: result.status,
