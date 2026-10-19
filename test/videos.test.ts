@@ -1,5 +1,4 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
 import {
 	existsSync,
 	mkdtempSync,
@@ -13,6 +12,7 @@ import me from "./fixtures/me.json";
 import publicVideo from "./fixtures/public-video.json";
 import transcripts from "./fixtures/transcripts.json";
 import videos from "./fixtures/videos.json";
+import { run as execute } from "./run";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-videos-"));
 const video = { ...videos.data[0], ready: true, failure_reason: null };
@@ -29,8 +29,10 @@ const server = Bun.serve({
 			request.headers.get("authorization") === "Bearer bold_test_admin_2032";
 		if (url.pathname === "/api/v1/me")
 			return Response.json({
-				...me,
-				key: { ...me.key, kind: admin ? "admin" : "tenant" },
+				data: {
+					...me.data,
+					key: { ...me.data.key, kind: admin ? "admin" : "tenant" },
+				},
 			});
 		const path = url.pathname.replace("/api/v1", "");
 		const root = admin ? "/admin/videos" : "/videos";
@@ -95,53 +97,31 @@ afterAll(() => {
 	rmSync(temporary, { recursive: true, force: true });
 });
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
-async function run(
+function run(
 	args: string[],
 	options: { tenant?: boolean; tty?: boolean; shell?: string } = {},
 ) {
-	const argv = ["node", resolve("dist/boldvideo.js"), ...args];
-	const child = spawn(
-		options.tty ? "script" : options.shell ? "sh" : "node",
-		options.tty
-			? ["-qefc", argv.map(quote).join(" "), "/dev/null"]
-			: options.shell
-				? [
-						"-c",
-						options.shell.replace(
-							"boldvideo",
-							`node ${quote(resolve("dist/boldvideo.js"))}`,
-						),
-					]
-				: argv.slice(1),
-		{
-			env: {
-				...process.env,
-				NO_COLOR: "1",
-				FORCE_COLOR: undefined,
-				BOLDVIDEO_API_KEY: options.tenant
-					? "bold_test_tenant_2032"
-					: "bold_test_admin_2032",
-				BOLDVIDEO_API_URL: `http://127.0.0.1:${server.port}/api/v1`,
-				XDG_CONFIG_HOME: temporary,
-				APPDATA: temporary,
-			},
-			stdio: "pipe",
+	const argv = options.shell
+		? [
+				"sh",
+				"-c",
+				options.shell.replace(
+					"boldvideo",
+					`node ${quote(resolve("dist/boldvideo.js"))}`,
+				),
+			]
+		: ["node", resolve("dist/boldvideo.js"), ...args];
+	return execute(argv, {
+		tty: options.tty,
+		env: {
+			BOLDVIDEO_API_KEY: options.tenant
+				? "bold_test_tenant_2032"
+				: "bold_test_admin_2032",
+			BOLDVIDEO_API_URL: `http://127.0.0.1:${server.port}/api/v1`,
+			XDG_CONFIG_HOME: temporary,
+			APPDATA: temporary,
 		},
-	);
-	let stdout = "",
-		stderr = "";
-	child.stdout.on("data", (data) => {
-		stdout += data;
 	});
-	child.stderr.on("data", (data) => {
-		stderr += data;
-	});
-	child.stdin.end();
-	const status = await new Promise<number | null>((resolve, reject) => {
-		child.on("close", resolve);
-		child.on("error", reject);
-	});
-	return { status, stdout: stdout.replaceAll("\r\n", "\n"), stderr };
 }
 
 test("admin filters, bounded pages, fields and executable continuation preserve shell quoting", async () => {
