@@ -69,7 +69,9 @@ Nonterminal stderr receives exactly one newline-terminated JSON object:
 
 Terminal stderr prints the same fields on separate lines; the hint is visibly
 set apart. Failures do not produce success output. `--json` does not change error
-stream selection.
+stream selection. Bulk video mutations are the exception: stdout contains one
+result per supplied ID, including per-item errors. Any failed item produces a
+single `bulk_failed` error on stderr with exit 1 and the failed IDs in its hint.
 
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
@@ -111,7 +113,12 @@ related command invocations, optional list/write/destructive markers, subcommand
 and `run(ctx, args, flags)`. Groups can omit `run`; invoking one then displays its
 help. The help group has a handler because `help --json` returns the whole tree.
 
-Positionals are required unless marked `required: false`. Flag types are
+Positionals are required unless marked `required: false`. A final argument marked
+`variadic: true` accepts all remaining positionals and appears as `id...` in help.
+Bulk video mutations make it optional so IDs can also come from piped stdin, one
+per line, when no positional IDs are supplied. With the bounded list envelope,
+use `boldvideo videos list --json | jq -r '.items[].internal_id' | boldvideo videos publish`.
+Flag types are
 `string`, `number`, `boolean` and `list`; defaults and required flags are enforced
 by the dispatcher. Number values must be finite. Following `node:util.parseArgs`,
 use `--rating=-3.5` for a negative flag value, and `--` before a positional that

@@ -1,0 +1,14 @@
+{
+	"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12",
+	"id": "k8N2pQ",
+	"slug": "paid-workshops",
+	"title": "Paid workshops",
+	"description": "October training for the sales team.",
+	"status": "ready",
+	"privacy_level": "private",
+	"published_at": "2026-10-18T10:00:00Z",
+	"tags": [{ "id": "sales", "name": "Sales", "slug": "sales" }],
+	"collections": [{ "id": "workshops", "name": "Workshops" }],
+	"video_type": "workshop",
+	"duration": 125
+}
