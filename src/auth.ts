@@ -113,7 +113,7 @@ export function resolveKey(profile?: string): Credential {
 
 // Keep the evolving /me wire format in one place.
 function parseIdentity(data: unknown): Identity {
-	const value = data as Identity | null;
+	const value = (data as { data?: Identity } | null)?.data;
 	if (
 		!value ||
 		typeof value.account?.slug !== "string" ||

@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
 import {
 	chmodSync,
 	existsSync,
@@ -11,8 +10,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { json } from "node:stream/consumers";
 import me from "./fixtures/me.json";
+import { run as execute } from "./run";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-auth-"));
 const runner = join(temporary, "runner.mjs");
@@ -31,15 +30,20 @@ const server = Bun.serve({
 			if (override) return override.clone();
 			if (key !== tenant && key !== admin)
 				return Response.json(
-					{ message: `Invalid key: ${key}`, request_id: "req_body_2028" },
+					{
+						error: { code: "unauthorized", message: `Invalid key: ${key}` },
+						request_id: "req_body_2028",
+					},
 					{ status: 401 },
 				);
 			return Response.json(
 				key === admin
 					? {
-							...me,
-							account: { slug: "bold", name: "Bold Admin" },
-							key: { kind: "admin", short_id: "key_admin" },
+							data: {
+								...me.data,
+								account: { slug: "bold", name: "Bold Admin" },
+								key: { kind: "admin", short_id: "key_admin" },
+							},
 						}
 					: me,
 			);
@@ -95,63 +99,20 @@ function run(
 		options.fixture ? runner : resolve("dist/boldvideo.js"),
 		...args,
 	];
-	const quote = (word: string) => `'${word.replaceAll("'", "'\\''")}'`;
-	const macTTY = options.tty && process.platform === "darwin";
-	// Bun async stdio uses sockets; BSD script needs a pipe for its stdin ioctl.
-	// cat forwards interactive input through a real pipe without blocking Bun's server.
-	const child = spawn(
-		macTTY ? "sh" : options.tty ? "script" : "node",
-		options.tty
-			? macTTY
-				? ["-c", `cat | script -q /dev/null ${argv.map(quote).join(" ")}`]
-				: ["-qefc", argv.map(quote).join(" "), "/dev/null"]
-			: argv.slice(1),
-		{
-			env: {
-				...process.env,
-				NO_COLOR: "1",
-				FORCE_COLOR: undefined,
-				BOLDVIDEO_API_KEY: options.key ?? "",
-				BOLDVIDEO_API_URL: `${base}/`,
-				XDG_CONFIG_HOME: home,
-				APPDATA: home,
-				...options.env,
-			},
-			stdio: "pipe",
+	return execute(argv, {
+		tty: options.tty,
+		input: options.input,
+		waitFor:
+			options.tty && options.input !== undefined
+				? "API key (input hidden):"
+				: undefined,
+		env: {
+			BOLDVIDEO_API_KEY: options.key ?? "",
+			BOLDVIDEO_API_URL: `${base}/`,
+			XDG_CONFIG_HOME: home,
+			APPDATA: home,
+			...options.env,
 		},
-	);
-	return new Promise((resolve, reject) => {
-		let stdout = "";
-		let stderr = "";
-		let sent = false;
-		child.stdout.on("data", (data) => {
-			stdout += data;
-			if (
-				options.tty &&
-				options.input !== undefined &&
-				!sent &&
-				stdout.includes("API key (input hidden):")
-			) {
-				sent = true;
-				child.stdin.end(options.input);
-			}
-		});
-		child.stderr.on("data", (data) => {
-			stderr += data;
-		});
-		child.once("error", reject);
-		child.once("close", (status) => {
-			stdout = stdout.replaceAll("\r\n", "\n");
-			if (
-				options.tty &&
-				process.platform === "darwin" &&
-				stdout.startsWith("^D")
-			)
-				stdout = stdout.slice(stdout.startsWith("^D\b\b") ? 4 : 2);
-			resolve({ status, stdout, stderr });
-		});
-		if (!options.tty || options.input === undefined)
-			child.stdin.end(options.input ?? "");
 	});
 }
 
@@ -161,7 +122,7 @@ test("env authentication works alone and whoami formats JSON and terminal tables
 	expect(result.stderr).toBe("");
 	expect(JSON.parse(result.stdout)).toEqual({
 		account_slug: "acme",
-		account_name: "Acme Academy",
+		account_name: "Acme",
 		key_kind: "tenant",
 		profile: null,
 		api_url: base,
@@ -169,7 +130,7 @@ test("env authentication works alone and whoami formats JSON and terminal tables
 	const terminal = await run(["whoami"], { key: tenant, tty: true });
 	expect(terminal).toMatchObject({ status: 0 });
 	expect(terminal.stdout).toContain(
-		"ACCOUNT_SLUG  ACCOUNT_NAME  KEY_KIND  PROFILE  API_URL\nacme          Acme Academy  tenant",
+		"ACCOUNT_SLUG  ACCOUNT_NAME  KEY_KIND  PROFILE  API_URL\nacme          Acme          tenant",
 	);
 	expect(terminal.stdout).toContain(base);
 	expect(terminal.stdout).not.toContain(tenant);
@@ -311,7 +272,9 @@ test("failed login preserves profiles and errors redact keys and preserve API re
 		message: "Forbidden [REDACTED]",
 	});
 	for (const response of [
-		Response.json({ account: me.account }),
+		Response.json({ data: { account: me.data.account } }),
+		Response.json(me.data),
+		Response.json(null),
 		new Response("not json"),
 	]) {
 		override = response;
@@ -326,6 +289,36 @@ test("failed login preserves profiles and errors redact keys and preserve API re
 		code: "api_error",
 		request_id: "req_unavailable",
 	});
+});
+
+test("flat and nested 401 errors keep the auth hint and prevent admin writes", async () => {
+	for (const body of [
+		{
+			type: "error",
+			code: "unauthorized",
+			message: "Unauthorized",
+			retryable: false,
+		},
+		{ error: { code: "unauthorized", message: "Unauthorized" } },
+	]) {
+		override = Response.json(body, {
+			status: 401,
+			headers: { "x-request-id": "req_auth" },
+		});
+		for (const args of [["whoami"], ["fixture", "admin-write"]]) {
+			const result = await run(args, { key: admin, fixture: true });
+			expect(result.status).toBe(3);
+			expect(result.stdout).toBe("");
+			expect(JSON.parse(result.stderr)).toEqual({
+				code: "not_authenticated",
+				message: "Unauthorized",
+				hint: "Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.",
+				docs: "https://docs.boldvideo.com/cli#not-authenticated",
+				request_id: "req_auth",
+			});
+		}
+	}
+	expect(writes).toHaveLength(0);
 });
 
 test("profile pagination, dry-run, removal and logout preserve unrelated keys", async () => {
@@ -351,15 +344,16 @@ test("profile pagination, dry-run, removal and logout preserve unrelated keys", 
 		next: "boldvideo profiles list --offset 1 --limit 1 --fields 'name'",
 	});
 	// Execute the returned continuation, including its shell quoting.
-	const next = spawn(
-		"sh",
+	const next = await execute(
 		[
+			"sh",
 			"-c",
 			first.next.replace("boldvideo", `node '${resolve("dist/boldvideo.js")}'`),
 		],
-		{ env: { ...process.env, XDG_CONFIG_HOME: home, BOLDVIDEO_API_KEY: "" } },
+		{ env: { XDG_CONFIG_HOME: home } },
 	);
-	const page = await json(next.stdout);
+	expect(next.status).toBe(0);
+	const page = JSON.parse(next.stdout);
 	expect(page).toEqual({ items: [{ name: "customer-demo" }], has_more: false });
 	expect((await run(["profiles", "remove", "acme"])).status).toBe(2);
 	expect((await run(["profiles", "remove", "acme", "--yes"])).status).toBe(0);
