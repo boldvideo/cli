@@ -26,6 +26,7 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json version ($expected)."
             exit 1
           fi
+          node -e 'const main = require("./package.json"); const alias = require("./packages/cli-alias/package.json"); if (alias.version !== main.version || alias.dependencies.boldvideo !== main.version) { console.error("Alias version and dependency must match package.json version"); process.exit(1); }'
 
   check:
     needs: version
@@ -35,7 +36,7 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
       - uses: actions/download-artifact@v4
@@ -53,8 +54,54 @@ jobs:
             echo "::error::Missing repository secret NPM_TOKEN. Add an npm publish token before releasing."
             exit 1
           fi
-          npm publish boldvideo-*.tgz --provenance --access public
-      - name: Create GitHub release with checked tarball
+          npm publish boldvideo-[0-9]*.tgz --provenance --access public
+          npm publish boldvideo-cli-*.tgz --provenance --access public
+
+  smoke:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BOLDVIDEO_API_KEY: ${{ secrets.BOLDVIDEO_SMOKE_API_KEY }}
+      BOLDVIDEO_API_URL: ${{ secrets.BOLDVIDEO_SMOKE_API_URL }}
+      BOLDVIDEO_SMOKE_YOUTUBE_URL: ${{ secrets.BOLDVIDEO_SMOKE_YOUTUBE_URL }}
+    steps:
+      - name: Check non-customer smoke credentials
+        id: credentials
+        run: |
+          if [ -z "$BOLDVIDEO_API_KEY" ] || [ -z "$BOLDVIDEO_API_URL" ] || [ -z "$BOLDVIDEO_SMOKE_YOUTUBE_URL" ]; then
+            echo "::notice::Skipping live smoke: configure BOLDVIDEO_SMOKE_API_KEY, BOLDVIDEO_SMOKE_API_URL and BOLDVIDEO_SMOKE_YOUTUBE_URL for a non-customer account."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.credentials.outputs.enabled == 'true'
+        with:
+          node-version: 22
+      - name: Install the published version
+        if: steps.credentials.outputs.enabled == 'true'
+        run: npm install --global "boldvideo@${GITHUB_REF_NAME#v}"
+      - name: Import the smoke YouTube source and wait
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo import youtube "$BOLDVIDEO_SMOKE_YOUTUBE_URL" --wait
+      - name: Ask with cited timestamps
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+      - name: Search the smoke library
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo search "paid workshops"
+
+  release:
+    needs: [publish, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+      - name: Create GitHub release with checked tarballs
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

@@ -29,6 +29,36 @@ boldvideo ask "What does Taki say about paid workshops versus free webinars? Cit
 boldvideo search "paid workshops"
 ```
 
+## v0.1 commands
+
+Intended cut, not a claim that sibling branches have shipped. Run
+[`boldvideo --help`](https://docs.boldvideo.com/cli) for the installed binary's
+source of truth, then `<command> --help` for its flags.
+
+| Command | Purpose |
+| --- | --- |
+| `login` | Store credentials for a Bold account. |
+| `whoami` | Show the active account. |
+| `profiles` | Manage stored account profiles. |
+| `import youtube` | Import a YouTube video or channel; `--wait` waits for ingest. |
+| `import url` | Import a video from its source URL. |
+| `videos list` | List a bounded page of videos. |
+| `videos get` | Read one video's details. |
+| `videos transcript` | Read a video's transcript. |
+| `videos publish` | Publish a video. |
+| `videos unpublish` | Unpublish a video. |
+| `videos delete` | Delete a video with confirmation. |
+| `ask` | Ask the library a question with cited timestamps. |
+| `search` | Find relevant video content. |
+| `api` | Call an arbitrary API method and path. |
+| `docs` | Read documentation, including `docs cli`. |
+| `help` | Read command metadata and examples. |
+| `help exit-codes` | Look up stable process exit codes. |
+| `--version` | Print the installed version. |
+
+Not in the v0.1.0 cut unless merged before release: video edits (`videos update`),
+collections, folder import (`import dir`), viewers, and insights.
+
 ## For agents
 
 - JSON automatically when piped; readable tables in a terminal. Use `--json`
