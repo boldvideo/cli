@@ -6,6 +6,7 @@ import type { Command } from "../spec";
 export const help: Command = {
 	name: "help",
 	summary: "Show the command tree and exit codes.",
+	auth: "none",
 	examples: [
 		{
 			cmd: "boldvideo help --json",
@@ -18,6 +19,7 @@ export const help: Command = {
 		{
 			name: "exit-codes",
 			summary: "Explain process exit codes.",
+			auth: "none",
 			examples: [
 				{ cmd: "boldvideo help exit-codes", note: "Read the exit-code table." },
 				{

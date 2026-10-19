@@ -1,7 +1,8 @@
 import { type ParseArgsOptionsConfig, parseArgs } from "node:util";
 import { version } from "../package.json";
+import { identity, loadProfiles, resolveKey } from "./auth";
 import { commands } from "./commands";
-import { error } from "./errors";
+import { error, registerSecret } from "./errors";
 import { rootCommand, showHelp } from "./help";
 import { output } from "./output";
 import { type Command, commandFlags, type Flags } from "./spec";
@@ -128,6 +129,18 @@ export function parse(argv: string[], registry = commands) {
 }
 
 export async function cli(argv: string[], registry = commands): Promise<void> {
+	// Redact credentials even when parsing fails or help echoes an example.
+	for (const [index, arg] of argv.entries()) {
+		if (arg === "--") break;
+		if (arg === "--token") registerSecret(argv[index + 1] ?? "");
+		if (arg.startsWith("--token=")) registerSecret(arg.slice(8));
+	}
+	try {
+		loadProfiles();
+	} catch {
+		// Help and environment authentication must work with an unreadable file.
+		// Commands that need profiles report the error when they load it.
+	}
 	const { command, path, args, flags } = parse(argv, registry);
 	if (path.length === 0 && flags.version) {
 		output({ version }, version, flags.json === true);
@@ -145,12 +158,28 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 			2,
 		);
 	}
+	const credential =
+		command.auth === "none"
+			? undefined
+			: resolveKey(flags.profile as string | undefined);
+	if (
+		command.auth === "admin" &&
+		credential &&
+		(await identity(credential.key)).key.kind !== "admin"
+	)
+		throw error(
+			"not_permitted",
+			"This command requires an admin key.",
+			"An admin key is required. Set BOLDVIDEO_API_KEY to an admin key or run boldvideo login --token <admin-key>.",
+			3,
+		);
 	await command.run(
 		{
 			json: flags.json === true || !process.stdout.isTTY,
 			debug: flags.debug === true,
 			commands: registry,
 			path,
+			credential,
 		},
 		args,
 		flags,

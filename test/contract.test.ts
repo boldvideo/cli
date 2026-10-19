@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parse } from "../src/cli";
@@ -41,6 +48,8 @@ function run(
 		NO_COLOR: "1",
 		FORCE_COLOR: undefined,
 		BOLDVIDEO_API_KEY: "",
+		XDG_CONFIG_HOME: join(temporary, "empty-config"),
+		APPDATA: join(temporary, "empty-config"),
 		...options.env,
 	};
 	const result = options.tty
@@ -347,20 +356,39 @@ test("API errors preserve request IDs and map to stable exits", () => {
 
 test("API keys are redacted from failures, success and debug hints", () => {
 	for (const key of ["bold_test_secret_2026", 'bold_test_"quoted"\\key']) {
-		for (const args of [
-			[key, "--debug"],
-			["fixture", "fail", "--internal", "--debug"],
-			["fixture", "echo", key, "--debug"],
-		]) {
-			const result = run(args, {
+		const config = mkdtempSync(join(temporary, "stored-"));
+		mkdirSync(join(config, "boldvideo"));
+		writeFileSync(
+			join(config, "boldvideo", "profiles.json"),
+			JSON.stringify({ active: "acme", profiles: { acme: { key } } }),
+		);
+		const environments: Record<string, string>[] = [
+			{ BOLDVIDEO_API_KEY: key },
+			{ XDG_CONFIG_HOME: config, APPDATA: config },
+		];
+		for (const env of environments) {
+			for (const args of [
+				[key, "--debug"],
+				["fixture", "fail", "--internal", "--debug"],
+				["fixture", "echo", key, "--debug"],
+			]) {
+				const result = run(args, {
+					fixture: true,
+					env,
+				});
+				expect(result.stdout + result.stderr).not.toContain(key);
+				expect(result.stdout + result.stderr).not.toContain(
+					JSON.stringify(key).slice(1, -1),
+				);
+				expect(result.stdout + result.stderr).toContain("[REDACTED]");
+			}
+			const debug = run(["fixture", "echo", key, "--debug"], {
 				fixture: true,
-				env: { BOLDVIDEO_API_KEY: key },
+				tty: true,
+				env,
 			});
-			expect(result.stdout + result.stderr).not.toContain(key);
-			expect(result.stdout + result.stderr).not.toContain(
-				JSON.stringify(key).slice(1, -1),
-			);
-			expect(result.stdout + result.stderr).toContain("[REDACTED]");
+			expect(debug.stdout).toContain("Debug title: [REDACTED]");
+			expect(debug.stdout).not.toContain(key);
 		}
 	}
 });
