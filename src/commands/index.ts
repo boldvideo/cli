@@ -1,5 +1,6 @@
 import type { Command } from "../spec";
 import { help } from "./help";
+import { imports } from "./import";
 import { login } from "./login";
 import { logout, profiles } from "./profiles";
 import { videos } from "./videos";
@@ -12,4 +13,5 @@ export const commands: Command[] = [
 	profiles,
 	logout,
 	videos,
+	imports,
 ];
