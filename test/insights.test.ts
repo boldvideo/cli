@@ -293,6 +293,9 @@ test("invalid duration and pagination use standard usage errors", async () => {
 		["--page", "0"],
 		["--limit", "101"],
 		["--group-by", "viewer"],
+		["--format", "html"],
+		["--format", "md", "--group-by", "video"],
+		["--format", "md", "--fields", "question"],
 	]) {
 		const result = await invoke(args);
 		expect(result.status).toBe(2);
@@ -308,6 +311,68 @@ test("invalid duration and pagination use standard usage errors", async () => {
 			);
 	}
 	expect(queries).toHaveLength(0);
+});
+
+test("explicit Markdown is report-ready in pipes and terminals; JSON still wins", async () => {
+	const expected = [
+		"- 2026-10-19 — Marcel: How can I price a paid workshop for a team with several departments and different learning goals?  ",
+		"  Sources: Pricing workshops (00:42), Pricing workshops (01:30), Team coaching (00:15)",
+		"- 2026-10-19 — Ana: Can I offer team discounts?  ",
+		"  Sources: Pricing workshops (01:00)",
+		"- 2026-10-19 — Lee: Do you cover refunds?  ",
+		"  Sources: None",
+		"- 2026-10-18 — Anonymous viewer: What about certification?  ",
+		"  Sources: Unobserved",
+		"- 2026-10-18 — Jules: How long is a session?  ",
+		"  Sources: Team coaching (00:30)",
+		"",
+	].join("\n");
+	for (const tty of [false, true]) {
+		const result = await invoke(["--format", "md"], { tty });
+		expect(result.status).toBe(0);
+		expect(result.stderr).toBe("");
+		expect(result.stdout).toBe(expected);
+		const json = await invoke(["--format", "md", "--json"], { tty });
+		expect(json.status).toBe(0);
+		expect(JSON.parse(json.stdout)).toEqual({
+			items: questions.data,
+			has_more: false,
+		});
+	}
+	expect(queries.every((query) => query.format === undefined)).toBe(true);
+	const paged = await invoke(["--format", "md", "--limit", "2"], { tty: true });
+	expect(paged.stdout).toContain("--format 'md'");
+	expect(paged.stdout).toContain("--since '2026-10-12T12:00:00Z'");
+	expect(paged.stdout).not.toContain("Do you cover refunds?");
+	const empty = await invoke(["--format", "md", "--page", "2"]);
+	expect(empty).toMatchObject({ status: 0, stdout: "\n", stderr: "" });
+});
+
+test("Markdown escapes report content and handles zero, fractional and unknown timestamps", async () => {
+	override = Response.json({
+		...questions,
+		data: [
+			{
+				...questions.data[0],
+				viewer: { id: "report-viewer", display_name: "Ana *team*" },
+				question: "Why?\n- <script> [notes]",
+				sources: [
+					{ video_id: "intro", title: "Intro (part 1)", timestamp: 0 },
+					{
+						video_id: "long-session",
+						title: "Long session",
+						timestamp: 3605.9,
+					},
+					{ video_id: "untitled-session", title: null, timestamp: null },
+				],
+			},
+		],
+	});
+	const result = await invoke(["--format", "md"]);
+	expect(result.status).toBe(0);
+	expect(result.stdout).toBe(
+		"- 2026-10-19 — Ana \\*team\\*: Why? - \\<script\\> \\[notes\\]  \n  Sources: Intro \\(part 1\\) (00:00), Long session (60:05), untitled-session\n",
+	);
 });
 
 test("tenant keys and endpoint 401/403 errors exit 3 with an admin-key hint", async () => {

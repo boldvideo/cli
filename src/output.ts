@@ -28,9 +28,15 @@ export function table(
 	return [colors.bold(line(headers)), ...cells.map(line)].join("\n");
 }
 
-export function output(data: unknown, text: string, json = false): void {
+export function output(
+	data: unknown,
+	text: string,
+	format: boolean | "md" = false,
+): void {
 	process.stdout.write(
-		redact(`${json || !process.stdout.isTTY ? JSON.stringify(data) : text}\n`),
+		redact(
+			`${format === true || (format !== "md" && !process.stdout.isTTY) ? JSON.stringify(data) : text}\n`,
+		),
 	);
 }
 

@@ -112,6 +112,29 @@ function questionTable(items: Question[]) {
 	return table(rows, columns);
 }
 
+function questionMarkdown(items: Question[]) {
+	const inline = (value: string) =>
+		value.replace(/\s+/g, " ").replace(/[\\`*_{}[\]()<>#!|~]/g, "\\$&");
+	return items
+		.map((item) => {
+			const sources =
+				item.sources === null
+					? "Unobserved"
+					: item.sources.length === 0
+						? "None"
+						: item.sources
+								.map((source) => {
+									const title = inline(source.title ?? source.video_id);
+									if (source.timestamp === null) return title;
+									const seconds = Math.floor(source.timestamp);
+									return `${title} (${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")})`;
+								})
+								.join(", ");
+			return `- ${item.asked_at.slice(0, 10)} — ${inline(item.viewer.display_name)}: ${inline(item.question)}  \n  Sources: ${sources}`;
+		})
+		.join("\n");
+}
+
 function groupQuestions(items: Question[], groupBy: string) {
 	const counts = new Map<string, number>();
 	for (const item of items) {
@@ -187,15 +210,21 @@ const questions: Command = {
 			type: "string",
 			description: "Count by video, outcome or day over the fetched page only.",
 		},
+		{
+			name: "format",
+			type: "string",
+			description:
+				"Use md for a compact Markdown question list, even when piped. --json wins; otherwise md cannot combine with --group-by or --fields.",
+		},
 	],
 	examples: [
 		{
-			cmd: "boldvideo insights questions --since 7d --needs-a-look",
-			note: "Find recent questions worth reviewing.",
+			cmd: "boldvideo insights questions --since 14d --until 7d --format md",
+			note: "last week's questions",
 		},
 		{
-			cmd: "boldvideo insights questions --since 2026-10-01 --until 2026-10-08 --group-by video --limit 100",
-			note: "Count questions per source video on one weekly page.",
+			cmd: "boldvideo insights questions --collection a31c608a-2ab7-457f-8734-4f8f055d2e08",
+			note: "questions for one collection",
 		},
 	],
 	seeAlso: ["boldvideo whoami", "boldvideo insights --help"],
@@ -208,11 +237,18 @@ const questions: Command = {
 		const groupBy = flags["group-by"] as string | undefined;
 		if (groupBy !== undefined && !["video", "outcome", "day"].includes(groupBy))
 			throw usage("--group-by must be video, outcome or day.");
+		if (flags.format !== undefined && flags.format !== "md")
+			throw usage("--format must be md.");
+		const markdown = flags.format === "md" && flags.json !== true;
+		if (markdown && (groupBy || (flags.fields as string[] | undefined)?.length))
+			throw usage(
+				"--format md cannot combine with --group-by or --fields; use --json for structured output.",
+			);
 		const query: Record<string, string | number | boolean | undefined> = {
 			page_size: Number(flags.limit),
 		};
 		for (const flag of questions.flags ?? []) {
-			if (flag.name !== "group-by")
+			if (flag.name !== "group-by" && flag.name !== "format")
 				query[flag.name.replaceAll("-", "_")] = flags[flag.name] as
 					| string
 					| number
@@ -256,6 +292,11 @@ const questions: Command = {
 				next += ` --${name}${value === true ? "" : ` ${quote(Array.isArray(value) ? value.join(",") : String(value))}`}`;
 			}
 		}
+		if (markdown) {
+			output(null, questionMarkdown(page.data), "md");
+			if (next) hint(`More results: ${next}`);
+			return;
+		}
 		const items = groupBy ? groupQuestions(page.data, groupBy) : page.data;
 		if (ctx.json || groupBy || (flags.fields as string[] | undefined)?.length) {
 			outputList(items, flags, next);
@@ -270,16 +311,7 @@ export const insights: Command = {
 	name: "insights",
 	summary: "Explore member questions and content gaps.",
 	auth: "admin",
-	examples: [
-		{
-			cmd: "boldvideo insights questions --since 7d",
-			note: "Read this week's questions.",
-		},
-		{
-			cmd: "boldvideo insights questions --since 24h --group-by outcome",
-			note: "Count outcomes on the latest page.",
-		},
-	],
+	examples: questions.examples,
 	seeAlso: ["boldvideo insights questions --help"],
 	subcommands: [questions],
 };
