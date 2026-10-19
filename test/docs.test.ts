@@ -2,7 +2,7 @@ import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { docsMarkdown } from "../src/docs-markdown";
+import { commandTreeToMarkdown } from "../src/docs-markdown";
 import type { Command } from "../src/spec";
 import { run } from "./run";
 
@@ -164,7 +164,7 @@ test("ambiguous topics list candidates; unknown topics exit 4 without fetching p
 					? "sdk/videos, api/reference/videos"
 					: "guides, guides/quickstart",
 			),
-			hint: "boldvideo docs",
+			hint: "boldvideo docs\nRead: boldvideo docs cli",
 			docs: "https://docs.boldvideo.com/cli#usage-error",
 		});
 	}
@@ -270,7 +270,9 @@ test("unavailable remote markdown exits 4 with the browser URL and known topic c
 	expect(result.stdout).toBe("");
 	expect(JSON.parse(result.stderr)).toMatchObject({
 		code: "not_found",
-		hint: expect.stringContaining(`${url} (boldvideo docs guides/quickstart)`),
+		hint: expect.stringContaining(
+			`${url} (boldvideo docs 'guides/quickstart')`,
+		),
 		docs: "https://docs.boldvideo.com/cli#not-found",
 	});
 });
@@ -380,11 +382,29 @@ test("the reusable renderer accepts serialized metadata and escapes markdown tab
 		],
 		seeAlso: [],
 	};
-	const markdown = docsMarkdown(JSON.parse(JSON.stringify(tree)));
+	const markdown = commandTreeToMarkdown(JSON.parse(JSON.stringify(tree)));
 	expect(markdown).toContain("### boldvideo\n\nInspect the installed library.");
 	expect(markdown).toContain(
 		'| --format | string | "&lt;json\\|text&gt;" | JSON \\| text<br>Choose a format. (required) |',
 	);
 	expect(markdown).toContain("```sh\nboldvideo --format=json\n```");
 	expect(markdown).not.toContain("### boldvideo whoami");
+});
+
+test("error docs URLs append the installed topic command in JSON and terminal hints", async () => {
+	const result = await execute(["--offset=-1"]);
+	expect(result.status).toBe(2);
+	expect(result.stdout).toBe("");
+	expect(JSON.parse(result.stderr)).toEqual({
+		code: "usage_error",
+		message: "--offset must be a nonnegative integer.",
+		hint: "boldvideo docs --help\nRead: boldvideo docs cli",
+		docs: "https://docs.boldvideo.com/cli#usage-error",
+	});
+	const terminal = await execute(["--offset=-1"], true);
+	expect(terminal.status).toBe(2);
+	expect(terminal.stdout).toContain(
+		"Hint: boldvideo docs --help\nRead: boldvideo docs cli\nDocs: https://docs.boldvideo.com/cli#usage-error",
+	);
+	expect(requests).toEqual([]);
 });

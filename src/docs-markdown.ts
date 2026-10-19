@@ -2,7 +2,7 @@ import { exitCodes } from "./exit-codes";
 import type { Command } from "./spec";
 
 /** Render the serialized command tree returned by `boldvideo help --json`. */
-export function docsMarkdown(tree: Command): string {
+export function commandTreeToMarkdown(tree: Command): string {
 	const sections = [
 		"# boldvideo CLI reference",
 		"## Install",

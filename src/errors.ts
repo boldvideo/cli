@@ -10,12 +10,12 @@ export interface CliError {
 	request_id?: string;
 }
 
-/** Pair a known documentation page with its shell equivalent. */
-export function docsHint(url: string, topic: string): string {
-	const argument = /^[a-zA-Z0-9/_-]+$/.test(topic)
-		? topic
-		: `'${topic.replaceAll("'", "'\\''")}'`;
-	return `${url} (boldvideo docs ${argument})`;
+/** The CLI reference is a known, installed topic, including its error anchors. */
+function docsHint(hint: string, docs: string): string {
+	return /^https:\/\/docs\.boldvideo\.com\/cli\/?(?:[?#]|$)/.test(docs) &&
+		!hint.includes("boldvideo docs cli")
+		? `${hint}\nRead: boldvideo docs cli`
+		: hint;
 }
 
 export function error(
@@ -98,6 +98,7 @@ export function writeError(thrown: unknown): ExitCode {
 				);
 	const { exitCode, ...fields } = value;
 	fields.message = fields.message.replace(/[\r\n]+/g, " ");
+	fields.hint = docsHint(fields.hint, fields.docs);
 	const colors = pc.createColors(
 		Boolean(process.stderr.isTTY) && !process.env.NO_COLOR,
 	);

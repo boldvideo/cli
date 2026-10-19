@@ -1,5 +1,5 @@
-import { docsMarkdown } from "../docs-markdown";
-import { docsHint, error } from "../errors";
+import { commandTreeToMarkdown } from "../docs-markdown";
+import { error } from "../errors";
 import { commandTree, rootCommand } from "../help";
 import { output, outputList } from "../output";
 import type { Command } from "../spec";
@@ -193,7 +193,7 @@ export const docs: Command = {
 			);
 		let markdown =
 			page.topic === "cli"
-				? docsMarkdown(commandTree(rootCommand(ctx.commands)))
+				? commandTreeToMarkdown(commandTree(rootCommand(ctx.commands)))
 				: ((await fetchText(`${page.url}.md`)) ??
 					(await fetchText(page.url, true)));
 		if (!markdown) {
@@ -204,7 +204,7 @@ export const docs: Command = {
 			throw error(
 				"not_found",
 				`Markdown is not available for '${page.topic}'.`,
-				`Open ${docsHint(page.url, page.topic)} in a browser; run boldvideo docs to find other topics.`,
+				`Open ${page.url} (boldvideo docs '${page.topic.replaceAll("'", "'\\''")}') in a browser; run boldvideo docs to find other topics.`,
 				4,
 			);
 		markdown = markdown.trim();
