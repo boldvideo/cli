@@ -114,7 +114,7 @@ export function parse(argv: string[], registry = commands) {
 			throw usage("--limit must be a positive integer.");
 		if (!flags.help) {
 			const args = command.args ?? [];
-			if (parsed.positionals.length > args.length)
+			if (!args.at(-1)?.variadic && parsed.positionals.length > args.length)
 				throw usage("Too many arguments.");
 			for (const [index, arg] of args.entries()) {
 				if (arg.required !== false && parsed.positionals[index] === undefined)

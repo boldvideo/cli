@@ -23,7 +23,12 @@ export interface Command {
 	name: string;
 	summary: string;
 	description?: string;
-	args?: { name: string; description: string; required?: boolean }[];
+	args?: {
+		name: string;
+		description: string;
+		required?: boolean;
+		variadic?: boolean;
+	}[];
 	flags?: Flag[];
 	examples: [{ cmd: string; note: string }, { cmd: string; note: string }];
 	seeAlso: string[];
