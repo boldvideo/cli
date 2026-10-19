@@ -41,11 +41,20 @@ export function apiError(
 	const [code, exitCode] = codes[status] ?? ["api_error", 1];
 	const data =
 		body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+	if (
+		status === 403 &&
+		data.code === "feature_disabled" &&
+		data.message === "AI feature not available"
+	)
+		hint =
+			"Enable the AI (ai) feature in your Bold account settings, then run boldvideo whoami.";
 	const result = error(
 		code,
 		typeof data.message === "string"
 			? data.message
-			: `API request failed (HTTP ${status}).`,
+			: typeof data.error === "string"
+				? data.error
+				: `API request failed (HTTP ${status}).`,
 		hint,
 		exitCode,
 	);
