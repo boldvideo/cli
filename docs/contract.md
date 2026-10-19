@@ -71,6 +71,12 @@ Terminal stderr prints the same fields on separate lines; the hint is visibly
 set apart. Failures do not produce success output. `--json` does not change error
 stream selection.
 
+Batch sync is the exception: it emits one ordered result array with a standard
+error object on each failed row, continues processing other rows, and exits 1 if
+any row failed. Terminal output includes the action table and summary. Dry-run
+reports planned actions without writing; it cannot predict server-side write
+validation failures.
+
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
 adapter uses `body.request_id`. It reads `body.error.message` for nested errors
@@ -94,6 +100,9 @@ meanings from `src/exit-codes.ts`.
 
 - `write: true` or `destructive: true` automatically adds boolean `--dry-run` and
   `--yes`, both false by default. `destructive: true` implies a write for flags.
+- A boolean flag may declare `destructive: true` on a `write: true` command.
+  Confirmation is then required only when that flag is set (for example, memory
+  `--clear`), not for read or toggle invocations of the same command.
 - Before running a destructive handler, the dispatcher requires `--yes` when
   stdin is not a terminal. This also applies to previews: use `--dry-run --yes`.
   Help never requires confirmation. The refusal hint reproduces the original
