@@ -57,6 +57,15 @@ function videoError(cause: unknown): never {
 	throw cause;
 }
 
+export function videoText(video: Record<string, unknown>): string {
+	return table(
+		Object.entries(video).map(([key, value]) => ({
+			key,
+			value: typeof value === "object" ? JSON.stringify(value) : value,
+		})),
+	);
+}
+
 export const videos: Command = {
 	name: "videos",
 	summary: "Browse library videos and retrieve transcripts.",
@@ -186,17 +195,7 @@ export const videos: Command = {
 						),
 						admin,
 					);
-					output(
-						video,
-						table(
-							Object.entries(video).map(([key, value]) => ({
-								key,
-								value:
-									typeof value === "object" ? JSON.stringify(value) : value,
-							})),
-						),
-						ctx.json,
-					);
+					output(video, videoText(video), ctx.json);
 				} catch (cause) {
 					videoError(cause);
 				}
