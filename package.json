@@ -12,13 +12,14 @@
 		"boldvideo": "dist/boldvideo.js"
 	},
 	"files": [
-		"dist"
+		"dist/boldvideo.js"
 	],
 	"engines": {
 		"node": ">=22"
 	},
 	"scripts": {
 		"build": "bun build src/main.ts --target=node --outfile=dist/boldvideo.js",
+		"build:binaries": "bun scripts/build-binaries.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test",
 		"check": "biome check --write .",
