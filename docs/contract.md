@@ -132,7 +132,8 @@ Examples are tokenized and passed to the actual parser without executing a
 handler. Test-only command objects exercise effects and errors in a separately
 bundled runner; they are absent from `dist/boldvideo.js` and the tarball. API
 errors use a synthetic fixture; tests require no network. Terminal tests use
-Linux's `script` utility (util-linux) for real pseudo-terminals.
+the platform's `script` utility (util-linux on Linux, BSD on macOS) for real
+pseudo-terminals, with platform-specific arguments confined to the test helper.
 
 Examples must be realistic and copy-pasteable, never `foo` or placeholders like
 `<id>`. After this initial baseline, help and error wording change only in
