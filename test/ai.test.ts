@@ -1,10 +1,10 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import fixtures from "./fixtures/ai.json";
 import me from "./fixtures/me.json";
+import { run as execute, type RunResult } from "./run";
 
 const home = mkdtempSync(join(tmpdir(), "boldvideo-ai-"));
 let answer: unknown;
@@ -32,7 +32,9 @@ const server = Bun.serve({
 		if (failure) return failure.clone();
 		switch (url.pathname) {
 			case "/api/v1/me":
-				return Response.json({ ...me, features: { ...me.features, viewers } });
+				return Response.json({
+					data: { ...me.data, features: { ...me.data.features, viewers } },
+				});
 			case "/api/v1/ai/chat":
 				return Response.json(answer);
 			case "/api/v1/ai/search":
@@ -69,51 +71,32 @@ afterAll(() => {
 function run(
 	args: string[] | string,
 	options: { tty?: boolean; color?: boolean; stderrTty?: boolean } = {},
-): Promise<{ status: number | null; stdout: string; stderr: string }> {
+): Promise<RunResult> {
 	const quote = (word: string) => `'${word.replaceAll("'", "'\\''")}'`;
-	const command =
+	const argv =
 		typeof args === "string"
-			? args.replace(
-					/^boldvideo/,
-					`node ${quote(resolve("dist/boldvideo.js"))}`,
-				)
-			: ["node", resolve("dist/boldvideo.js"), ...args].map(quote).join(" ");
-	const child = spawn(
-		options.tty ? "script" : "sh",
-		options.tty
 			? [
-					"-qefc",
-					`stty cols 64; ${command}${options.stderrTty === false ? " 2>/dev/null" : ""}`,
-					"/dev/null",
+					"sh",
+					"-c",
+					args.replace(
+						/^boldvideo/,
+						`node ${quote(resolve("dist/boldvideo.js"))}`,
+					),
 				]
-			: ["-c", command],
-		{
-			env: {
-				...process.env,
-				NO_COLOR: options.color ? "" : "1",
-				FORCE_COLOR: undefined,
-				BOLDVIDEO_API_KEY: "bold_test_ai_2033",
-				BOLDVIDEO_API_URL: `http://127.0.0.1:${server.port}/api/v1`,
-				XDG_CONFIG_HOME: home,
-				APPDATA: home,
-			},
-			stdio: "pipe",
+			: ["node", resolve("dist/boldvideo.js"), ...args];
+	return execute(argv, {
+		tty: options.tty,
+		columns: 64,
+		stderr: options.stderrTty === false ? "pipe" : "tty",
+		env: {
+			...process.env,
+			NO_COLOR: options.color ? "" : "1",
+			FORCE_COLOR: undefined,
+			BOLDVIDEO_API_KEY: "bold_test_ai_2033",
+			BOLDVIDEO_API_URL: `http://127.0.0.1:${server.port}/api/v1`,
+			XDG_CONFIG_HOME: home,
+			APPDATA: home,
 		},
-	);
-	return new Promise((resolve, reject) => {
-		let stdout = "";
-		let stderr = "";
-		child.stdout.on("data", (data) => {
-			stdout += data;
-		});
-		child.stderr.on("data", (data) => {
-			stderr += data;
-		});
-		child.once("error", reject);
-		child.once("close", (status) =>
-			resolve({ status, stdout: stdout.replaceAll("\r\n", "\n"), stderr }),
-		);
-		child.stdin.end();
 	});
 }
 
@@ -380,7 +363,12 @@ test("keyword search uses bounded server pages and preserves fields and quoting 
 
 test("401 envelopes, generic 403 and AI entitlement use stable errors and specific hints", async () => {
 	for (const [body, status, code, hint] of [
-		[fixtures.unauthorized, 401, "not_authenticated", "boldvideo login --help"],
+		[
+			fixtures.unauthorized,
+			401,
+			"not_authenticated",
+			"Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.",
+		],
 		[fixtures.forbidden, 403, "not_permitted", "boldvideo login --help"],
 		[
 			fixtures.entitlement,
