@@ -54,12 +54,20 @@ export function apiError(
 	return result;
 }
 
+const secrets = new Set<string>();
+
+export function registerSecret(key: string): void {
+	if (key) secrets.add(key);
+}
+
 export function redact(text: string): string {
-	const key = process.env.BOLDVIDEO_API_KEY;
-	if (!key) return text;
-	return text
-		.replaceAll(JSON.stringify(key).slice(1, -1), "[REDACTED]")
-		.replaceAll(key, "[REDACTED]");
+	registerSecret(process.env.BOLDVIDEO_API_KEY ?? "");
+	for (const key of [...secrets].sort((a, b) => b.length - a.length)) {
+		text = text
+			.replaceAll(JSON.stringify(key).slice(1, -1), "[REDACTED]")
+			.replaceAll(key, "[REDACTED]");
+	}
+	return text;
 }
 
 export function writeError(thrown: unknown): ExitCode {
