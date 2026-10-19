@@ -31,15 +31,20 @@ const server = Bun.serve({
 			if (override) return override.clone();
 			if (key !== tenant && key !== admin)
 				return Response.json(
-					{ message: `Invalid key: ${key}`, request_id: "req_body_2028" },
+					{
+						error: { code: "unauthorized", message: `Invalid key: ${key}` },
+						request_id: "req_body_2028",
+					},
 					{ status: 401 },
 				);
 			return Response.json(
 				key === admin
 					? {
-							...me,
-							account: { slug: "bold", name: "Bold Admin" },
-							key: { kind: "admin", short_id: "key_admin" },
+							data: {
+								...me.data,
+								account: { slug: "bold", name: "Bold Admin" },
+								key: { kind: "admin", short_id: "key_admin" },
+							},
 						}
 					: me,
 			);
@@ -161,7 +166,7 @@ test("env authentication works alone and whoami formats JSON and terminal tables
 	expect(result.stderr).toBe("");
 	expect(JSON.parse(result.stdout)).toEqual({
 		account_slug: "acme",
-		account_name: "Acme Academy",
+		account_name: "Acme",
 		key_kind: "tenant",
 		profile: null,
 		api_url: base,
@@ -169,7 +174,7 @@ test("env authentication works alone and whoami formats JSON and terminal tables
 	const terminal = await run(["whoami"], { key: tenant, tty: true });
 	expect(terminal).toMatchObject({ status: 0 });
 	expect(terminal.stdout).toContain(
-		"ACCOUNT_SLUG  ACCOUNT_NAME  KEY_KIND  PROFILE  API_URL\nacme          Acme Academy  tenant",
+		"ACCOUNT_SLUG  ACCOUNT_NAME  KEY_KIND  PROFILE  API_URL\nacme          Acme          tenant",
 	);
 	expect(terminal.stdout).toContain(base);
 	expect(terminal.stdout).not.toContain(tenant);
@@ -311,7 +316,9 @@ test("failed login preserves profiles and errors redact keys and preserve API re
 		message: "Forbidden [REDACTED]",
 	});
 	for (const response of [
-		Response.json({ account: me.account }),
+		Response.json({ data: { account: me.data.account } }),
+		Response.json(me.data),
+		Response.json(null),
 		new Response("not json"),
 	]) {
 		override = response;
@@ -326,6 +333,36 @@ test("failed login preserves profiles and errors redact keys and preserve API re
 		code: "api_error",
 		request_id: "req_unavailable",
 	});
+});
+
+test("flat and nested 401 errors keep the auth hint and prevent admin writes", async () => {
+	for (const body of [
+		{
+			type: "error",
+			code: "unauthorized",
+			message: "Unauthorized",
+			retryable: false,
+		},
+		{ error: { code: "unauthorized", message: "Unauthorized" } },
+	]) {
+		override = Response.json(body, {
+			status: 401,
+			headers: { "x-request-id": "req_auth" },
+		});
+		for (const args of [["whoami"], ["fixture", "admin-write"]]) {
+			const result = await run(args, { key: admin, fixture: true });
+			expect(result.status).toBe(3);
+			expect(result.stdout).toBe("");
+			expect(JSON.parse(result.stderr)).toEqual({
+				code: "not_authenticated",
+				message: "Unauthorized",
+				hint: "Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.",
+				docs: "https://docs.boldvideo.com/cli#not-authenticated",
+				request_id: "req_auth",
+			});
+		}
+	}
+	expect(writes).toHaveLength(0);
 });
 
 test("profile pagination, dry-run, removal and logout preserve unrelated keys", async () => {

@@ -73,7 +73,8 @@ stream selection.
 
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
-adapter uses `body.request_id`. It uses `body.message` when supplied. Auth/API
+adapter uses `body.request_id`. It reads `body.error.message` for nested errors
+or `body.message` for flat errors, keeping CLI codes determined by HTTP status. Auth/API
 commands remain responsible for making requests and adapting any SDK-specific
 exception shape; `src/api.ts` handles fetch responses.
 
@@ -156,7 +157,8 @@ always work without credentials. Auth requirements are not inherited by children
   0600 for the file. The shape is `{ active: string | null, profiles: { [name]:
   { key: string } } }`. Corrupt files fail without being overwritten.
 - `identity(key)`: fetch and parse `/me`; its wire-format adapter is isolated
-  in `parseIdentity`, with the proposed response in `test/fixtures/me.json`.
+  in `parseIdentity`, which unwraps `data`. The response from BOLD_admin PR #717
+  is recorded in `test/fixtures/me.json`; callers still receive `Identity` directly.
 - `Credential`, `Profiles`, `Identity`: the types for those return values.
 
 Login verifies the supplied key, saves it under the account slug (or `--profile`)
@@ -178,4 +180,6 @@ Never log credentials, request headers or SDK error objects. Load
 `@boldvideo/bold-js` inside commands that need it, never in the dispatcher or at
 module top level. SDK-uncovered endpoints use `request` with a `// TODO(bold-js)`
 comment at the call site. Tests use fixtures and a loopback server, never the
-live API. BOLD-2013 still owns deployment of the proposed `/me` endpoint.
+live API. BOLD-2013 still owns deployment of `/me`. Missing, invalid, revoked
+or expired keys and inactive accounts all return HTTP 401, which maps to
+`not_authenticated`, exit 3, and the same setup hint as missing local credentials.
