@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
 import {
 	existsSync,
 	mkdirSync,
@@ -15,12 +14,12 @@ import { commands } from "../src/commands";
 import { commandTree, rootCommand } from "../src/help";
 import { type Command, commandFlags } from "../src/spec";
 import { fixture } from "./commands";
+import { runSync } from "./run";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-test-"));
 const built = resolve("dist/boldvideo.js");
 const runner = join(temporary, "runner.mjs");
 const registry = [...commands, fixture];
-const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
 beforeAll(async () => {
 	const result = await Bun.build({
@@ -43,44 +42,14 @@ function run(
 	} = {},
 ) {
 	const argv = ["node", options.fixture ? runner : built, ...args];
-	const env = {
-		...process.env,
-		NO_COLOR: "1",
-		FORCE_COLOR: undefined,
-		BOLDVIDEO_API_KEY: "",
-		XDG_CONFIG_HOME: join(temporary, "empty-config"),
-		APPDATA: join(temporary, "empty-config"),
-		...options.env,
-	};
-	const result = options.tty
-		? spawnSync(
-				"script",
-				process.platform === "darwin"
-					? ["-q", "/dev/null", ...argv]
-					: ["-qefc", argv.map(quote).join(" "), "/dev/null"],
-				{
-					encoding: "utf8",
-					env,
-					input: "",
-				},
-			)
-		: spawnSync(argv[0] ?? "node", argv.slice(1), {
-				encoding: "utf8",
-				env,
-				input: "",
-			});
-	if (result.error) throw result.error;
-	let stdout = result.stdout.replaceAll("\r\n", "\n");
-	if (options.tty && process.platform === "darwin") {
-		// BSD script echoes EOF, sometimes followed by two erasing backspaces.
-		if (stdout.startsWith("^D"))
-			stdout = stdout.slice(stdout.startsWith("^D\b\b") ? 4 : 2);
-	}
-	return {
-		status: result.status,
-		stdout,
-		stderr: result.stderr,
-	};
+	return runSync(argv, {
+		tty: options.tty,
+		env: {
+			XDG_CONFIG_HOME: join(temporary, "empty-config"),
+			APPDATA: join(temporary, "empty-config"),
+			...options.env,
+		},
+	});
 }
 
 // A shell-word tokenizer, not a shell: examples are parsed, never executed.
