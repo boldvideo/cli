@@ -119,7 +119,6 @@ jobs:
               git switch -C homebrew-tap FETCH_HEAD
             else
               git switch --orphan homebrew-tap
-              git rm -rf .
             fi
             mkdir -p Formula
             cp "$RUNNER_TEMP/boldvideo.rb" Formula/boldvideo.rb
