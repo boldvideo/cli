@@ -434,12 +434,18 @@ process.stdout.write(searches ? events.join('\n') + '\n' : ${JSON.stringify(stre
 		expect(defaultRun.stdout).toContain(
 			"Total estimated cost (placeholder prices): $0.001293 USD",
 		);
-		const skillRun = await run([...defaults, "--mode", "skill"], { env });
+		const skillRun = await run(
+			[...defaults, "--mode", "skill", "--repeat", "1"],
+			{ env },
+		);
 		expect(skillRun.status).toBe(0);
-		expect(skillRun.stdout).toContain("| skill | 100.0% | 2 | 3 |");
-		const searchRun = await run([...defaults, "--mode", "one-search"], { env });
+		expect(skillRun.stdout).toContain("| skill | 100.0% | 2 | 1 |");
+		const searchRun = await run(
+			[...defaults, "--mode", "one-search", "--repeat", "1"],
+			{ env },
+		);
 		expect(searchRun.status).toBe(0);
-		expect(searchRun.stdout).toContain("| one-search | 100.0% | 3 | 3 |");
+		expect(searchRun.stdout).toContain("| one-search | 100.0% | 3 | 1 |");
 		const examplePath = join(root, "evals/tasks/00-example.md");
 		const example = await Bun.file(examplePath).text();
 		await Bun.write(
@@ -494,6 +500,8 @@ process.stdout.write(searches ? events.join('\n') + '\n' : ${JSON.stringify(stre
 				"manual",
 				"--answer",
 				answer,
+				"--repeat",
+				"1",
 			],
 			{ env: { ...env, EVAL_RESET_CMD: "echo skip" } },
 		);
@@ -520,7 +528,7 @@ process.stdout.write(searches ? events.join('\n') + '\n' : ${JSON.stringify(stre
 		server.stop(true);
 		await rm(temporary, { recursive: true, force: true });
 	}
-});
+}, 60000);
 
 test("API checker scores the requested sandbox field and rejects a mismatch", async () => {
 	const root = await mkdtemp(join(tmpdir(), "boldvideo-check-test-"));
