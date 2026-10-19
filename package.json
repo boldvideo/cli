@@ -23,6 +23,7 @@
 		"test": "bun test",
 		"check": "biome check --write .",
 		"ci:lint": "biome ci .",
+		"release:check": "node scripts/release-check.mjs",
 		"prepack": "bun run build"
 	},
 	"publishConfig": {

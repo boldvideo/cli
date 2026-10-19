@@ -1,9 +1,13 @@
 name: CI
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   check:
@@ -24,12 +28,12 @@ jobs:
       - run: bun run typecheck
       - run: bun test
       - run: bun run ci:lint
-      - run: npm pack
+      - run: bun run release:check
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Linux'
         with:
           name: package
-          path: boldvideo-0.1.0.tgz
+          path: boldvideo-*.tgz
 
   smoke:
     needs: check
@@ -45,7 +49,9 @@ jobs:
         with:
           name: package
       - run: |
-          npx --yes ./boldvideo-0.1.0.tgz --version > version.json
-          node -e 'if (JSON.parse(require("fs").readFileSync("version.json", "utf8")).version !== "0.1.0") process.exit(1)'
-          npx --yes ./boldvideo-0.1.0.tgz --help > help.json
+          package=$(echo boldvideo-*.tgz)
+          export EXPECTED_VERSION=$(tar -xOf "$package" package/package.json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).version')
+          npx --yes "./$package" --version > version.json
+          node -e 'if (JSON.parse(require("fs").readFileSync("version.json", "utf8")).version !== process.env.EXPECTED_VERSION) process.exit(1)'
+          npx --yes "./$package" --help > help.json
           node -e 'const help = JSON.parse(require("fs").readFileSync("help.json", "utf8")); if (help.name !== "boldvideo" || !help.subcommands.some(c => c.name === "help")) process.exit(1)'
