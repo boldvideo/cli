@@ -18,6 +18,7 @@ const temporary = mkdtempSync(join(tmpdir(), "boldvideo-videos-"));
 const video = { ...videos.data[0], ready: true, failure_reason: null };
 const calls: URL[] = [];
 let unpaginated = false;
+let publicCount = 23;
 const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 0,
@@ -34,7 +35,13 @@ const server = Bun.serve({
 		const path = url.pathname.replace("/api/v1", "");
 		const root = admin ? "/admin/videos" : "/videos";
 		if (path === root) {
-			if (unpaginated) return Response.json({ data: [publicVideo.data] });
+			if (unpaginated)
+				return Response.json({
+					data: Array.from({ length: publicCount }, (_, index) => ({
+						...publicVideo.data,
+						id: `public-workshop-${index + 1}`,
+					})),
+				});
 			const page = Number(url.searchParams.get("page"));
 			return Response.json(
 				{
@@ -81,6 +88,7 @@ const server = Bun.serve({
 beforeEach(() => {
 	calls.length = 0;
 	unpaginated = false;
+	publicCount = 23;
 });
 afterAll(() => {
 	server.stop(true);
@@ -310,17 +318,80 @@ test("transcript dry-run preserves existing files and does not fetch a transcrip
 	expect(calls).toHaveLength(0);
 });
 
-test("the current unpaginated public list fails explicitly instead of inventing pagination", async () => {
+test("unpaginated public lists default to 20 and continue by increasing the limit, not the page", async () => {
 	unpaginated = true;
 	const result = await run(["videos", "list"], { tenant: true });
-	expect(result.status).toBe(1);
-	expect(result.stdout).toBe("");
-	expect(JSON.parse(result.stderr)).toMatchObject({
-		code: "api_error",
-		message: expect.stringContaining(
-			"bounded listing requires pagination metadata",
-		),
+	expect(result.status).toBe(0);
+	expect(result.stderr).toBe("");
+	const first = JSON.parse(result.stdout);
+	expect(first.items.map((item: { id: string }) => item.id)).toEqual(
+		Array.from({ length: 20 }, (_, index) => `public-workshop-${index + 1}`),
+	);
+	expect(first).toMatchObject({
+		has_more: true,
+		next: "boldvideo videos list --page 1 --limit 23",
 	});
+	const last = await run([], { tenant: true, shell: first.next });
+	expect(last.status).toBe(0);
+	const complete = JSON.parse(last.stdout);
+	expect(complete.items).toHaveLength(23);
+	expect(complete.items[22].id).toBe("public-workshop-23");
+	expect(complete.has_more).toBe(false);
+	expect(complete.next).toBeUndefined();
+	const projected = await run(
+		[
+			"videos",
+			"list",
+			"--limit",
+			"1",
+			"--page",
+			"3",
+			"--tag",
+			"Director's picks",
+			"--fields",
+			"id,title",
+			"--profile",
+			"customer-demo",
+			"--json",
+		],
+		{ tenant: true },
+	);
+	const small = JSON.parse(projected.stdout);
+	expect(small.items).toEqual([
+		{ id: "public-workshop-1", title: "Paid workshops" },
+	]);
+	expect(small.next).toContain("--page 3 --limit 2");
+	expect(small.next).toContain("--profile 'customer-demo'");
+	expect(small.next).toContain("--fields 'id,title'");
+	expect(small.next).toEndWith("--json");
+	const continued = await run([], { tenant: true, shell: small.next });
+	expect(continued.status).toBe(0);
+	expect(JSON.parse(continued.stdout).items).toEqual([
+		{ id: "public-workshop-1", title: "Paid workshops" },
+		{ id: "public-workshop-2", title: "Paid workshops" },
+	]);
+	expect(calls.at(-1)?.searchParams.get("tag")).toBe("Director's picks");
+	const terminal = await run(["videos", "list"], { tenant: true, tty: true });
+	expect(terminal.status).toBe(0);
+	expect(terminal.stdout).toContain(
+		"More results: boldvideo videos list --page 1 --limit 23",
+	);
+	for (const count of [0, 20]) {
+		publicCount = count;
+		const page = await run(["videos", "list"], { tenant: true });
+		expect(page.status).toBe(0);
+		const data = JSON.parse(page.stdout);
+		expect(data.items).toHaveLength(count);
+		expect(data.has_more).toBe(false);
+		expect(data.next).toBeUndefined();
+	}
+	unpaginated = false;
+	const paginated = await run(["videos", "list", "--limit", "1"], {
+		tenant: true,
+	});
+	expect(JSON.parse(paginated.stdout).next).toBe(
+		"boldvideo videos list --page 2 --limit 1",
+	);
 });
 
 test("missing videos and pending transcripts exit 4 with actionable hints and request IDs", async () => {

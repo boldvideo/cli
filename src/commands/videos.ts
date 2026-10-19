@@ -9,15 +9,16 @@ const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 const filters = ["status", "privacy", "collection", "tag", "type", "since"];
 
 // Keep the pending backend's page envelope and display fields isolated here.
-function parsePage(data: unknown) {
+function parsePage(data: unknown, admin: boolean) {
 	const page = data as {
 		data: Record<string, unknown>[];
-		meta: { page: number; total_pages: number };
+		meta?: { page: number; total_pages: number };
 	};
 	if (
 		!Array.isArray(page?.data) ||
-		!Number.isSafeInteger(page.meta?.page) ||
-		!Number.isSafeInteger(page.meta?.total_pages)
+		((admin || page.meta !== undefined) &&
+			(!Number.isSafeInteger(page.meta?.page) ||
+				!Number.isSafeInteger(page.meta?.total_pages)))
 	)
 		throw error(
 			"api_error",
@@ -126,25 +127,32 @@ export const videos: Command = {
 						key,
 						query,
 					}),
+					admin,
 				);
-				const next =
-					page < result.meta.total_pages
-						? `boldvideo videos list --page ${page + 1} --limit ${flags.limit}${[
-								...filters,
-								"profile",
-								"fields",
-							]
-								.filter((name) => flags[name] !== undefined)
-								.map(
-									(name) =>
-										` --${name} ${quote(Array.isArray(flags[name]) ? (flags[name] as string[]).join(",") : String(flags[name]))}`,
-								)
-								.join("")}${flags.json ? " --json" : ""}`
-						: undefined;
+				const limit = Number(flags.limit);
+				// The public endpoint currently ignores page_size and omits meta.
+				// Until it paginates, show a bounded prefix and offer a larger one.
+				const items = result.meta ? result.data : result.data.slice(0, limit);
+				const hasMore = result.meta
+					? page < result.meta.total_pages
+					: result.data.length > limit;
+				const next = hasMore
+					? `boldvideo videos list --page ${result.meta ? page + 1 : page} --limit ${result.meta ? limit : Math.min(limit * 2, result.data.length)}${[
+							...filters,
+							"profile",
+							"fields",
+						]
+							.filter((name) => flags[name] !== undefined)
+							.map(
+								(name) =>
+									` --${name} ${quote(Array.isArray(flags[name]) ? (flags[name] as string[]).join(",") : String(flags[name]))}`,
+							)
+							.join("")}${flags.json ? " --json" : ""}`
+					: undefined;
 				outputList(
 					!ctx.json && !(flags.fields as string[] | undefined)?.length
-						? result.data.map(videoRow)
-						: result.data,
+						? items.map(videoRow)
+						: items,
 					flags,
 					next,
 				);
