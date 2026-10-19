@@ -173,7 +173,7 @@ export const collections: Command = {
 			],
 			async run(ctx, args, flags) {
 				let parent = flags.parent as string | undefined;
-				if (parent && !flags["dry-run"]) {
+				if (parent) {
 					// TODO(bold-js): resolve parent slugs to the UUID required by admin writes.
 					const result = (await request(
 						"GET",

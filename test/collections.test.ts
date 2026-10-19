@@ -308,6 +308,11 @@ test("dry-run never mutates; missing video input is a usage error", async () => 
 			path: expect.stringContaining("/admin/collections"),
 			body: expect.any(Object),
 		});
+		if (args[0] === "create")
+			expect(JSON.parse(preview.stdout).body).toEqual({
+				name: "Pricing lessons",
+				parent_id: "8c36b95c-7be2-4b7e-bf63-2ee639f7a246",
+			});
 	}
 	expect(writes).toHaveLength(0);
 	for (const action of ["add", "remove"]) {
