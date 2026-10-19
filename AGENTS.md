@@ -10,16 +10,18 @@ One name everywhere: the binary, the npm package, the docs term and the env pref
 
 ## Stack (decided 2026-10-19, do not relitigate inside a ticket)
 
-- TypeScript, strict. ESM only.
-- Runtime floor: Node 22. Stated in `package.json` `engines` and in the README.
-- Package manager: pnpm. Same as `@boldvideo/bold-js`.
-- Build: tsup, one bundled file at `dist/boldvideo.js` with a shebang. Cold start of `boldvideo --version` stays under 300 ms.
-- Tests: `node --test`. No test framework.
+Newest, fastest, agent-friendly. Fast feedback loops matter more than familiarity.
+
+- TypeScript 6, strict, ESM only, `erasableSyntaxOnly` so the source runs anywhere types can be stripped.
+- Toolchain: Bun (install, `bun test`, `bun build`). One tool, no config files to maintain.
+- Runtime floor for the published package: Node 22. `bun build --target=node` produces one bundled file, `dist/boldvideo.js`, with a shebang, and that is what `npx boldvideo` runs. Cold start of `boldvideo --version` stays under 300 ms on Node.
+- Tests: `bun test`, exercising the built file through its public behavior (argv in, stdout/stderr/exit code out), plus unit tests where logic is dense.
+- Lint and format: Biome. One config, one command, fast.
 - Arg parsing: `node:util.parseArgs`. No CLI framework. Commands are plain data (see below) and a small dispatcher walks them.
 - Color: `picocolors`. Honors `NO_COLOR` and non-TTY automatically.
 - Tables: a hand-written column padder in `src/output.ts`. No table library.
 - API client: `@boldvideo/bold-js` for what it covers. `boldvideo api` uses `fetch` directly because its job is arbitrary paths. If a curated command needs an endpoint bold-js lacks, call `fetch` through `src/api.ts` for now and leave a `// TODO(bold-js)` so it can move into the SDK; do not block a command on an SDK release.
-- Standalone binaries and Homebrew come later (BOLD-2048) via `bun build --compile` or Node SEA. Nothing in this repo should make that harder; nothing should prepare for it either.
+- Standalone binaries and Homebrew come later (BOLD-2048) via `bun build --compile`. Nothing in this repo should make that harder; nothing should prepare for it either.
 
 Dependencies are a cost. Before adding one, ask whether thirty lines of our own code would do. Usually yes.
 
@@ -70,21 +72,21 @@ Write the code DHH would merge, with the pragmatism of Dave Thomas and the data-
 - Small files named after what they hold. A reader should find any command by its name in the file tree.
 - Errors are values with a code; throw them at the edge, format them once in `src/errors.ts`.
 - Tests exercise the built CLI through its public behavior (argv in, stdout/stderr/exit code out), plus unit tests where logic is dense. Record API responses as fixtures under `test/fixtures/`; no network in tests.
-- Prettier and the TypeScript compiler are the linters. No ESLint config to maintain.
+- Biome and the TypeScript compiler are the linters. No ESLint, no Prettier.
 - If a ticket's acceptance criteria and this file disagree, this file wins; say so in the PR.
 
 ## Checks
 
 ```sh
-pnpm install
-pnpm build          # tsup → dist/boldvideo.js
-pnpm test           # node --test, runs against dist
-pnpm typecheck      # tsc --noEmit
-pnpm format         # prettier --write
+bun install
+bun run build       # bun build --target=node → dist/boldvideo.js
+bun test            # runs against dist
+bun run typecheck   # tsc --noEmit
+bun run check       # biome check --write
 node dist/boldvideo.js --help
 ```
 
-CI runs build, typecheck, test and format check on every pull request, and smoke-runs `npx` from a packed tarball on Node 22 and 24.
+CI runs build, typecheck, test and `biome ci` on every pull request, and smoke-runs `npx` from a packed tarball on Node 22 and 24.
 
 ## Working here
 
