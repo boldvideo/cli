@@ -3,7 +3,7 @@
 This contract applies to every command. The registered command objects in
 `src/commands/` are the source of truth for command reference material; read them
 with `boldvideo help --json`, rather than maintaining a second command reference.
-Only help and version ship in 0.1.0. The rules below also govern future commands.
+The rules below govern shipped commands and future additions.
 
 ## Streams and color
 
@@ -23,8 +23,8 @@ Only help and version ship in 0.1.0. The rules below also govern future commands
   color on both streams. Color conveys meaning: red error codes, cyan error
   hints, bold table headers. No color is emitted to pipes.
 - Use `output()`, `outputList()` and `hint()`, not direct writes from commands.
-  Their final output and the error formatter redact `BOLDVIDEO_API_KEY`, including
-  its JSON-escaped representation.
+  Their final output and the error formatter redact environment, stored and
+  supplied login keys, including their JSON-escaped representations.
 
 ## Lists and identifiers
 
@@ -75,7 +75,7 @@ stream selection.
 value. Pass the response header's request ID when available; otherwise the
 adapter uses `body.request_id`. It uses `body.message` when supplied. Auth/API
 commands remain responsible for making requests and adapting any SDK-specific
-exception shape; no network or authentication module ships yet.
+exception shape; `src/api.ts` handles fetch responses.
 
 | Exit | Meaning | Codes currently used |
 | --- | --- | --- |
@@ -137,17 +137,45 @@ Examples must be realistic and copy-pasteable, never `foo` or placeholders like
 `<id>`. After this initial baseline, help and error wording change only in
 response to a failing cold-agent eval transcript.
 
-## Authentication boundary for BOLD-2028
+## Authentication
 
-Resolve `BOLDVIDEO_API_KEY` before stored profiles. `BOLDVIDEO_API_URL` overrides
+Commands default to `auth: "any"`. The dispatcher resolves a credential before
+calling the handler and supplies it as `ctx.credential`. Set `auth: "admin"` to
+check the live `/me` identity before the handler can write. Set `auth: "none"` on
+local commands such as login, help and profile management. Help and version
+always work without credentials. Auth requirements are not inherited by children.
+
+`src/auth.ts` exports:
+
+- `resolveKey(profile?)`: environment key, then explicit profile, then active
+  profile; returns `{ key, profile }`, with `profile: null` for environment auth.
+  An explicit missing profile never falls back to another stored profile.
+- `loadProfiles()` / `saveProfiles(data)`: read and atomically replace
+  `profiles.json` under `$XDG_CONFIG_HOME/boldvideo`, `~/.config/boldvideo`, or
+  `%APPDATA%/boldvideo` on Windows. POSIX modes are 0700 for the directory and
+  0600 for the file. The shape is `{ active: string | null, profiles: { [name]:
+  { key: string } } }`. Corrupt files fail without being overwritten.
+- `identity(key)`: fetch and parse `/me`; its wire-format adapter is isolated
+  in `parseIdentity`, with the proposed response in `test/fixtures/me.json`.
+- `Credential`, `Profiles`, `Identity`: the types for those return values.
+
+Login verifies the supplied key, saves it under the account slug (or `--profile`)
+and activates that profile. With no token flag it reads piped stdin or prompts
+without echo. Profile switching does not override `BOLDVIDEO_API_KEY`. Removing
+the active profile clears the default rather than silently switching accounts.
+Logout removes a stored key, not an environment variable. All local writes
+support dry-run; logout and profile removal require `--yes` on piped stdin.
+
+`src/api.ts` exports `apiUrl()` and
+`request(method, path, { key, body?, query? })`. Requests use Bearer auth, stay
+under the API base URL, refuse redirects, parse JSON (null for empty responses),
+and translate HTTP errors and request IDs through `apiError`. A request times
+out after 30 seconds with exit 5. `BOLDVIDEO_API_URL` overrides
 `https://app.boldvideo.io/api/v1`. OpenAPI is at
-`https://app.boldvideo.io/api/openapi`. Load `@boldvideo/bold-js` inside commands
-that need it, never in the dispatcher or at module top level.
+`https://app.boldvideo.io/api/openapi`.
 
-Add auth commands to `src/commands/index.ts`; the help tree and generic checks
-will discover them. Use exit 3 for missing credentials or permissions and supply
-a concrete login/profile hint once those commands exist. Extend output redaction
-to the resolved profile credential before introducing stored keys; currently only
-the environment key exists. Never log credentials, request headers or SDK error
-objects directly. SDK-uncovered endpoints belong in a small authenticated fetch
-helper in `src/api.ts` with a `// TODO(bold-js)` comment.
+Never log credentials, request headers or SDK error objects. Load
+`@boldvideo/bold-js` inside commands that need it, never in the dispatcher or at
+module top level. SDK-uncovered endpoints use `request` with a `// TODO(bold-js)`
+comment at the call site. Tests use fixtures and a loopback server, never the
+live API. BOLD-2013 still owns deployment of the proposed `/me` endpoint.

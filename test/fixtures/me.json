@@ -1,0 +1,5 @@
+{
+	"account": { "slug": "acme", "name": "Acme Academy" },
+	"key": { "kind": "tenant", "short_id": "key_7c21" },
+	"features": { "viewers": true, "viewer_memory": false, "mcp": true }
+}
