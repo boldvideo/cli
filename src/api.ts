@@ -35,6 +35,9 @@ export async function request(
 			method,
 			headers: {
 				Authorization: `Bearer ${options.key}`,
+				...(path.startsWith("/admin")
+					? { "X-Bold-Admin-Api-Key": options.key }
+					: {}),
 				Accept: "application/json",
 				...(options.body === undefined
 					? {}
