@@ -4,8 +4,9 @@ From a checkout of this branch (the CLI itself must also be installed):
 
 - Claude Code: `mkdir -p ~/.claude/skills/boldvideo && cp -R skill/. ~/.claude/skills/boldvideo/`
 - Amp: `amp skill add --global ./skill --name boldvideo`
+- Codex: `mkdir -p ~/.agents/skills/boldvideo && cp -R skill/. ~/.agents/skills/boldvideo/`
 
-Both install the complete directory, including recipes, under the frontmatter
+All three install the complete directory, including recipes, under the frontmatter
 name `boldvideo`. Start a new session after installing.
 
 The eval harness installs this directory in its isolated workspace in `skill`

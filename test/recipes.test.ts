@@ -13,6 +13,7 @@ const siblings = [
 	"ask",
 	"search",
 	"videos publish",
+	"import dir", // Pending BOLD-2036, not the registered URL import path.
 ];
 let checked = 0;
 let skipped = 0;

@@ -2,8 +2,11 @@
 
 Requires Bash, Python 3, jq, a secret-injected admin `BOLDVIDEO_API_KEY`, and
 the import, collections, videos-read and videos-write commands installed.
-Run blocks in order in the same Bash session. Do not use `import dir`: these
-are URL manifests, not local video files.
+Choose the URL path below for today's command surface; the local-file path at
+the end is **pending BOLD-2036**. Run blocks for your chosen path in order in
+the same Bash session. Do not feed URL manifests to `import dir`.
+
+## URL-based path (available now)
 
 Export recordings you are authorized to migrate into `kajabi-export/recordings.csv`
 (or several CSV files in that folder), with this UTF-8 header and real media
@@ -105,3 +108,43 @@ Follow pagination again and open the customer portal as a learner before retirin
 Kajabi. Keep the export and ID manifest privately; URL manifests may contain
 signed media credentials. The parser test does not verify URL access or backend
 deployment.
+
+## Local exports with a CSV map (pending BOLD-2036)
+
+**Not executable until BOLD-2036 ships.** This is the planned `import dir`
+alternative for downloaded recording files, not a folder of URL lists. Keep
+the URL-based path above for current migrations. No directory command or CSV
+map schema is registered on this branch; the parser test explicitly skips
+these planned invocations until `import dir` exists.
+
+Arrange the export with media under `kajabi-export/media/`, for example
+`2026-09-07-pricing.mp4` and `2026-09-14-sales.mp4`, and a sibling
+`kajabi-export/meta.csv`. The map must associate each relative media filename
+with its title, original published date, type, tags and destination collection.
+Use the metadata values in the URL example above, but **do not assume that
+URL CSV's header is the directory map schema**. Once BOLD-2036 lands, inspect
+`boldvideo import dir --help` and construct the map with its exact column names
+and path rules; verify support for `--map`, `--wait` and `--dry-run` before using
+the planned commands below. Create the mapped collections with the same
+preview/create steps as the URL path.
+
+Preview the folder and map first, checking every file and metadata association:
+
+```bash
+boldvideo import dir ./kajabi-export/media --map ./kajabi-export/meta.csv --wait --dry-run
+```
+
+Only after that preview is reviewed and the command is available, import and
+wait for readiness:
+
+```bash
+boldvideo import dir ./kajabi-export/media --map ./kajabi-export/meta.csv --wait > folder-import.json
+```
+
+Use the shipped output contract to extract successful video IDs into
+`publish-ids.txt`; do not guess the batch response shape or publish every video
+already in a destination collection. Reconcile all files and CSV metadata with
+`videos list`, following pagination, then use the dry-run and bulk-publication
+steps from the URL path. Stop before publication if any file fails or is not
+ready. Confirm the shipped retry/deduplication behavior before rerunning uploads;
+URL-based deduplication does not establish a local-file retry contract.
