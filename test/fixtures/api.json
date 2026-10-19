@@ -1,0 +1,37 @@
+{
+	"videos": {
+		"data": [
+			{ "id": "paid-workshops", "title": "Paid workshops" },
+			{ "id": "sales-onboarding", "title": "Sales onboarding" }
+		],
+		"meta": { "page": 1, "total_pages": 2 }
+	},
+	"last": {
+		"data": [{ "id": "pricing-masterclass", "title": "Pricing masterclass" }],
+		"meta": { "page": 2, "total_pages": 2 }
+	},
+	"body": {
+		"title": "Paid workshops",
+		"tags": ["sales", "coaching"],
+		"public": false
+	},
+	"failure": {
+		"message": "Video access denied.",
+		"request_id": "req_body_2030",
+		"error": { "reason": "scope_missing" }
+	},
+	"spec": {
+		"openapi": "3.0.3",
+		"paths": {
+			"/videos": {
+				"parameters": [],
+				"get": { "summary": "List videos" },
+				"post": { "summary": "Import a video" }
+			},
+			"/collections": {
+				"get": { "summary": "Find collections containing videos" }
+			},
+			"/viewers": { "get": { "summary": "List viewers" } }
+		}
+	}
+}
