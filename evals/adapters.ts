@@ -1,6 +1,11 @@
+export type Mode = "cold" | "one-search" | "skill";
+
 export type AgentResult = {
 	answer: string;
 	calls: number;
+	cli_calls: number;
+	searches: number;
+	model: string | null;
 	input_tokens: number | null;
 	output_tokens: number | null;
 	error?: string;
@@ -14,14 +19,34 @@ export function parseStream(stream: string): AgentResult {
 	let resultUsage = false;
 	let completed = false;
 	let error: string | undefined;
+	let model: string | null = null;
 	const tools = new Set<string>();
+	const cli = new Set<string>();
+	const searches = new Set<string>();
+	let serverSearches = 0;
 	const messages = new Map<string, { input: number; output: number }>();
 	for (const line of stream.split("\n").filter(Boolean)) {
 		const event = JSON.parse(line);
+		model = event.model ?? event.message?.model ?? model;
+		if (event.modelUsage && !model)
+			model = Object.keys(event.modelUsage)[0] ?? null;
 		if (event.type === "assistant") {
 			const blocks = event.message.content;
-			for (const block of blocks)
-				if (block.type === "tool_use") tools.add(block.id);
+			for (const block of blocks) {
+				if (!["tool_use", "server_tool_use"].includes(block.type)) continue;
+				tools.add(block.id);
+				if (["WebSearch", "web_search"].includes(block.name))
+					searches.add(block.id);
+				if (
+					["Bash", "shell_command", "async_shell_command"].includes(
+						block.name,
+					) &&
+					/^boldvideo(?:\s|$)/.test(
+						block.input?.command ?? block.input?.cmd ?? "",
+					)
+				)
+					cli.add(block.id);
+			}
 			const text = blocks
 				.filter((block: { type: string }) => block.type === "text")
 				.map((block: { text: string }) => block.text)
@@ -47,6 +72,7 @@ export function parseStream(stream: string): AgentResult {
 			if (typeof event.result === "string") answer = event.result;
 			if (event.usage) {
 				resultUsage = true;
+				serverSearches = event.usage.server_tool_use?.web_search_requests ?? 0;
 				input_tokens =
 					(event.usage.input_tokens ?? 0) +
 					(event.usage.cache_read_input_tokens ?? 0) +
@@ -66,6 +92,9 @@ export function parseStream(stream: string): AgentResult {
 	return {
 		answer,
 		calls: tools.size,
+		cli_calls: cli.size,
+		searches: Math.max(searches.size, serverSearches),
+		model,
 		input_tokens: resultUsage || messages.size ? input_tokens : null,
 		output_tokens: resultUsage || messages.size ? output_tokens : null,
 		...(error ? { error } : {}),
@@ -75,7 +104,10 @@ export function parseStream(stream: string): AgentResult {
 export async function claude(
 	run: (args: string[]) => Promise<string>,
 	prompt: string,
+	mode: Mode = "cold",
+	model?: string,
 ) {
+	const tools = mode === "one-search" ? "Bash,WebSearch" : "Bash";
 	return parseStream(
 		await run([
 			"-p",
@@ -84,14 +116,15 @@ export async function claude(
 			"stream-json",
 			"--verbose",
 			"--tools",
-			"Bash",
+			tools,
 			"--allowedTools",
-			"Bash",
+			tools,
 			"--strict-mcp-config",
 			"--mcp-config",
 			'{"mcpServers":{}}',
 			"--setting-sources",
 			"",
+			...(model ? ["--model", model] : []),
 		]),
 	);
 }
@@ -108,6 +141,9 @@ export async function manual(answerFile: string, prompt: string) {
 	return {
 		answer: await Bun.file(answerFile).text(),
 		calls: 0,
+		cli_calls: 0,
+		searches: 0,
+		model: "manual",
 		input_tokens: 0,
 		output_tokens: 0,
 	};

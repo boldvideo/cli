@@ -1,7 +1,12 @@
 import { chmod, copyFile, mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { Mode } from "./adapters";
 
-export async function sandbox(root: string, binary: string) {
+export async function sandbox(
+	root: string,
+	binary: string,
+	mode: Mode = "cold",
+) {
 	const bin = join(root, "bin");
 	const system = join(root, "system");
 	const home = join(root, "home");
@@ -43,6 +48,14 @@ export async function sandbox(root: string, binary: string) {
 		"async_shell_command_status",
 		"async_shell_command_kill",
 	];
+	if (mode === "one-search") shellTools.push("web_search");
+	if (mode === "skill") {
+		await mkdir(join(cwd, "skill"));
+		await copyFile(
+			join(import.meta.dir, "../skill/SKILL.md"),
+			join(cwd, "skill/SKILL.md"),
+		);
+	}
 	await writeFile(
 		settings,
 		JSON.stringify({
