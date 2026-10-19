@@ -1,3 +1,3 @@
-external_id,name,traits
-member_2050,"Sam ""Coach"", Rivera","{""plan"":""pro""}"
-member_2048,Maria Garcia,"{""cohort"":""autumn"",""plan"":""pro""}"
+external_id,name,plan,cohort
+member_2050,"Sam ""Coach"", Rivera",pro,spring
+member_2048,Maria Garcia,pro,autumn

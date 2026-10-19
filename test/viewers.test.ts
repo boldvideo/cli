@@ -1,10 +1,9 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import me from "./fixtures/me.json";
 import fixture from "./fixtures/viewers.json";
-import members from "./fixtures/viewers-sync.json";
 import { type RunOptions, run } from "./run";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-viewers-"));
@@ -15,6 +14,7 @@ let features = { viewers: true, viewer_memory: true, mcp: true };
 let identityStatus = 200;
 let active = 0;
 let peak = 0;
+let pageCap = 100;
 const requests: {
 	path: string;
 	method: string;
@@ -81,7 +81,10 @@ const server = Bun.serve({
 			}
 			if (path === "/viewers" && request.method === "GET") {
 				const page = Number(url.searchParams.get("page"));
-				const size = Number(url.searchParams.get("page_size"));
+				const size = Math.min(
+					pageCap,
+					Number(url.searchParams.get("page_size")),
+				);
 				return Response.json({
 					data: viewers.slice((page - 1) * size, page * size),
 					meta: {
@@ -137,6 +140,10 @@ const server = Bun.serve({
 				);
 			if (request.method === "PATCH")
 				Object.assign(viewer, (await request.json()).viewer);
+			if (request.method === "DELETE") {
+				viewers = viewers.filter((row) => row.id !== viewer.id);
+				return new Response(null, { status: 204 });
+			}
 			return Response.json({ data: viewer });
 		} finally {
 			active--;
@@ -153,6 +160,7 @@ beforeEach(() => {
 	rates.clear();
 	active = 0;
 	peak = 0;
+	pageCap = 100;
 });
 afterAll(() => {
 	server.stop(true);
@@ -258,10 +266,22 @@ test("sync applies creates/updates, compares nested traits independent of key or
 	expect(rows[4].error.code).toBe("usage_error");
 	expect(
 		viewers.find((row) => row.external_id === "member_2050"),
-	).toMatchObject(members[0] as object);
+	).toMatchObject({
+		name: "Sam Rivera",
+		traits: { first_name: "Sam", avatar_url: "https://acme.com/sam.jpg" },
+	});
 	expect(
 		viewers.find((row) => row.external_id === "member_2049"),
-	).toMatchObject(members[1] as object);
+	).toMatchObject({
+		name: "Alexandra Kim",
+		traits: { display_name: "Alex", plan: "enterprise" },
+	});
+	expect(
+		viewers.find((row) => row.external_id === "member_2050"),
+	).not.toHaveProperty("first_name");
+	expect(
+		viewers.find((row) => row.external_id === "member_2049"),
+	).not.toHaveProperty("display_name");
 	expect(viewers.find((row) => row.external_id === "member_2048")).toEqual(
 		fixture.list.data[0],
 	);
@@ -303,7 +323,7 @@ test("sync accepts CSV file and stdin with quotes/traits, JSON stdin, and safe d
 	]);
 	expect(viewers[2]).toMatchObject({
 		name: 'Sam "Coach", Rivera',
-		traits: { plan: "pro" },
+		traits: { plan: "pro", cohort: "spring" },
 	});
 	const piped = await cli(["sync", "-"], {
 		input: readFileSync("test/fixtures/viewers-sync.csv", "utf8"),
@@ -370,19 +390,171 @@ test("sync rejects malformed files without writes and continues invalid JSON row
 		"created",
 	]);
 	expect(writes()).toHaveLength(1);
+});
+
+test("sync maps every nonidentity field into traits while preserving JSON types and omitted fields", async () => {
+	const input = [
+		{
+			external_id: "member_2051",
+			email: "private@acme.com",
+			name: "Private Member",
+			seats: 3,
+			active: false,
+			goals: ["retention", "growth"],
+			preferences: { locale: "es" },
+			traits: "literal trait column",
+		},
+	];
+	const result = await cli(["sync", "-"], { input: JSON.stringify(input) });
+	expect(result.status).toBe(0);
+	expect(viewers.find((row) => row.external_id === "member_2051")).toEqual({
+		id: expect.any(String),
+		external_id: "member_2051",
+		email: "private@acme.com",
+		name: "Private Member",
+		traits: {
+			seats: 3,
+			active: false,
+			goals: ["retention", "growth"],
+			preferences: { locale: "es" },
+			traits: "literal trait column",
+		},
+	});
+	const update = await cli(["sync", "-"], {
+		input: '[{"external_id":"member_2051","name":"Renamed Member"}]',
+	});
+	expect(update.status).toBe(0);
+	expect(
+		viewers.find((row) => row.external_id === "member_2051"),
+	).toMatchObject({
+		email: "private@acme.com",
+		traits: { seats: 3, active: false },
+	});
 	const csv = await cli(["sync", "-"], {
 		input:
-			'external_id,name,traits\ninvalid_traits,Invalid Member,not-json\nvalid_traits,Valid Member,"{}"\n',
+			"external_id,name,seats,active,traits\nmember_2052,CSV Member,3,false,literal\n",
 	});
-	expect(csv.status).toBe(1);
-	expect(JSON.parse(csv.stdout).map((row: Row) => row.action)).toEqual([
-		"failed",
-		"created",
-	]);
-	expect(JSON.parse(csv.stdout)[0].error.code).toBe("usage_error");
+	expect(csv.status).toBe(0);
 	expect(
-		viewers.find((row) => row.external_id === "valid_traits")?.traits,
-	).toEqual({});
+		viewers.find((row) => row.external_id === "member_2052")?.traits,
+	).toEqual({ seats: "3", active: "false", traits: "literal" });
+});
+
+test("prune is opt-in, requires confirmation before requests, and previews/deletes all absent pages", async () => {
+	viewers.push(
+		{ id: "stale-viewer", external_id: "member_stale", name: "Stale Member" },
+		{ id: "unlinked-viewer", external_id: null, name: "Unlinked Member" },
+	);
+	pageCap = 1;
+	const input = '[{"external_id":"member_2048"}]';
+	for (const dry of [[], ["--dry-run"]]) {
+		const refused = await cli(["sync", "-", "--prune", ...dry], { input });
+		expect(refused.status).toBe(2);
+		expect(JSON.parse(refused.stderr).code).toBe("confirmation_required");
+		expect(requests).toHaveLength(0);
+	}
+	const normal = await cli(["sync", "-"], { input });
+	expect(normal.status).toBe(0);
+	expect(viewers).toHaveLength(4);
+	expect(writes()).toHaveLength(0);
+	const preview = await cli(["sync", "-", "--prune", "--yes", "--dry-run"], {
+		input,
+	});
+	expect(preview.status).toBe(0);
+	const plan = JSON.parse(preview.stdout);
+	expect(plan).toEqual([
+		{ external_id: "member_2048", action: "unchanged" },
+		{
+			external_id: "member_2049",
+			action: "pruned",
+			id: "22345678-1234-1234-1234-123456789abc",
+		},
+		{ external_id: "member_stale", action: "pruned", id: "stale-viewer" },
+		{ external_id: null, action: "pruned", id: "unlinked-viewer" },
+	]);
+	expect(viewers).toHaveLength(4);
+	expect(writes()).toHaveLength(0);
+	const file = join(temporary, "prune-members.json");
+	writeFileSync(file, input);
+	const terminal = await cli(["sync", file, "--prune", "--yes", "--dry-run"], {
+		tty: true,
+	});
+	expect(terminal.stdout).toContain("unlinked-viewer");
+	expect(terminal.stdout).toContain(
+		"Dry run: 0 created, 0 updated, 1 unchanged, 3 pruned, 0 failed.",
+	);
+	const applied = await cli(["sync", "-", "--prune", "--yes"], { input });
+	expect(applied.status).toBe(0);
+	expect(JSON.parse(applied.stdout)).toEqual(plan);
+	expect(viewers).toEqual(fixture.list.data.slice(0, 1));
+});
+
+test("prune stops on incomplete input or snapshot failure, and continues per-deletion failures", async () => {
+	const invalid = await cli(["sync", "-", "--prune", "--yes"], {
+		input: '[{"external_id":"member_2048"},null]',
+	});
+	expect(invalid.status).toBe(1);
+	expect(viewers).toEqual(fixture.list.data);
+	expect(writes()).toHaveLength(0);
+	rates.set("/viewers", { remaining: 1, retry: "0", status: 500 });
+	const incomplete = await cli(["sync", "-", "--prune", "--yes"], {
+		input: "[]",
+	});
+	expect(incomplete.status).toBe(1);
+	expect(incomplete.stdout).toBe("");
+	expect(viewers).toEqual(fixture.list.data);
+	expect(writes()).toHaveLength(0);
+	viewers.push({ id: "stale-viewer", external_id: "member_stale" });
+	rates.set("/viewers/22345678-1234-1234-1234-123456789abc", {
+		remaining: 1,
+		retry: "0",
+		status: 500,
+	});
+	const partial = await cli(["sync", "-", "--prune", "--yes"], {
+		input: '[{"external_id":"member_2048"}]',
+	});
+	expect(partial.status).toBe(1);
+	expect(JSON.parse(partial.stdout)).toMatchObject([
+		{ action: "unchanged" },
+		{
+			external_id: "member_2049",
+			action: "failed",
+			error: { code: "api_error", request_id: "req_sync_rate" },
+		},
+		{ external_id: "member_stale", action: "pruned" },
+	]);
+	expect(viewers).toEqual(fixture.list.data);
+});
+
+test("an explicitly confirmed empty prune removes all viewers", async () => {
+	const result = await cli(["sync", "-", "--prune", "--yes"], { input: "[]" });
+	expect(result.status).toBe(0);
+	expect(JSON.parse(result.stdout).map((row: Row) => row.action)).toEqual([
+		"pruned",
+		"pruned",
+	]);
+	expect(viewers).toEqual([]);
+});
+
+test("debug adds no email or trait diagnostics and does not change requested data output", async () => {
+	const input =
+		'[{"external_id":"private_member","email":"private@acme.com","name":"Private Member","private_trait":"sensitive_goals"}]';
+	const file = join(temporary, "private-members.json");
+	writeFileSync(file, input);
+	for (const options of [{}, { tty: true, stderr: "pipe" as const }]) {
+		const sync = await cli(["sync", file, "--dry-run", "--debug"], options);
+		expect(sync.status).toBe(0);
+		expect(sync.stdout + sync.stderr).not.toContain("private@acme.com");
+		expect(sync.stdout + sync.stderr).not.toContain("sensitive_goals");
+		expect(sync.stderr).toBe("");
+		const read = await cli(
+			["get", "maria@acme.com", "--debug", "--json"],
+			options,
+		);
+		expect(read.status).toBe(0);
+		expect(JSON.parse(read.stdout)).toEqual(fixture.list.data[0]);
+		expect(read.stderr).toBe("");
+	}
 });
 
 test("sync retries 429 once with Retry-After seconds and HTTP date, never retries other failures", async () => {
@@ -447,11 +619,11 @@ test("progress prints one or all progress rows, with terminal percentage and tit
 });
 
 test("memory reads, toggles without replacing content, and refuses unconfirmed clears before requests", async () => {
-	const read = await cli(["memory", "member_2048"]);
+	const read = await cli(["memory", "get", "member_2048"]);
 	expect(read.status).toBe(0);
 	expect(JSON.parse(read.stdout)).toEqual(fixture.memory.data);
 	for (const flag of ["--disable", "--enable"]) {
-		const result = await cli(["memory", "member_2048", flag]);
+		const result = await cli(["memory", "get", "member_2048", flag]);
 		expect(result.status).toBe(0);
 		expect(JSON.parse(result.stdout)).toEqual({
 			...fixture.memory.data,
@@ -460,22 +632,27 @@ test("memory reads, toggles without replacing content, and refuses unconfirmed c
 	}
 	for (const extra of [[], ["--dry-run"]]) {
 		const count = requests.length;
-		const result = await cli(["memory", "member_2048", "--clear", ...extra]);
+		const result = await cli(["memory", "clear", "member_2048", ...extra]);
 		expect(result.status).toBe(2);
 		expect(JSON.parse(result.stderr).code).toBe("confirmation_required");
 		expect(requests).toHaveLength(count);
 	}
 	const before = writes().length;
-	for (const flag of ["--enable", "--disable", "--clear"]) {
-		expect(
-			(await cli(["memory", "member_2048", flag, "--dry-run", "--yes"])).status,
-		).toBe(0);
+	for (const args of [
+		["get", "member_2048", "--enable"],
+		["get", "member_2048", "--disable"],
+		["clear", "member_2048"],
+	]) {
+		expect((await cli(["memory", ...args, "--dry-run", "--yes"])).status).toBe(
+			0,
+		);
 	}
 	expect(writes()).toHaveLength(before);
 	expect(
-		(await cli(["memory", "member_2048", "--enable", "--disable"])).status,
+		(await cli(["memory", "get", "member_2048", "--enable", "--disable"]))
+			.status,
 	).toBe(2);
-	const cleared = await cli(["memory", "member_2048", "--clear", "--yes"]);
+	const cleared = await cli(["memory", "clear", "member_2048", "--yes"]);
 	expect(cleared.status).toBe(0);
 	expect(JSON.parse(cleared.stdout)).toEqual({
 		viewer_id: "12345678-1234-1234-1234-123456789abc",
@@ -487,7 +664,7 @@ test("memory reads, toggles without replacing content, and refuses unconfirmed c
 test("feature-disabled hints stop all viewer requests, but unavailable identity does not block them", async () => {
 	for (const [feature, args, setting] of [
 		["viewers", ["list"], "Viewers"],
-		["viewer_memory", ["memory", "member_2048"], "Viewer Memory"],
+		["viewer_memory", ["memory", "get", "member_2048"], "Viewer Memory"],
 	] as const) {
 		features[feature] = false;
 		const result = await cli([...args]);

@@ -9,12 +9,13 @@
 		"external_id": "member_2049",
 		"name": "Alexandra Kim",
 		"display_name": "Alex",
-		"traits": { "plan": "enterprise" }
+		"plan": "enterprise"
 	},
 	{
 		"external_id": "member_2048",
 		"name": "Maria Garcia",
-		"traits": { "cohort": "autumn", "plan": "pro" }
+		"cohort": "autumn",
+		"plan": "pro"
 	},
 	{ "external_id": "member_rejected", "name": "Rejected Member" },
 	{ "name": "Missing External ID" }
