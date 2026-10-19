@@ -31,8 +31,9 @@ for streams, exit codes, pagination, write safety and the auth integration point
 
 ## Development
 
-Use Bun 1.3.10 and TypeScript 6. Linux terminal tests also use `script` from
-util-linux (included on the CI runners).
+Use Bun 1.3.10 and TypeScript 6. Terminal tests use the platform's `script`
+utility: util-linux on Linux or the built-in BSD version on macOS. CI runs the
+suite on both platforms.
 
 ```sh
 bun install --frozen-lockfile

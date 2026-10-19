@@ -70,7 +70,7 @@ export function parse(argv: string[], registry = commands) {
 				throw error(
 					"unknown_command",
 					`Unknown command '${token.value}'.`,
-					nearest
+					nearest && distance(token.value, nearest.name) <= 2
 						? `boldvideo ${[...path, nearest.name].join(" ")} --help`
 						: "boldvideo --help",
 					2,
