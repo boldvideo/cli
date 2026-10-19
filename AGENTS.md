@@ -93,3 +93,25 @@ CI runs build, typecheck, test and `biome ci` on every pull request, and smoke-r
 - Branch per Linear ticket, named `bold-<number>-<slug>`. One PR per ticket. The PR title starts with the ticket ID.
 - Commits: plain, imperative, no attribution trailers.
 - Do not publish to npm from a laptop. Publishing happens from CI on a version tag.
+
+## How to add a command
+
+Create `src/commands/<group>.ts` and register its exported command in
+`src/commands/index.ts`. Follow `Command` in `src/spec.ts`: `name`, one-line
+`summary`, optional `description`, positional `args`, typed `flags` with defaults
+and descriptions, exactly two realistic `{ cmd, note }` examples, `seeAlso`, and
+`run(ctx, args, flags)`. Use `subcommands` for groups and `list`, `write` or
+`destructive` for automatic shared flags; do not redeclare those flags. Handlers
+must honor dry-run and pagination; use the output/error functions described in
+`docs/contract.md`. Lazy-import the SDK only in handlers that need it.
+
+The contract suite walks the registry recursively, checks metadata and help,
+tokenizes both examples and passes them to the real parser without executing
+them. Every new command is picked up automatically. Examples must be realistic,
+copy-pasteable and exactly two, never `foo` or a bare `<id>`. Help and error text
+are tuned by evals: subsequent wording changes need a failing eval transcript.
+
+Run `bun run build`, `bun run typecheck`, `bun test`, `bun run check`, then
+`bun run ci:lint`. Inspect `node dist/boldvideo.js <command> --help` in a terminal
+and with `--json`; pack and smoke-test with `npm pack` and
+`npx ./boldvideo-0.1.0.tgz --version` before shipping packaging changes.

@@ -1,0 +1,153 @@
+# boldvideo command contract
+
+This contract applies to every command. The registered command objects in
+`src/commands/` are the source of truth for command reference material; read them
+with `boldvideo help --json`, rather than maintaining a second command reference.
+Only help and version ship in 0.1.0. The rules below also govern future commands.
+
+## Streams and color
+
+- Success is one JSON value followed by a newline when stdout is not a terminal,
+  or whenever `--json` is passed. No prose, ANSI escapes or progress on stdout in
+  JSON mode. This includes help and version: piped `--version` returns
+  `{"version":"0.1.0"}`; piped help returns command metadata.
+- Terminal output is plain text or a space-padded table with bold headers,
+  two spaces between columns and no box drawing. Values and IDs are never
+  truncated. Empty results without known columns say `No results.`.
+- Progress, diagnostics and continuation hints go through `hint()` to stderr;
+  they are dim and suppressed if stderr is not a terminal. `--debug` enables
+  command diagnostics, not a raw credential-bearing dump. It never changes the
+  success or error format.
+- Stdout and stderr detect terminals independently. `--json` controls success
+  output; errors follow stderr's terminal status. A nonempty `NO_COLOR` disables
+  color on both streams. Color conveys meaning: red error codes, cyan error
+  hints, bold table headers. No color is emitted to pipes.
+- Use `output()`, `outputList()` and `hint()`, not direct writes from commands.
+  Their final output and the error formatter redact `BOLDVIDEO_API_KEY`, including
+  its JSON-escaped representation.
+
+## Lists and identifiers
+
+Set `list: true` on list commands. The dispatcher adds `--json`, `--limit` (a
+positive safe integer, default **20**) and `--fields` (comma-separated or repeated
+API field names). Shared flags must not be redeclared by a command.
+
+The command requests at most `flags.limit` records from the API and passes that
+page to `outputList(items, flags, next)`. The formatter projects `--fields` without
+renaming API keys. It does not fetch, slice or guess API pagination. Commands must
+supply the exact next shell command, preserving filters, fields and page size and
+quoting user-controlled values. Omit `next` only when no more records exist.
+
+```json
+{"items":[{"id":"paid-workshops","title":"Paid workshops"}],"has_more":true,"next":"boldvideo videos list --limit 1 --cursor c_9d7a"}
+```
+
+This illustrates a future list command, not one shipped in 0.1.0. On the final
+page `has_more` is false and `next` is absent. A terminal stderr receives
+`More results: <exact next command>`. JSON stays bounded; commands must never
+silently fetch an entire library. IDs remain API UUIDs, hashids or slugs, accepted
+without local format restrictions and printed in full.
+
+## Errors and exits
+
+Throw the plain value from `error(code, message, hint, exitCode)` at a command
+boundary. `src/main.ts` catches it, calls `writeError()` once and sets the process
+exit code. Unexpected exceptions become `internal_error` with exit 1; stack
+traces are not printed, including with `--debug`.
+
+Nonterminal stderr receives exactly one newline-terminated JSON object:
+
+```json
+{"code":"unknown_command","message":"Unknown command 'hlep'.","hint":"boldvideo help --help","docs":"https://docs.boldvideo.com/cli#unknown-command"}
+```
+
+- `code`: stable snake_case; never depend on an API's mutable message.
+- `message`: a single line (line breaks are flattened).
+- `hint`: a runnable next command, not generic advice.
+- `docs`: a URL under `https://docs.boldvideo.com/cli#...`.
+- `request_id`: included when supplied by the API, omitted otherwise.
+
+Terminal stderr prints the same fields on separate lines; the hint is visibly
+set apart. Failures do not produce success output. `--json` does not change error
+stream selection.
+
+`apiError(status, body, requestId?, hint?)` translates an HTTP response into this
+value. Pass the response header's request ID when available; otherwise the
+adapter uses `body.request_id`. It uses `body.message` when supplied. Auth/API
+commands remain responsible for making requests and adapting any SDK-specific
+exception shape; no network or authentication module ships yet.
+
+| Exit | Meaning | Codes currently used |
+| --- | --- | --- |
+| 0 | Success | — |
+| 1 | General failure | `internal_error`, `api_error` |
+| 2 | Usage error | `usage_error`, `unknown_command`, `confirmation_required` |
+| 3 | Not authenticated or not permitted | `not_authenticated` (401), `not_permitted` (403) |
+| 4 | Not found | `not_found` (404) |
+| 5 | Timed out while waiting | `timed_out` (408/504, or a command's wait deadline) |
+
+Other HTTP failures use exit 1. `boldvideo help exit-codes` displays the same exit
+meanings from `src/exit-codes.ts`.
+
+## Writes and asynchronous work
+
+- `write: true` or `destructive: true` automatically adds boolean `--dry-run` and
+  `--yes`, both false by default. `destructive: true` implies a write for flags.
+- Before running a destructive handler, the dispatcher requires `--yes` when
+  stdin is not a terminal. This also applies to previews: use `--dry-run --yes`.
+  Help never requires confirmation. The refusal hint reproduces the original
+  invocation with shell quoting and adds `--yes` before any `--` terminator.
+- The handler must honor `flags["dry-run"]`: describe the intended action without
+  issuing a write. The dispatcher cannot infer a command's mutation boundary.
+- Any ingest operation must expose `--wait`. Imports deduplicate by source URL;
+  rerunning an import must be safe. Those behaviors land with their commands.
+
+## Help, parsing and examples
+
+`src/spec.ts` defines plain command data: name, one-line summary, optional
+description, positional args, typed flags, exactly two `{ cmd, note }` examples,
+related command invocations, optional list/write/destructive markers, subcommands
+and `run(ctx, args, flags)`. Groups can omit `run`; invoking one then displays its
+help. The help group has a handler because `help --json` returns the whole tree.
+
+Positionals are required unless marked `required: false`. Flag types are
+`string`, `number`, `boolean` and `list`; defaults and required flags are enforced
+by the dispatcher. Number values must be finite. Following `node:util.parseArgs`,
+use `--rating=-3.5` for a negative flag value, and `--` before a positional that
+starts with a dash. Shared boolean flags may precede the command; put
+command-specific value flags after the command path. Group-specific flags are
+not implicitly inherited by children.
+
+No arguments and `--help` show the same index (at most 40 lines). The index lists
+one row per registered top-level command, prioritizing `import`, `ask`, `search`
+once those commands exist. Groups list only their immediate children, not the
+entire descendant tree. Command help includes synopsis, flags with types and
+defaults (`—` means unset), arguments, exactly two examples and related commands.
+The root is a compact index; its two examples remain in JSON metadata.
+
+`test/contract.test.ts` recursively checks every registered command for complete
+metadata, shared flags, flag-name collisions, valid examples and JSON/text help.
+Examples are tokenized and passed to the actual parser without executing a
+handler. Test-only command objects exercise effects and errors in a separately
+bundled runner; they are absent from `dist/boldvideo.js` and the tarball. API
+errors use a synthetic fixture; tests require no network. Terminal tests use
+Linux's `script` utility (util-linux) for real pseudo-terminals.
+
+Examples must be realistic and copy-pasteable, never `foo` or placeholders like
+`<id>`. After this initial baseline, help and error wording change only in
+response to a failing cold-agent eval transcript.
+
+## Authentication boundary for BOLD-2028
+
+Resolve `BOLDVIDEO_API_KEY` before stored profiles. `BOLDVIDEO_API_URL` overrides
+`https://app.boldvideo.io/api/v1`. OpenAPI is at
+`https://app.boldvideo.io/api/openapi`. Load `@boldvideo/bold-js` inside commands
+that need it, never in the dispatcher or at module top level.
+
+Add auth commands to `src/commands/index.ts`; the help tree and generic checks
+will discover them. Use exit 3 for missing credentials or permissions and supply
+a concrete login/profile hint once those commands exist. Extend output redaction
+to the resolved profile credential before introducing stored keys; currently only
+the environment key exists. Never log credentials, request headers or SDK error
+objects directly. SDK-uncovered endpoints belong in a small authenticated fetch
+helper in `src/api.ts` with a `// TODO(bold-js)` comment.

@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run typecheck
+      - run: bun test
+      - run: bun run ci:lint
+      - run: npm pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: boldvideo-0.1.0.tgz
+
+  smoke:
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+      - run: |
+          npx --yes ./boldvideo-0.1.0.tgz --version > version.json
+          node -e 'if (JSON.parse(require("fs").readFileSync("version.json", "utf8")).version !== "0.1.0") process.exit(1)'
+          npx --yes ./boldvideo-0.1.0.tgz --help > help.json
+          node -e 'const help = JSON.parse(require("fs").readFileSync("help.json", "utf8")); if (help.name !== "boldvideo" || !help.subcommands.some(c => c.name === "help")) process.exit(1)'
