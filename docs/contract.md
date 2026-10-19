@@ -135,10 +135,10 @@ errors use a synthetic fixture; tests require no network. Terminal tests use
 the platform's `script` utility (util-linux on Linux, BSD on macOS) for real
 pseudo-terminals, with platform-specific arguments confined to the test helper.
 
-Import `run(argv, options)` from `test/run.ts` for async tests with loopback
-servers; `runSync` is for tests without an in-process server. Both take a full
-executable argv and return `{ status, stdout, stderr }`. Options are `env`,
-`tty`, `columns`, `stderr: "tty" | "pipe"`, and `input`. Async `waitFor` delays
+Import `run(argv, options)` from `test/run.ts` for all process-based tests.
+It takes a full executable argv and asynchronously returns
+`{ status, stdout, stderr }`, allowing loopback servers to keep responding.
+Options are `env`, `tty`, `columns`, `stderr: "tty" | "pipe"`, and `input`. `waitFor` delays
 input until a stdout prompt appears. For shell continuation commands, pass
 `["sh", "-c", command]`. Suites supply their isolated config directories through
 `env`. Keep all `script` spawning and platform handling in this helper.
