@@ -1,0 +1,90 @@
+name: Nightly eval
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-nightly
+  cancel-in-progress: false
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      BOLDVIDEO_API_KEY: ${{ secrets.BOLDVIDEO_API_KEY }}
+      BOLDVIDEO_API_URL: ${{ secrets.BOLDVIDEO_API_URL }}
+      EVAL_SANDBOX_SLUG: ${{ secrets.EVAL_SANDBOX_SLUG }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      EVAL_RESET_CMD: ${{ secrets.EVAL_RESET_CMD || 'echo skip' }}
+    steps:
+      - name: Check required secrets
+        id: secrets
+        shell: bash
+        run: |
+          for name in BOLDVIDEO_API_KEY BOLDVIDEO_API_URL EVAL_SANDBOX_SLUG ANTHROPIC_API_KEY; do
+            if [[ -z "${!name}" ]]; then
+              echo "::notice::Skipping nightly eval: required secrets are absent."
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          bun-version: 1.3.10
+      - name: Install and build
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+          npm install --global @anthropic-ai/claude-code@2.1.303
+      - uses: actions/cache/restore@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          path: .eval-history
+          key: eval-history-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: eval-history-${{ github.ref_name }}-
+      - name: Restore previous results
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          mkdir -p evals/results
+          if compgen -G '.eval-history/*.json' > /dev/null; then
+            cp .eval-history/*.json evals/results/
+          fi
+      - name: Run cold evaluations
+        if: steps.secrets.outputs.ready == 'true'
+        run: bun evals/run.ts --agent claude --mode cold --concurrency 1
+      - name: Preserve comparison baseline
+        if: always() && steps.secrets.outputs.ready == 'true'
+        run: |
+          latest=$(find evals/results -maxdepth 1 -name '*.json' | sort | tail -n 1)
+          if [[ -n "$latest" ]]; then
+            mkdir -p .eval-history
+            rm -f .eval-history/*.json
+            cp "$latest" .eval-history/
+          fi
+      - uses: actions/cache/save@v4
+        if: always() && steps.secrets.outputs.ready == 'true'
+        with:
+          path: .eval-history
+          key: eval-history-${{ github.ref_name }}-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.secrets.outputs.ready == 'true'
+        with:
+          name: eval-results-${{ github.run_id }}
+          path: evals/results/
+          if-no-files-found: ignore
+          retention-days: 14

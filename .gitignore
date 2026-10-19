@@ -3,3 +3,4 @@ dist/
 *.tgz
 .amp/
 evals/results/
+.eval-history/
