@@ -1,0 +1,132 @@
+name: Release binaries
+
+# BOLD-2043's npm publishing branch did not exist when this workflow was added.
+# npm publishing is added separately; the npm artifact remains dist/boldvideo.js.
+on:
+  push:
+    tags: ["v[0-9]*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  binaries:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+      - run: bun install --frozen-lockfile
+      - name: Check stable tag matches package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          bun -e 'import p from "./package.json"; if (!/^v\d+\.\d+\.\d+$/.test(process.env.TAG) || process.env.TAG !== "v" + p.version) throw new Error("Tag must match package version")'
+      - run: bun run build
+      - run: bun run typecheck
+      - run: bun test
+      - run: bun run ci:lint
+      - run: bun run build:binaries
+      - name: Verify checksums and host executable
+        run: |
+          (cd dist/bin && sha256sum --check checksums.txt)
+          dist/bin/boldvideo-linux-x64 --version > version.json
+          bun -e 'import p from "./package.json"; if ((await Bun.file("version.json").json()).version !== p.version) throw new Error("Wrong binary version")'
+          dist/bin/boldvideo-linux-x64 --help
+      - name: Create release or attach assets to existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" dist/bin/boldvideo-* dist/bin/checksums.txt --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/bin/
+
+  homebrew:
+    needs: binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+    steps:
+      - name: Skip tap update when token is absent
+        if: env.TAP_GITHUB_TOKEN == ''
+        run: echo '::notice::TAP_GITHUB_TOKEN is absent; skipping Homebrew update.'
+      - uses: actions/checkout@v4
+        if: env.TAP_GITHUB_TOKEN != ''
+      - uses: oven-sh/setup-bun@v2
+        if: env.TAP_GITHUB_TOKEN != ''
+        with:
+          bun-version: 1.3.10
+      - uses: actions/download-artifact@v4
+        if: env.TAP_GITHUB_TOKEN != ''
+        with:
+          name: binaries
+          path: dist/bin
+      - name: Generate formula and open tap PR (or save fallback branch)
+        if: env.TAP_GITHUB_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+          CLI_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          bun scripts/update-formula.ts "$TAG" dist/bin/checksums.txt packaging/homebrew/boldvideo.rb
+          if gh repo clone boldvideo/homebrew-tap tap; then
+            cd tap
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            branch="boldvideo-$TAG"
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              git fetch origin "$branch"
+              git switch -c "$branch" FETCH_HEAD
+            else
+              git switch -c "$branch"
+            fi
+            mkdir -p Formula
+            cp ../packaging/homebrew/boldvideo.rb Formula/boldvideo.rb
+            git add Formula/boldvideo.rb
+            if ! git diff --cached --quiet; then
+              git commit -m "Bump boldvideo to $TAG"
+              gh auth setup-git
+              git push origin "$branch"
+            fi
+            if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+              gh pr create --title "Bump boldvideo to $TAG" --body "Update binaries and SHA-256 checksums from boldvideo/cli $TAG.
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)."
+            fi
+          else
+            echo '::notice::Tap unreachable; saving formula on cli homebrew-tap branch.'
+            cp packaging/homebrew/boldvideo.rb "$RUNNER_TEMP/boldvideo.rb"
+            git restore packaging/homebrew/boldvideo.rb
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            if git ls-remote --exit-code --heads origin homebrew-tap >/dev/null 2>&1; then
+              git fetch origin homebrew-tap
+              git switch -C homebrew-tap FETCH_HEAD
+            else
+              git switch --orphan homebrew-tap
+              git rm -rf .
+            fi
+            mkdir -p Formula
+            cp "$RUNNER_TEMP/boldvideo.rb" Formula/boldvideo.rb
+            git add Formula/boldvideo.rb
+            if ! git diff --cached --quiet; then
+              git commit -m "Bump boldvideo to $TAG"
+              GH_TOKEN="$CLI_TOKEN" gh auth setup-git
+              GH_TOKEN="$CLI_TOKEN" git push origin homebrew-tap
+            fi
+          fi
