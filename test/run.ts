@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,7 +10,7 @@ export interface RunOptions {
 	/** With a PTY, default to terminal stderr; use pipe to test independent streams. */
 	stderr?: "tty" | "pipe";
 	input?: string;
-	/** Send input only after this marker appears on terminal stdout. Async only. */
+	/** Send input only after this marker appears on terminal stdout. */
 	waitFor?: string;
 }
 
@@ -103,25 +103,6 @@ export async function run(
 			);
 			if (!options.waitFor) child.stdin.end(options.input ?? "");
 		});
-	} finally {
-		call.cleanup();
-	}
-}
-
-/** Only for tests without an in-process server or interactive input. */
-export function runSync(
-	argv: string[],
-	options: Omit<RunOptions, "waitFor"> = {},
-): RunResult {
-	const call = invocation(argv, options);
-	try {
-		const result = spawnSync(call.argv[0] as string, call.argv.slice(1), {
-			env: call.env,
-			input: options.input ?? "",
-			encoding: "utf8",
-		});
-		if (result.error) throw result.error;
-		return call.result(result.status, result.stdout, result.stderr);
 	} finally {
 		call.cleanup();
 	}

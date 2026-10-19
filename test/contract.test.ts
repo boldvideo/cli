@@ -14,7 +14,7 @@ import { commands } from "../src/commands";
 import { commandTree, rootCommand } from "../src/help";
 import { type Command, commandFlags } from "../src/spec";
 import { fixture } from "./commands";
-import { runSync } from "./run";
+import { run as execute } from "./run";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-test-"));
 const built = resolve("dist/boldvideo.js");
@@ -42,7 +42,7 @@ function run(
 	} = {},
 ) {
 	const argv = ["node", options.fixture ? runner : built, ...args];
-	return runSync(argv, {
+	return execute(argv, {
 		tty: options.tty,
 		env: {
 			XDG_CONFIG_HOME: join(temporary, "empty-config"),
@@ -116,8 +116,10 @@ function contracts(command: Command, path: string[], testOnly = false) {
 			for (const related of command.seeAlso)
 				expect(() => parse(words(related), registry)).not.toThrow();
 		});
-		test("exposes the same complete metadata in built --help JSON", () => {
-			const result = run([...path, "--help", "--json"], { fixture: testOnly });
+		test("exposes the same complete metadata in built --help JSON", async () => {
+			const result = await run([...path, "--help", "--json"], {
+				fixture: testOnly,
+			});
 			expect(result.status).toBe(0);
 			expect(result.stderr).toBe("");
 			const data = JSON.parse(result.stdout);
@@ -138,7 +140,10 @@ function contracts(command: Command, path: string[], testOnly = false) {
 						}),
 					]),
 				);
-			const text = run([...path, "--help"], { fixture: testOnly, tty: true });
+			const text = await run([...path, "--help"], {
+				fixture: testOnly,
+				tty: true,
+			});
 			expect(text.status).toBe(0);
 			expect(text.stdout).toContain(command.summary);
 			for (const flag of commandFlags(command)) {
@@ -160,10 +165,10 @@ function contracts(command: Command, path: string[], testOnly = false) {
 contracts(rootCommand(commands), []);
 contracts(fixture, ["fixture"], true);
 
-test("no args and --help agree; the published tree excludes test commands", () => {
-	const help = run(["--help"]);
-	expect(run([])).toEqual(help);
-	expect(run(["help", "--json"])).toEqual(help);
+test("no args and --help agree; the published tree excludes test commands", async () => {
+	const help = await run(["--help"]);
+	expect(await run([])).toEqual(help);
+	expect(await run(["help", "--json"])).toEqual(help);
 	const names = JSON.parse(help.stdout).subcommands.map(
 		(command: Command) => command.name,
 	);
@@ -172,18 +177,20 @@ test("no args and --help agree; the published tree excludes test commands", () =
 		expect.arrayContaining(commands.map((command) => command.name)),
 	);
 	expect(names).not.toContain("fixture");
-	expect(JSON.parse(run(["--version"]).stdout)).toEqual({ version: "0.1.0" });
+	expect(JSON.parse((await run(["--version"])).stdout)).toEqual({
+		version: "0.1.0",
+	});
 	expect(readFileSync(built, "utf8")).toStartWith("#!/usr/bin/env node\n");
 });
 
-test("unknown commands suggest close matches and fall back to top-level help", () => {
+test("unknown commands suggest close matches and fall back to top-level help", async () => {
 	for (const [args, hint] of [
 		[["hlep"], "boldvideo help --help"],
 		[["xyzp"], "boldvideo --help"],
 		[["help", "exit-code"], "boldvideo help exit-codes --help"],
 		[["help", "unrelated"], "boldvideo --help"],
 	] as const) {
-		const result = run([...args]);
+		const result = await run([...args]);
 		expect(result.status).toBe(2);
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toMatchObject({
@@ -193,24 +200,24 @@ test("unknown commands suggest close matches and fall back to top-level help", (
 		});
 		expect(result.stderr.trim().split("\n")).toHaveLength(1);
 	}
-	const result = run(["fixture", "ech"], { fixture: true });
+	const result = await run(["fixture", "ech"], { fixture: true });
 	expect(result.status).toBe(2);
 	expect(JSON.parse(result.stderr).hint).toBe("boldvideo fixture echo --help");
 });
 
-test("parseArgs failures use the usage error contract", () => {
+test("parseArgs failures use the usage error contract", async () => {
 	for (const args of [
 		["--bogus"],
 		["--version=yes"],
 		["help", "exit-codes", "extra"],
 	]) {
-		const result = run(args);
+		const result = await run(args);
 		expect(result.status).toBe(2);
 		expect(JSON.parse(result.stderr).code).toBe("usage_error");
 	}
 });
 
-test("typed flags, quoted positionals, defaults, global flags and -- survive parsing", () => {
+test("typed flags, quoted positionals, defaults, global flags and -- survive parsing", async () => {
 	const parsed = parse(
 		words(fixture.subcommands?.[2]?.examples[0].cmd ?? ""),
 		registry,
@@ -220,7 +227,7 @@ test("typed flags, quoted positionals, defaults, global flags and -- survive par
 		rating: -3.5,
 		tags: ["sales", "coaching", "pricing"],
 	});
-	const result = run(
+	const result = await run(
 		["--json", "fixture", "echo", "--", "--private-workshop"],
 		{ fixture: true },
 	);
@@ -237,8 +244,8 @@ test("typed flags, quoted positionals, defaults, global flags and -- survive par
 		expect(() => parse(args, registry)).toThrow();
 });
 
-test("list pages are bounded, project fields and provide an executable next command", () => {
-	const first = run(["fixture", "list"], { fixture: true });
+test("list pages are bounded, project fields and provide an executable next command", async () => {
+	const first = await run(["fixture", "list"], { fixture: true });
 	const page = JSON.parse(first.stdout);
 	expect(first.stderr).toBe("");
 	expect(page.items).toHaveLength(20);
@@ -246,7 +253,9 @@ test("list pages are bounded, project fields and provide an executable next comm
 		has_more: true,
 		next: "boldvideo fixture list --offset 20 --limit 20",
 	});
-	const last = JSON.parse(run(words(page.next), { fixture: true }).stdout);
+	const last = JSON.parse(
+		(await run(words(page.next), { fixture: true })).stdout,
+	);
 	expect(last.items.map((item: { id: string }) => item.id)).toEqual([
 		"workshop-recording-21",
 		"workshop-recording-22",
@@ -255,18 +264,20 @@ test("list pages are bounded, project fields and provide an executable next comm
 	expect(last).toMatchObject({ has_more: false });
 	expect(last.next).toBeUndefined();
 	const projected = JSON.parse(
-		run(
-			[
-				"fixture",
-				"list",
-				"--limit",
-				"2",
-				"--fields",
-				"id",
-				"--fields",
-				"published_at",
-			],
-			{ fixture: true },
+		(
+			await run(
+				[
+					"fixture",
+					"list",
+					"--limit",
+					"2",
+					"--fields",
+					"id",
+					"--fields",
+					"published_at",
+				],
+				{ fixture: true },
+			)
 		).stdout,
 	);
 	expect(projected.items).toEqual([
@@ -274,19 +285,24 @@ test("list pages are bounded, project fields and provide an executable next comm
 		{ id: "workshop-recording-2", published_at: "2026-10-19" },
 	]);
 	expect(
-		JSON.parse(run(words(projected.next), { fixture: true }).stdout).items[0],
+		JSON.parse((await run(words(projected.next), { fixture: true })).stdout)
+			.items[0],
 	).toEqual({ id: "workshop-recording-3", published_at: "2026-10-19" });
 	for (const limit of ["0", "-1", "1.5", "Infinity", "", "9007199254740992"])
 		expect(() =>
 			parse(["fixture", "list", `--limit=${limit}`], registry),
 		).toThrow();
 	expect(
-		run(["fixture", "list", "--offset", "23"], { fixture: true, tty: true })
-			.stdout,
+		(
+			await run(["fixture", "list", "--offset", "23"], {
+				fixture: true,
+				tty: true,
+			})
+		).stdout,
 	).toBe("No results.\n");
 });
 
-test("destructive calls require --yes before any effect, and dry-run makes no write", () => {
+test("destructive calls require --yes before any effect, and dry-run makes no write", async () => {
 	const destination = join(temporary, "deleted-video");
 	const options = { fixture: true, env: { BOLDVIDEO_TEST_WRITE: destination } };
 	const args = [
@@ -297,19 +313,19 @@ test("destructive calls require --yes before any effect, and dry-run makes no wr
 		"--",
 		"paid-workshops",
 	];
-	const refused = run(args, options);
+	const refused = await run(args, options);
 	expect(refused.status).toBe(2);
 	expect(refused.stdout).toBe("");
 	expect(existsSync(destination)).toBe(false);
 	const refusal = JSON.parse(refused.stderr);
 	expect(refusal.code).toBe("confirmation_required");
-	expect(run(["--dry-run", "--yes", ...args], options).status).toBe(0);
+	expect((await run(["--dry-run", "--yes", ...args], options)).status).toBe(0);
 	expect(existsSync(destination)).toBe(false);
-	expect(run(words(refusal.hint), options).status).toBe(0);
+	expect((await run(words(refusal.hint), options)).status).toBe(0);
 	expect(readFileSync(destination, "utf8")).toBe("paid-workshops");
 });
 
-test("API errors preserve request IDs and map to stable exits", () => {
+test("API errors preserve request IDs and map to stable exits", async () => {
 	for (const [status, code, exit] of [
 		[401, "not_authenticated", 3],
 		[403, "not_permitted", 3],
@@ -318,7 +334,7 @@ test("API errors preserve request IDs and map to stable exits", () => {
 		[504, "timed_out", 5],
 		[500, "api_error", 1],
 	] as const) {
-		const result = run(["fixture", "fail", "--status", String(status)], {
+		const result = await run(["fixture", "fail", "--status", String(status)], {
 			fixture: true,
 		});
 		expect(result.status).toBe(exit);
@@ -333,14 +349,16 @@ test("API errors preserve request IDs and map to stable exits", () => {
 	}
 	expect(
 		JSON.parse(
-			run(["fixture", "fail", "--request-id", "req_header_42"], {
-				fixture: true,
-			}).stderr,
+			(
+				await run(["fixture", "fail", "--request-id", "req_header_42"], {
+					fixture: true,
+				})
+			).stderr,
 		).request_id,
 	).toBe("req_header_42");
 });
 
-test("API keys are redacted from failures, success and debug hints", () => {
+test("API keys are redacted from failures, success and debug hints", async () => {
 	for (const key of ["bold_test_secret_2026", 'bold_test_"quoted"\\key']) {
 		const config = mkdtempSync(join(temporary, "stored-"));
 		mkdirSync(join(config, "boldvideo"));
@@ -358,7 +376,7 @@ test("API keys are redacted from failures, success and debug hints", () => {
 				["fixture", "fail", "--internal", "--debug"],
 				["fixture", "echo", key, "--debug"],
 			]) {
-				const result = run(args, {
+				const result = await run(args, {
 					fixture: true,
 					env,
 				});
@@ -368,7 +386,7 @@ test("API keys are redacted from failures, success and debug hints", () => {
 				);
 				expect(result.stdout + result.stderr).toContain("[REDACTED]");
 			}
-			const debug = run(["fixture", "echo", key, "--debug"], {
+			const debug = await run(["fixture", "echo", key, "--debug"], {
 				fixture: true,
 				tty: true,
 				env,
@@ -379,34 +397,34 @@ test("API keys are redacted from failures, success and debug hints", () => {
 	}
 });
 
-test("terminal help is compact, group help lists direct children, and JSON can be forced", () => {
-	const help = run(["--help"], { tty: true });
+test("terminal help is compact, group help lists direct children, and JSON can be forced", async () => {
+	const help = await run(["--help"], { tty: true });
 	expect(help.status).toBe(0);
-	expect(run([], { tty: true })).toEqual(help);
+	expect(await run([], { tty: true })).toEqual(help);
 	expect(help.stdout.trim().split("\n").length).toBeLessThanOrEqual(40);
 	expect(help.stdout).toContain("Run boldvideo <command> --help");
 	expect(help.stdout).not.toContain("\u001b[");
-	expect(run(["--version"], { tty: true }).stdout).toBe("0.1.0\n");
-	expect(JSON.parse(run(["--help", "--json"], { tty: true }).stdout).name).toBe(
-		"boldvideo",
-	);
-	const group = run(["help", "--help"], { tty: true }).stdout;
+	expect((await run(["--version"], { tty: true })).stdout).toBe("0.1.0\n");
+	expect(
+		JSON.parse((await run(["--help", "--json"], { tty: true })).stdout).name,
+	).toBe("boldvideo");
+	const group = (await run(["help", "--help"], { tty: true })).stdout;
 	expect(group).toContain("exit-codes  Explain process exit codes.");
 	expect(group).toContain("Examples:");
 	expect(group).toContain("Related:");
-	const exits = run(["help", "exit-codes"], { tty: true }).stdout;
+	const exits = (await run(["help", "exit-codes"], { tty: true })).stdout;
 	expect(exits).toContain("EXIT_CODE  MEANING");
 	expect(exits).toContain("5          Timed out while waiting");
 	expect(
-		JSON.parse(run(["help", "exit-codes"]).stdout).map(
+		JSON.parse((await run(["help", "exit-codes"])).stdout).map(
 			(row: { exit_code: number }) => row.exit_code,
 		),
 	).toEqual([0, 1, 2, 3, 4, 5]);
 });
 
-test("terminal tables keep full IDs; hints and meaningful colors respect NO_COLOR", () => {
+test("terminal tables keep full IDs; hints and meaningful colors respect NO_COLOR", async () => {
 	const args = ["fixture", "list", "--limit", "1", "--fields", "id,title"];
-	const plain = run(args, { fixture: true, tty: true }).stdout;
+	const plain = (await run(args, { fixture: true, tty: true })).stdout;
 	expect(plain).toContain(
 		"ID                    TITLE\nworkshop-recording-1  Paid workshops 1",
 	);
@@ -414,25 +432,30 @@ test("terminal tables keep full IDs; hints and meaningful colors respect NO_COLO
 		"More results: boldvideo fixture list --offset 1 --limit 1 --fields id,title",
 	);
 	expect(plain).not.toContain("\u001b[");
-	const colored = run(args, {
-		fixture: true,
-		tty: true,
-		env: { NO_COLOR: "" },
-	}).stdout;
+	const colored = (
+		await run(args, {
+			fixture: true,
+			tty: true,
+			env: { NO_COLOR: "" },
+		})
+	).stdout;
 	expect(colored).toContain("\u001b[1m");
 	expect(colored).toContain("\u001b[2m");
-	const failure = run(["hlep"], { tty: true, env: { NO_COLOR: "" } }).stdout;
+	const failure = (await run(["hlep"], { tty: true, env: { NO_COLOR: "" } }))
+		.stdout;
 	expect(failure).toContain("\u001b[31munknown_command");
 	expect(failure).toContain("\u001b[36mHint: boldvideo help --help");
-	expect(run(["hlep"], { tty: true }).stdout).toBe(
+	expect((await run(["hlep"], { tty: true })).stdout).toBe(
 		"unknown_command: Unknown command 'hlep'.\nHint: boldvideo help --help\nDocs: https://docs.boldvideo.com/cli#unknown-command\n",
 	);
 	const key = "bold_test_terminal_secret";
-	const debug = run(["fixture", "echo", key, "--debug"], {
-		fixture: true,
-		tty: true,
-		env: { BOLDVIDEO_API_KEY: key },
-	}).stdout;
+	const debug = (
+		await run(["fixture", "echo", key, "--debug"], {
+			fixture: true,
+			tty: true,
+			env: { BOLDVIDEO_API_KEY: key },
+		})
+	).stdout;
 	expect(debug).not.toContain(key);
 	expect(debug).toContain("Debug title: [REDACTED]");
 });
