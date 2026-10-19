@@ -1,0 +1,42 @@
+{
+	"name": "boldvideo",
+	"version": "0.1.0",
+	"description": "Run your Bold video library from a shell.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/boldvideo/cli.git"
+	},
+	"type": "module",
+	"bin": {
+		"boldvideo": "dist/boldvideo.js"
+	},
+	"files": [
+		"dist"
+	],
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"build": "bun build src/main.ts --target=node --outfile=dist/boldvideo.js",
+		"typecheck": "tsc --noEmit",
+		"test": "bun test",
+		"check": "biome check --write .",
+		"ci:lint": "biome ci .",
+		"prepack": "bun run build"
+	},
+	"publishConfig": {
+		"provenance": true,
+		"access": "public"
+	},
+	"dependencies": {
+		"@boldvideo/bold-js": "2.2.0",
+		"picocolors": "^1.1.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.15",
+		"@types/node": "^22.20.5",
+		"bun-types": "1.3.10",
+		"typescript": "~6.0.3"
+	}
+}
