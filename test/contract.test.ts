@@ -53,20 +53,32 @@ function run(
 		...options.env,
 	};
 	const result = options.tty
-		? spawnSync("script", ["-qefc", argv.map(quote).join(" "), "/dev/null"], {
-				encoding: "utf8",
-				env,
-				input: "",
-			})
+		? spawnSync(
+				"script",
+				process.platform === "darwin"
+					? ["-q", "/dev/null", ...argv]
+					: ["-qefc", argv.map(quote).join(" "), "/dev/null"],
+				{
+					encoding: "utf8",
+					env,
+					input: "",
+				},
+			)
 		: spawnSync(argv[0] ?? "node", argv.slice(1), {
 				encoding: "utf8",
 				env,
 				input: "",
 			});
 	if (result.error) throw result.error;
+	let stdout = result.stdout.replaceAll("\r\n", "\n");
+	if (options.tty && process.platform === "darwin") {
+		// BSD script echoes EOF, sometimes followed by two erasing backspaces.
+		if (stdout.startsWith("^D"))
+			stdout = stdout.slice(stdout.startsWith("^D\b\b") ? 4 : 2);
+	}
 	return {
 		status: result.status,
-		stdout: result.stdout.replaceAll("\r\n", "\n"),
+		stdout,
 		stderr: result.stderr,
 	};
 }
@@ -195,10 +207,12 @@ test("no args and --help agree; the published tree excludes test commands", () =
 	expect(readFileSync(built, "utf8")).toStartWith("#!/usr/bin/env node\n");
 });
 
-test("unknown commands suggest the nearest command at either depth", () => {
+test("unknown commands suggest close matches and fall back to top-level help", () => {
 	for (const [args, hint] of [
 		[["hlep"], "boldvideo help --help"],
+		[["xyzp"], "boldvideo --help"],
 		[["help", "exit-code"], "boldvideo help exit-codes --help"],
+		[["help", "unrelated"], "boldvideo --help"],
 	] as const) {
 		const result = run([...args]);
 		expect(result.status).toBe(2);
@@ -210,6 +224,9 @@ test("unknown commands suggest the nearest command at either depth", () => {
 		});
 		expect(result.stderr.trim().split("\n")).toHaveLength(1);
 	}
+	const result = run(["fixture", "ech"], { fixture: true });
+	expect(result.status).toBe(2);
+	expect(JSON.parse(result.stderr).hint).toBe("boldvideo fixture echo --help");
 });
 
 test("parseArgs failures use the usage error contract", () => {
