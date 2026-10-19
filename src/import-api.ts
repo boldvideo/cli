@@ -84,6 +84,50 @@ export async function getRun(
 	);
 }
 
+export async function resolveCollections(
+	key: string,
+	values: string[],
+): Promise<string[]> {
+	if (!values.length) return [];
+	// TODO(bold-js): use the SDK when it exposes collection lookup at the API cap.
+	const body = await request("GET", "/collections", {
+		key,
+		query: { limit: 1000 },
+	});
+	const collections = (
+		body as { data?: { id: string; name: string; slug: string }[] } | null
+	)?.data;
+	if (!Array.isArray(collections))
+		throw error(
+			"api_error",
+			"The Bold API returned an invalid collection list.",
+			"boldvideo collections list",
+		);
+	return values.map((value) => {
+		const byId = collections.find(
+			(collection) => collection.id === value || collection.slug === value,
+		);
+		if (byId) return byId.id;
+		const matches = collections.filter(
+			(collection) => collection.name === value,
+		);
+		if (matches.length > 1)
+			throw error(
+				"usage_error",
+				`Collection name '${value}' is ambiguous; use an ID.`,
+				"boldvideo collections list",
+				2,
+			);
+		if (matches[0]) return matches[0].id;
+		throw error(
+			"not_found",
+			`Collection '${value}' was not found.`,
+			"boldvideo collections list",
+			4,
+		);
+	});
+}
+
 // request() discards the status (200 already-active vs 202 created) and 422
 // details. Keep this POST transport local, as videos does for raw transcripts.
 export async function postImport(key: string, path: string, body?: unknown) {

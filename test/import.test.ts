@@ -2,6 +2,7 @@ import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import collections from "./fixtures/import-collections.json";
 import fixtures from "./fixtures/imports.json";
 import me from "./fixtures/me.json";
 import { run as execute, type RunOptions } from "./run";
@@ -45,6 +46,7 @@ const server = Bun.serve({
 					},
 				},
 			});
+		if (path === "/collections") return Response.json(collections);
 		if (request.method === "POST") {
 			if (postError)
 				return Response.json(
@@ -71,6 +73,8 @@ const server = Bun.serve({
 				});
 		}
 		if (path.startsWith("/admin/imports/")) {
+			if (!path.endsWith("/run_taki_20261019"))
+				return Response.json({ message: "Run not found." }, { status: 404 });
 			if (slow) {
 				await Bun.sleep(2000);
 				return Response.json(fixtures.running);
@@ -87,6 +91,8 @@ const server = Bun.serve({
 		}
 		if (path.startsWith("/admin/videos/")) {
 			const id = decodeURIComponent(path.split("/").at(-1) as string);
+			if (id === "missing-video")
+				return Response.json({ message: "Video not found." }, { status: 404 });
 			const count = (videoPolls.get(id) ?? 0) + 1;
 			videoPolls.set(id, count);
 			let result: typeof fixtures.ready | typeof fixtures.failed =
@@ -169,7 +175,10 @@ test("direct URL metadata preserves API names and returns the full admin record"
 			title: "Paid workshops",
 			description: "Turn workshops into sales.",
 			tags: ["sales", "coaching"],
-			collection_ids: ["workshops", "coaching"],
+			collection_ids: [
+				"b1c5296d-caf9-4bf4-a037-dcf191650350",
+				"3df0cf1c-b63d-4ab4-b9e1-e2767f2cd075",
+			],
 			video_type: "workshop",
 			privacy: "private",
 			published_at: "2026-10-18T09:30:00.000Z",
@@ -208,7 +217,7 @@ test("YouTube forms route to runs or single-video imports without a mode flag; V
 		const result = await run([
 			"youtube",
 			source,
-			"--limit",
+			"--max",
 			"12",
 			"--order",
 			"oldest",
@@ -236,7 +245,7 @@ test("YouTube forms route to runs or single-video imports without a mode flag; V
 				limit: 12,
 				order: "oldest",
 				tags: ["coaching"],
-				collection_ids: ["workshops"],
+				collection_ids: ["b1c5296d-caf9-4bf4-a037-dcf191650350"],
 				video_type: "workshop",
 			},
 		});
@@ -486,9 +495,12 @@ test("invalid metadata is rejected without writing or silently dropping flags", 
 		[...single, "--published-at", "2026-10-19T12:00:00"],
 		[...single, "--published-at", "source"],
 		[...single, "--limit", "5"],
+		[...channel, "--limit", "5"],
+		[...single, "--max", "5"],
 		[...channel, "--title", "Ignored title"],
 		[...channel, "--published-at", "2026-10-19"],
-		[...channel, "--limit", "1.5"],
+		[...channel, "--max", "1.5"],
+		[...channel, "--max", "0"],
 		[...channel, "--order", "popular"],
 		[...channel, "--privacy", "secret"],
 		[...channel, "--poll-interval", "0"],
@@ -499,4 +511,73 @@ test("invalid metadata is rejected without writing or silently dropping flags", 
 		expect(JSON.parse(result.stderr).code).toBe("usage_error");
 	}
 	expect(calls.every((call) => call.path === "/me")).toBe(true);
+});
+
+test("collections resolve exact names, IDs and slugs with one lookup; missing and ambiguous names never write", async () => {
+	const preview = await run([
+		...channel,
+		"--collection",
+		"Paid workshops",
+		"--collection",
+		"3df0cf1c-b63d-4ab4-b9e1-e2767f2cd075",
+		"--dry-run",
+	]);
+	expect(preview.status).toBe(0);
+	expect(JSON.parse(preview.stdout).body.collection_ids).toEqual([
+		"b1c5296d-caf9-4bf4-a037-dcf191650350",
+		"3df0cf1c-b63d-4ab4-b9e1-e2767f2cd075",
+	]);
+	expect(calls.filter((call) => call.path.startsWith("/collections"))).toEqual([
+		{ method: "GET", path: "/collections?limit=1000", body: undefined },
+	]);
+	for (const [name, status] of [
+		["Missing collection", 4],
+		["paid workshops", 4],
+		["Archive", 2],
+	] as const) {
+		const result = await run([...channel, "--collection", name]);
+		expect(result.status).toBe(status);
+		expect(result.stdout).toBe("");
+		expect(JSON.parse(result.stderr)).toMatchObject({
+			message: expect.stringContaining(name),
+			hint: "boldvideo collections list",
+		});
+	}
+	expect(calls.some((call) => call.method === "POST")).toBe(false);
+});
+
+test("status accepts video identifiers, waits for readiness and preserves not-found errors", async () => {
+	for (const id of [
+		fixtures.ready.data.internal_id,
+		"k8N2pQ",
+		"paid-workshops",
+	]) {
+		const result = await run(["status", id]);
+		expect(result.status).toBe(0);
+		expect(JSON.parse(result.stdout)).toEqual({
+			...fixtures.processing.data,
+			internal_id: id,
+		});
+		const ready = await run(["status", id, ...waiting]);
+		expect(ready.status).toBe(0);
+		expect(JSON.parse(ready.stdout)).toEqual({
+			...fixtures.ready.data,
+			internal_id: id,
+		});
+	}
+	const missing = await run(["status", "missing-video"]);
+	expect(missing.status).toBe(4);
+	expect(JSON.parse(missing.stderr).code).toBe("not_found");
+	stalled = true;
+	const timeout = await run([
+		"status",
+		"paid-workshops",
+		"--wait",
+		"--timeout",
+		"0.05",
+	]);
+	expect(timeout.status).toBe(5);
+	expect(JSON.parse(timeout.stderr).hint).toBe(
+		"boldvideo import status 'paid-workshops'",
+	);
 });

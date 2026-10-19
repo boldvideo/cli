@@ -8,6 +8,7 @@ import {
 	importRun,
 	importVideo,
 	postImport,
+	resolveCollections,
 } from "../import-api";
 import { hint, output } from "../output";
 import type { Command, Context, Flag, Flags } from "../spec";
@@ -54,7 +55,7 @@ const metadataFlags: Flag[] = [
 	{
 		name: "collection",
 		type: "list",
-		description: "Collection IDs, comma-separated or repeated.",
+		description: "Collection IDs or exact names, comma-separated or repeated.",
 	},
 	{ name: "type", type: "string", description: "Video type UUID or slug." },
 	{
@@ -80,7 +81,7 @@ const metadataFlags: Flag[] = [
 		description: "Single-video language code.",
 	},
 	{
-		name: "limit",
+		name: "max",
 		type: "number",
 		description: "Maximum videos in a playlist/channel run (positive integer).",
 	},
@@ -146,10 +147,10 @@ function importRequest(source: string, youtubeOnly: boolean, flags: Flags) {
 			if (flags[name] !== undefined)
 				usage(`--${name} is only supported for single videos.`);
 		if (
-			flags.limit !== undefined &&
-			(!Number.isSafeInteger(flags.limit) || Number(flags.limit) < 1)
+			flags.max !== undefined &&
+			(!Number.isSafeInteger(flags.max) || Number(flags.max) < 1)
 		)
-			usage("--limit must be a positive integer.");
+			usage("--max must be a positive integer.");
 		if (
 			flags.order !== undefined &&
 			!["latest", "oldest"].includes(String(flags.order))
@@ -161,12 +162,12 @@ function importRequest(source: string, youtubeOnly: boolean, flags: Flags) {
 				"--published-at must be source, now or none for playlist/channel runs.",
 			);
 		body.published_at_strategy = strategy;
-		if (flags.limit !== undefined) body.limit = flags.limit;
+		if (flags.max !== undefined) body.limit = flags.max;
 		if (flags.order !== undefined) body.order = flags.order;
 	} else {
 		if (!youtube && !vimeo && !String(flags.title ?? "").trim())
 			usage("--title is required for direct media URLs.");
-		for (const name of ["limit", "order"])
+		for (const name of ["max", "order"])
 			if (flags[name] !== undefined)
 				usage(`--${name} is only supported for playlist/channel runs.`);
 		for (const name of ["title", "description", "external-id", "language"])
@@ -195,8 +196,8 @@ function importRequest(source: string, youtubeOnly: boolean, flags: Flags) {
 	return { path: isRun ? "/admin/imports" : "/admin/videos", body, isRun };
 }
 
-function resumeCommand(id: string, flags: Flags, single = false) {
-	return `boldvideo ${single ? "videos get" : "import status"} ${quote(id)}${flags.profile ? ` --profile ${quote(String(flags.profile))}` : ""}`;
+function resumeCommand(id: string, flags: Flags) {
+	return `boldvideo import status ${quote(id)}${flags.profile ? ` --profile ${quote(String(flags.profile))}` : ""}`;
 }
 
 async function waitFor<T>(
@@ -265,7 +266,7 @@ async function waitSingle(
 	video: Record<string, unknown>,
 	flags: Flags,
 ) {
-	const resume = resumeCommand(String(video.internal_id), flags, true);
+	const resume = resumeCommand(String(video.internal_id), flags);
 	return waitFor(flags, resume, async () => {
 		if (video.ready !== true && !failed(video))
 			video = await getVideo(key, String(video.internal_id));
@@ -384,12 +385,12 @@ function sourceCommand(name: "youtube" | "url"): Command {
 			name === "youtube"
 				? [
 						{
-							cmd: "boldvideo import youtube https://www.youtube.com/@takimoore --wait",
-							note: "Import a channel and wait for searchable transcripts.",
+							cmd: "boldvideo import youtube https://www.youtube.com/watch?v=aqz-KE-bpKQ --wait",
+							note: "Import one video and wait for a searchable transcript.",
 						},
 						{
-							cmd: "boldvideo import youtube https://www.youtube.com/watch?v=aqz-KE-bpKQ --tags coaching --privacy private",
-							note: "Import one video with metadata.",
+							cmd: 'boldvideo import youtube https://www.youtube.com/@takimoore --collection "Coaching"',
+							note: "Import a channel into a named collection.",
 						},
 					]
 				: [
@@ -406,6 +407,12 @@ function sourceCommand(name: "youtube" | "url"): Command {
 		async run(ctx, args, flags) {
 			validateWait(flags);
 			const plan = importRequest(args[0] as string, name === "youtube", flags);
+			const { key } = ctx.credential as Credential;
+			if (flags.collection)
+				plan.body.collection_ids = await resolveCollections(
+					key,
+					flags.collection as string[],
+				);
 			if (flags["dry-run"]) {
 				output(
 					{ dry_run: true, method: "POST", path: plan.path, body: plan.body },
@@ -414,7 +421,6 @@ function sourceCommand(name: "youtube" | "url"): Command {
 				);
 				return;
 			}
-			const { key } = ctx.credential as Credential;
 			const response = await postImport(key, plan.path, plan.body);
 			if (plan.isRun) {
 				let run = importRun(response.data);
@@ -459,9 +465,14 @@ export const imports: Command = {
 		sourceCommand("url"),
 		{
 			name: "status",
-			summary: "Show an import run or resume waiting for all its videos.",
+			summary: "Show a video or import run, or resume waiting for readiness.",
 			auth: "admin",
-			args: [{ name: "run_id", description: "Import run identifier." }],
+			args: [
+				{
+					name: "id-or-run",
+					description: "Video UUID, hashid, slug or import run identifier.",
+				},
+			],
 			flags: [
 				...waitFlags,
 				{
@@ -489,13 +500,17 @@ export const imports: Command = {
 					usage("--page must be a positive integer.");
 				const { key } = ctx.credential as Credential;
 				const id = args[0] as string;
-				showRun(
-					flags.wait
-						? await waitRun(key, id, flags)
-						: await getRun(key, id, Number(flags.page)),
-					ctx,
-					flags,
-				);
+				let run: ImportRun;
+				try {
+					run = await getRun(key, id, Number(flags.page));
+				} catch (cause) {
+					if ((cause as CliError)?.code !== "not_found") throw cause;
+					let video = await getVideo(key, id);
+					if (flags.wait) video = await waitSingle(key, video, flags);
+					output(video, videoText(video), ctx.json);
+					return;
+				}
+				showRun(flags.wait ? await waitRun(key, id, flags) : run, ctx, flags);
 			},
 		},
 		{
