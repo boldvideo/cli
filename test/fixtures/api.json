@@ -16,9 +16,8 @@
 		"public": false
 	},
 	"failure": {
-		"message": "Video access denied.",
 		"request_id": "req_body_2030",
-		"error": { "reason": "scope_missing" }
+		"error": { "message": "Video access denied.", "reason": "scope_missing" }
 	},
 	"spec": {
 		"openapi": "3.0.3",

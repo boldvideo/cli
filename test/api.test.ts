@@ -1,10 +1,10 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { request } from "../src/api";
 import fixture from "./fixtures/api.json";
+import { run as execute } from "./run";
 
 const home = mkdtempSync(join(tmpdir(), "boldvideo-api-"));
 const key = "bold_test_escape_hatch_2030";
@@ -83,38 +83,17 @@ afterAll(() => {
 	rmSync(home, { recursive: true, force: true });
 });
 
-async function run(args: string[], input = "", tty = false) {
-	const argv = ["node", resolve("dist/boldvideo.js"), "api", ...args];
-	const quote = (word: string) => `'${word.replaceAll("'", "'\\''")}'`;
-	const child = spawn(
-		tty ? "script" : "node",
-		tty ? ["-qefc", argv.map(quote).join(" "), "/dev/null"] : argv.slice(1),
-		{
-			env: {
-				...process.env,
-				BOLDVIDEO_API_KEY: key,
-				BOLDVIDEO_API_URL: `${base}/`,
-				XDG_CONFIG_HOME: home,
-				APPDATA: home,
-				NO_COLOR: "1",
-			},
-			stdio: "pipe",
+function run(args: string[], input = "", tty = false) {
+	return execute(["node", resolve("dist/boldvideo.js"), "api", ...args], {
+		input,
+		tty,
+		env: {
+			BOLDVIDEO_API_KEY: key,
+			BOLDVIDEO_API_URL: `${base}/`,
+			XDG_CONFIG_HOME: home,
+			APPDATA: home,
 		},
-	);
-	let stdout = "";
-	let stderr = "";
-	child.stdout.on("data", (data) => {
-		stdout += data;
 	});
-	child.stderr.on("data", (data) => {
-		stderr += data;
-	});
-	child.stdin.end(input);
-	const status = await new Promise<number | null>((resolve, reject) => {
-		child.once("error", reject);
-		child.once("close", resolve);
-	});
-	return { status, stdout: stdout.replaceAll("\r\n", "\n"), stderr };
 }
 
 test("GET passes through JSON, uses the active key and pretty prints on terminals", async () => {
@@ -308,7 +287,7 @@ test("HTTP failures preserve details and request IDs with stable codes and exits
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toEqual({
 			code,
-			message: fixture.failure.message,
+			message: fixture.failure.error.message,
 			hint:
 				status === 401 || status === 403
 					? "boldvideo login --help"
