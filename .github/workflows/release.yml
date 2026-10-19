@@ -84,6 +84,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           bun scripts/update-formula.ts "$TAG" dist/bin/checksums.txt packaging/homebrew/boldvideo.rb
+          gh auth setup-git
           if gh repo clone boldvideo/homebrew-tap tap; then
             cd tap
             git config user.name 'github-actions[bot]'
@@ -100,7 +101,6 @@ jobs:
             git add Formula/boldvideo.rb
             if ! git diff --cached --quiet; then
               git commit -m "Bump boldvideo to $TAG"
-              gh auth setup-git
               git push origin "$branch"
             fi
             if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then

@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+	mkdir,
+	mkdtemp,
+	readFile,
+	rm,
+	stat,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseChecksums, writeChecksums } from "../scripts/checksums";
@@ -98,6 +105,69 @@ test("invalid formula updates fail without modifying the formula", async () => {
 			]);
 			expect(result.status).not.toBe(0);
 			expect(await readFile(path, "utf8")).toBe(template);
+		}
+	} finally {
+		await rm(directory, { recursive: true, force: true });
+	}
+});
+
+test("installer checks downloads before replacing an existing installation", async () => {
+	const directory = await mkdtemp(join(tmpdir(), "boldvideo install "));
+	const tools = join(directory, "tools");
+	const installed = join(directory, ".local/bin/boldvideo");
+	try {
+		await mkdir(tools);
+		await writeFile(
+			join(tools, "uname"),
+			'#!/bin/sh\ncase "$1" in -s) echo Linux;; -m) echo x86_64;; esac\n',
+			{ mode: 0o755 },
+		);
+		await writeFile(
+			join(tools, "curl"),
+			`#!/bin/sh
+set -eu
+url= destination=
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) destination=$2; shift 2 ;;
+    https://*) url=$1; shift ;;
+    *) shift ;;
+  esac
+done
+case "$url" in
+  https://github.com/boldvideo/cli/releases/latest)
+    printf 'https://github.com/boldvideo/cli/releases/tag/v0.1.0' ;;
+  https://github.com/boldvideo/cli/releases/download/v0.1.0/checksums.txt)
+    cp "$CHECKSUM_FIXTURE" "$destination" ;;
+  https://github.com/boldvideo/cli/releases/download/v0.1.0/boldvideo-linux-x64)
+    printf '%s\\n' "$DOWNLOAD_CONTENT" > "$destination" ;;
+  *) exit 99 ;;
+esac
+`,
+			{ mode: 0o755 },
+		);
+		for (const content of ["c", "tampered"]) {
+			const result = spawnSync("sh", ["packaging/install.sh"], {
+				encoding: "utf8",
+				env: {
+					...process.env,
+					HOME: directory,
+					PATH: `${tools}:${process.env.PATH}`,
+					BOLDVIDEO_INSTALL_DIR: "",
+					CHECKSUM_FIXTURE: resolve("test/fixtures/checksums.txt"),
+					DOWNLOAD_CONTENT: content,
+				},
+			});
+			if (content === "c") {
+				expect(result.stderr).toBe("");
+				expect(result.status).toBe(0);
+				expect(result.stdout).toContain("to PATH");
+			} else {
+				expect(result.status).toBe(1);
+				expect(result.stderr).toContain("Checksum verification failed");
+			}
+			expect(await readFile(installed, "utf8")).toBe("c\n");
+			expect((await stat(installed)).mode & 0o777).toBe(0o755);
 		}
 	} finally {
 		await rm(directory, { recursive: true, force: true });
