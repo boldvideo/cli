@@ -11,6 +11,8 @@ The rules below govern shipped commands and future additions.
   or whenever `--json` is passed. No prose, ANSI escapes or progress on stdout in
   JSON mode. This includes help and version: piped `--version` returns
   `{"version":"0.1.0"}`; piped help returns command metadata.
+- Exception: `docs <topic>` prints raw markdown even when piped; `--json` wraps
+  it as `{url, title, markdown}`. Its first line identifies the canonical page URL.
 - Terminal output is plain text or a space-padded table with bold headers,
   two spaces between columns and no box drawing. Values and IDs are never
   truncated. Empty results without known columns say `No results.`.
@@ -25,6 +27,7 @@ The rules below govern shipped commands and future additions.
 - Use `output()`, `outputList()` and `hint()`, not direct writes from commands.
   Their final output and the error formatter redact environment, stored and
   supplied login keys, including their JSON-escaped representations.
+  `output(data, text, "text")` explicitly selects redacted text on any stream.
 
 ## Lists and identifiers
 
