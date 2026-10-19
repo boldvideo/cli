@@ -7,13 +7,25 @@ npx boldvideo import youtube https://www.youtube.com/@takimoore --wait
 npx boldvideo ask "What does Taki say about paid workshops versus free webinars?"
 ```
 
-Install once:
+## Install
+
+After the first publication, choose in this order:
 
 ```sh
-npm install -g boldvideo
-export BOLDVIDEO_API_KEY=...   # Settings → Developer in your Bold account
-boldvideo --help
+# 1. npx: use Node 22+ without a global install
+npx --yes boldvideo@latest --help
+
+# 2. Homebrew: managed standalone binary, no Node required
+brew install boldvideo/tap/boldvideo
+
+# 3. Install script: no Node or Homebrew (URL not yet live)
+curl -fsSL https://boldvideo.com/install.sh | sh
 ```
+
+See [installation requirements and release status](docs/install.md). Global npm
+installation is also available for Node users: `npm install -g boldvideo`.
+Run `boldvideo upgrade` to print the right upgrade command for your installation;
+it never upgrades or replaces files itself. Use `--no-check` to stay offline.
 
 Everything the admin UI can do, from a shell. JSON when piped, tables when not. `--help` on every command, with examples that work.
 
@@ -21,8 +33,9 @@ Status: pre-release. Commands land one at a time; see `boldvideo --help` for wha
 
 ## Requirements and current commands
 
-Node **22 or newer** is required. Version 0.1.0 implements only `--version`,
-`--help`, `help --json` and `help exit-codes`; the import and ask examples above
+Node **22 or newer** is required for npx/npm, but not standalone installations.
+Version 0.1.0 implements `--version`, `--help`, `help --json`, `help exit-codes`
+and `upgrade`; the import and ask examples above
 describe the planned interface, not commands available in this release.
 
 Help and version are JSON when piped, like every other success response. In a
@@ -51,7 +64,7 @@ The Node-targeted build is one bundled executable; end users do not need Bun or
 TypeScript. CI smoke-tests the packed package on Node 22 and 24. No publish
 workflow for npm is configured; the tag-triggered binary release pipeline is
 prepared but has not been run. See [install paths and release preparation](docs/install.md)
-for npm, Homebrew, and the install script (not yet live).
+for npx, Homebrew, and the install script (not yet live).
 Dependency declaration checking is skipped because Bun
 and Node ambient declarations overlap; all source and tests remain strict.
 

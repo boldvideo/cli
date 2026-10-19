@@ -5,24 +5,24 @@ stable tagged release and formula PR are published/merged. The intended script
 URL, `https://boldvideo.com/install.sh`, is **not yet live**. No release or npm
 publication is performed by this change.
 
-All paths install the same CLI. Version 0.1.0 includes help and version commands;
+All paths install the same CLI. Version 0.1.0 includes help, version and upgrade commands;
 use `boldvideo --help` to see what is available. Piped help/version return JSON.
 
 | Path | Best for | Requirements |
 | --- | --- | --- |
-| npm | Agents and developers already using Node | Node 22+ and npm |
+| npx (recommended first) | Agents and developers already using Node | Node 22+ and npm |
 | Homebrew | People who want managed installs and upgrades | Homebrew; no Node or Bun |
 | Install script | Machines without Node or Homebrew | macOS or glibc Linux, curl, sha256sum or shasum |
 
-## npm
+## npx / npm
 
 Once the npm package is published:
 
 ```sh
+npx --yes boldvideo@latest --help
+# Optional persistent global installation:
 npm install -g boldvideo
 boldvideo --help
-# Or run without a global install:
-npx boldvideo --help
 ```
 
 Only `dist/boldvideo.js` is shipped in the npm package, not the standalone
@@ -71,6 +71,28 @@ To inspect before running, download the script to a file, read it, then run
 `sh install.sh`. Rerun to upgrade; checksum or download failures leave an existing
 installation intact. The script never invokes sudo. GitHub assets must be
 publicly downloadable for this unauthenticated script to work.
+
+## Upgrade advice (never self-updates)
+
+```sh
+boldvideo upgrade
+boldvideo upgrade --no-check --json
+```
+
+The command resolves its own executable path, including symlinks, and prints
+instructions for the detected channel. It never runs those instructions or
+replaces itself. JSON always has exactly `channel`, `current_version`, and
+`upgrade_command`; channel is `npx`, `npm`, `homebrew`, `script`, or `source`.
+Homebrew paths take precedence over inherited npm environment variables. npm's
+cache path or `npm_command=exec` identifies npx when running from an npm package.
+Other standalone locations use the script channel, preserving their directory
+in the printed command. Checkout builds print a source pull/install/build command.
+
+By default it makes a best-effort check of the npm registry's latest version,
+limited to 3 seconds. A terminal receives the latest version on stderr; JSON
+keeps the same three fields. Offline, timeout, HTTP, or invalid registry responses
+do not fail the command. `--no-check` skips the request entirely. The installer
+URL in script-channel advice is still **not live** during this preparation.
 
 ## Release preparation (maintainers)
 

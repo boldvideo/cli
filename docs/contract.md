@@ -3,7 +3,8 @@
 This contract applies to every command. The registered command objects in
 `src/commands/` are the source of truth for command reference material; read them
 with `boldvideo help --json`, rather than maintaining a second command reference.
-Only help and version ship in 0.1.0. The rules below also govern future commands.
+Help, version and advisory upgrade instructions ship in 0.1.0. The rules below
+also govern future commands.
 
 ## Streams and color
 
