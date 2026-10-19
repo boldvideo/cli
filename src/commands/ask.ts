@@ -1,6 +1,6 @@
 import { request } from "../api";
 import { type Credential, identity } from "../auth";
-import { hint, output } from "../output";
+import { hint } from "../output";
 import type { Command } from "../spec";
 import { type AiResult, outputAi } from "./ai-results";
 
@@ -8,9 +8,8 @@ export const ask: Command = {
 	name: "ask",
 	summary: "Ask your library a question and show cited moments.",
 	description:
-		"Sources keep their original citation numbers. --limit bounds displayed sources, not retrieval; increasing it regenerates the answer. Conversations are saved by the API; --dry-run previews the request without sending it.",
+		"Sources keep their original citation numbers. --limit bounds displayed sources, not retrieval; increasing it regenerates the answer.",
 	list: true,
-	write: true,
 	args: [
 		{ name: "prompt", description: "Question to ask your video library." },
 	],
@@ -57,14 +56,6 @@ export const ask: Command = {
 			...(flags.as ? { viewer: flags.as } : {}),
 			...(flags.conversation ? { conversation_id: flags.conversation } : {}),
 		};
-		if (flags["dry-run"]) {
-			output(
-				{ dry_run: true, method: "POST", path: "/ai/chat", body },
-				`Would POST /ai/chat\n${JSON.stringify(body, null, 2)}`,
-				ctx.json,
-			);
-			return;
-		}
 		if (flags.as && !(await identity(key)).features.viewers)
 			hint(
 				"Warning: this account has viewers disabled; --as will be ignored. Check the viewers account setting, then run boldvideo whoami.",

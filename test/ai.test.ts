@@ -256,28 +256,6 @@ test("disabled viewers warn only on terminal stderr, without changing JSON or th
 	expect(JSON.parse(piped.stdout)).toMatchObject(fixtures.answer);
 });
 
-test("ask dry-run makes no requests, including identity lookup", async () => {
-	const result = await run([
-		"ask",
-		"Workshop pricing",
-		"--as",
-		"customer-1042",
-		"--dry-run",
-	]);
-	expect(result.status).toBe(0);
-	expect(JSON.parse(result.stdout)).toEqual({
-		dry_run: true,
-		method: "POST",
-		path: "/ai/chat",
-		body: {
-			prompt: "Workshop pricing",
-			stream: false,
-			viewer: "customer-1042",
-		},
-	});
-	expect(calls).toHaveLength(0);
-});
-
 test("AI search preserves query and context and renders timestamps beyond an hour", async () => {
 	const result = await run(["search", "pricing a live workshop"]);
 	expect(result.status).toBe(0);
