@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { cp, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
+import { realpathSync } from "node:fs";
+import { cp, mkdir, mkdtemp, readdir, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { run } from "../test/run";
@@ -290,7 +291,10 @@ test("summary uses median of per-task ratios, includes failures and escapes reas
 });
 
 test("runner resets every repeat, checks answers, saves metrics and gates targets without a real agent", async () => {
-	const root = await mkdtemp(join(tmpdir(), "boldvideo-run-test-"));
+	const temporary = await mkdtemp(join(tmpdir(), "boldvideo-run-test-"));
+	const root = join(temporary, "configured");
+	await mkdir(join(temporary, "actual"));
+	await symlink(join(temporary, "actual"), root, "dir");
 	const me = await Bun.file(resolve("test/fixtures/me.json")).json();
 	let accountSlug = "acme";
 	let identities = 0;
@@ -412,8 +416,12 @@ process.stdout.write(searches ? events.join('\n') + '\n' : ${JSON.stringify(stre
 		const missed = await run(command, { env });
 		expect(missed.status).toBe(1);
 		expect(missed.stdout).toContain("Targets: MISSED");
-		expect(missed.stdout).toContain(
-			`Previous results: ${join(root, "evals/results", files[0] as string)}`,
+		const previousFile = missed.stdout.match(
+			/Previous results: (.+)\. Targets:/,
+		)?.[1];
+		if (!previousFile) throw new Error("Summary omitted previous results");
+		expect(realpathSync(previousFile)).toBe(
+			realpathSync(join(root, "evals/results", files[0] as string)),
 		);
 		await Bun.write(
 			join(root, "evals/targets.json"),
@@ -510,7 +518,7 @@ process.stdout.write(searches ? events.join('\n') + '\n' : ${JSON.stringify(stre
 		);
 	} finally {
 		server.stop(true);
-		await rm(root, { recursive: true, force: true });
+		await rm(temporary, { recursive: true, force: true });
 	}
 });
 
