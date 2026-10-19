@@ -1,0 +1,101 @@
+{
+	"data": [
+		{
+			"id": "q_9d7b8e2a-full-id",
+			"asked_at": "2026-10-19T10:15:00Z",
+			"question": "How can I price a paid workshop for a team with several departments and different learning goals?",
+			"viewer": { "id": "viewer-marcel", "display_name": "Marcel" },
+			"kind": "library_ask",
+			"channel": "portal",
+			"outcome": "answered",
+			"diagnosis": null,
+			"confidence": 0.92,
+			"reason": "relevant_sources",
+			"is_rephrase": false,
+			"rephrase_of_id": null,
+			"classified_at": "2026-10-19T10:16:00Z",
+			"classifier_version": "v1",
+			"diagnosis_version": null,
+			"quality_status": "resolved",
+			"quality_reviewed_at": "2026-10-19T11:00:00Z",
+			"sources": [
+				{
+					"video_id": "pricing-workshops",
+					"title": "Pricing workshops",
+					"timestamp": 42
+				},
+				{
+					"video_id": "pricing-workshops",
+					"title": "Pricing workshops",
+					"timestamp": 90
+				},
+				{
+					"video_id": "team-coaching",
+					"title": "Team coaching",
+					"timestamp": 15
+				}
+			],
+			"future_field": { "retained": true }
+		},
+		{
+			"id": "q_second",
+			"asked_at": "2026-10-19T09:05:00Z",
+			"question": "Can I offer team discounts?",
+			"viewer": { "id": "viewer-ana", "display_name": "Ana" },
+			"kind": "library_ask",
+			"channel": "portal",
+			"outcome": "answered",
+			"sources": [
+				{
+					"video_id": "pricing-workshops",
+					"title": "Pricing workshops",
+					"timestamp": 60
+				}
+			]
+		},
+		{
+			"id": "q_third",
+			"asked_at": "2026-10-19T08:00:00Z",
+			"question": "Do you cover refunds?",
+			"viewer": { "id": "viewer-lee", "display_name": "Lee" },
+			"kind": "search",
+			"channel": "api",
+			"outcome": "not_answered",
+			"sources": []
+		},
+		{
+			"id": "q_fourth",
+			"asked_at": "2026-10-18T21:00:00Z",
+			"question": "What about certification?",
+			"viewer": { "id": null, "display_name": "Anonymous viewer" },
+			"kind": "video_chat",
+			"channel": "embed",
+			"outcome": null,
+			"sources": null
+		},
+		{
+			"id": "q_fifth",
+			"asked_at": "2026-10-18T12:00:00Z",
+			"question": "How long is a session?",
+			"viewer": { "id": "viewer-jules", "display_name": "Jules" },
+			"kind": "library_ask",
+			"channel": "mcp",
+			"outcome": "answered",
+			"sources": [
+				{
+					"video_id": "team-coaching",
+					"title": "Team coaching",
+					"timestamp": 30
+				}
+			]
+		}
+	],
+	"meta": {
+		"page": 1,
+		"page_size": 20,
+		"total_entries": 5,
+		"total_pages": 1,
+		"since": "2026-10-12T12:00:00Z",
+		"until": "2026-10-19T12:00:00Z"
+	}
+}
