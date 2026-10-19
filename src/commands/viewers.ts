@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { apiUrl, request } from "../api";
 import { type Credential, identity } from "../auth";
 import { apiError, type CliError, error } from "../errors";
-import { output, outputList, table } from "../output";
+import { hint, output, outputList, table } from "../output";
 import type { Command, Context, Flags } from "../spec";
 import { syncRequest } from "./viewers-sync-request";
 
@@ -141,14 +141,13 @@ function csv(text: string): RecordData[] {
 
 async function sync(ctx: Context, args: string[], flags: Flags): Promise<void> {
 	let rows: unknown[];
-	let jsonInput: boolean;
 	try {
 		const file = args[0] as string;
 		const text = readFileSync(file === "-" ? 0 : file, "utf8").replace(
 			/^\uFEFF/,
 			"",
 		);
-		jsonInput =
+		const jsonInput =
 			file.endsWith(".json") || (file === "-" && /^\s*[[{]/.test(text));
 		const data = jsonInput ? JSON.parse(text) : csv(text);
 		if (!Array.isArray(data))
@@ -163,6 +162,25 @@ async function sync(ctx: Context, args: string[], flags: Flags): Promise<void> {
 		);
 	}
 	const key = await keyFor(ctx);
+	const present = new Set(
+		rows.map((row) => (row as RecordData | null)?.external_id),
+	);
+	const prune: RecordData[] = [];
+	if (flags.prune) {
+		// Snapshot every page before writes: deleting while paging can skip viewers.
+		for (let page = 1; ; page++) {
+			const result = (await syncRequest(key, "GET", "/viewers", undefined, {
+				page: String(page),
+				page_size: "100",
+			})) as Envelope<RecordData[]> & {
+				meta: { page: number; total_pages: number };
+			};
+			prune.push(
+				...result.data.filter((viewer) => !present.has(viewer.external_id)),
+			);
+			if (result.meta.page >= result.meta.total_pages) break;
+		}
+	}
 	const results: RecordData[] = new Array(rows.length);
 	// Hash each external ID into one sequential lane: duplicates cannot race a create.
 	const lanes: number[][] = Array.from({ length: 4 }, () => []);
@@ -193,21 +211,13 @@ async function sync(ctx: Context, args: string[], flags: Flags): Promise<void> {
 							"boldvideo viewers sync --help",
 							2,
 						);
-					if (!jsonInput && typeof row.traits === "string") {
-						try {
-							row = {
-								...row,
-								traits: row.traits ? JSON.parse(row.traits) : null,
-							};
-						} catch {
-							throw error(
-								"usage_error",
-								"CSV traits must contain valid JSON.",
-								"boldvideo viewers sync --help",
-								2,
-							);
-						}
-					}
+					const { external_id, email, name, ...traits } = row;
+					row = {
+						external_id,
+						...(Object.hasOwn(row, "email") ? { email } : {}),
+						...(Object.hasOwn(row, "name") ? { name } : {}),
+						...(Object.keys(traits).length ? { traits } : {}),
+					};
 					let existing = flags["dry-run"] ? planned.get(externalId) : undefined;
 					if (!existing) {
 						try {
@@ -266,7 +276,45 @@ async function sync(ctx: Context, args: string[], flags: Flags): Promise<void> {
 			}
 		}),
 	);
-	const summary = ["created", "updated", "unchanged", "failed"]
+	if (flags.prune && results.some((row) => row.action === "failed")) {
+		hint(
+			"Prune skipped because one or more sync rows failed. Fix the failed rows before rerunning boldvideo viewers sync --prune.",
+		);
+	} else {
+		for (const viewer of prune) {
+			try {
+				if (!flags["dry-run"])
+					await syncRequest(
+						key,
+						"DELETE",
+						`/viewers/${encodeURIComponent(String(viewer.id))}`,
+					);
+				results.push({
+					external_id: viewer.external_id ?? null,
+					id: viewer.id,
+					action: "pruned",
+				});
+			} catch (cause) {
+				const { exitCode: _exit, ...failure } = cause as CliError;
+				results.push({
+					external_id: viewer.external_id ?? null,
+					id: viewer.id,
+					action: "failed",
+					error: {
+						...failure,
+						message: failure.message.replace(/[\r\n]+/g, " "),
+					},
+				});
+			}
+		}
+	}
+	const summary = [
+		"created",
+		"updated",
+		"unchanged",
+		...(flags.prune ? ["pruned"] : []),
+		"failed",
+	]
 		.map(
 			(action) =>
 				`${results.filter((row) => row.action === action).length} ${action}`,
@@ -274,10 +322,55 @@ async function sync(ctx: Context, args: string[], flags: Flags): Promise<void> {
 		.join(", ");
 	output(
 		results,
-		`${table(results, ["external_id", "action"])}\n${flags["dry-run"] ? "Dry run: " : ""}${summary}.`,
+		`${table(results, ["external_id", "action", ...(flags.prune ? ["id"] : [])])}\n${flags["dry-run"] ? "Dry run: " : ""}${summary}.`,
 		ctx.json,
 	);
 	if (results.some((row) => row.action === "failed")) process.exitCode = 1;
+}
+
+async function memory(
+	ctx: Context,
+	args: string[],
+	flags: Flags,
+): Promise<void> {
+	if (flags.enable && flags.disable)
+		throw error(
+			"usage_error",
+			"Choose only one of --enable or --disable.",
+			"boldvideo viewers memory get --help",
+			2,
+		);
+	const key = await keyFor(ctx, true);
+	const viewer = await resolveViewer(key, args[0] as string);
+	const action =
+		ctx.path.at(-1) === "clear"
+			? "clear"
+			: flags.enable
+				? "enable"
+				: flags.disable
+					? "disable"
+					: "read";
+	if (flags["dry-run"] && action !== "read") {
+		const plan = { viewer_id: viewer.id, action, dry_run: true };
+		output(plan, table([plan]), ctx.json);
+		return;
+	}
+	// TODO(bold-js): SDK does not expose viewer memory endpoints.
+	const response = (await request(
+		action === "clear" ? "DELETE" : action === "read" ? "GET" : "PATCH",
+		`/viewers/${encodeURIComponent(String(viewer.id))}/memory`,
+		{
+			key,
+			...(action === "enable" || action === "disable"
+				? { body: { memory: { enabled: action === "enable" } } }
+				: {}),
+		},
+	)) as Envelope<RecordData> | null;
+	const result =
+		action === "clear"
+			? { viewer_id: viewer.id, cleared: true }
+			: (response?.data as RecordData);
+	output(result, table([result]), ctx.json);
 }
 
 export const viewers: Command = {
@@ -375,7 +468,16 @@ export const viewers: Command = {
 			summary: "Create or update viewers from CSV, JSON or stdin.",
 			write: true,
 			description:
-				"Rows require external_id and may include name, email, first_name, last_name, display_name, avatar_url and traits. New viewers require name. CSV traits cells contain JSON. Missing fields remain unchanged; traits are replaced, not merged. Four sequential lanes preserve duplicate-ID order. Each request retries a 429 once using Retry-After; other failures are not retried. Dry-run reports planned actions. Partial failures return row errors and exit 1.",
+				"Rows require external_id and may include email and name. Every other column becomes a key in traits; JSON values retain their types and CSV values are strings. New viewers require name. Omitted fields remain unchanged; supplied traits replace the map. Sync never deletes unless --prune is set. Prune snapshots all pages, then deletes viewers absent from the file only if every sync row succeeded. Four sequential lanes preserve duplicate-ID order. Each request retries a 429 once using Retry-After; other failures are not retried. Dry-run reports planned actions without writes. Partial failures return row errors and exit 1.",
+			flags: [
+				{
+					name: "prune",
+					type: "boolean",
+					destructive: true,
+					description:
+						"Delete viewers absent from the input (requires --yes when piped).",
+				},
+			],
 			args: [
 				{
 					name: "file",
@@ -460,80 +562,70 @@ export const viewers: Command = {
 		{
 			name: "memory",
 			summary: "Read, toggle or clear a viewer's AI memory.",
-			args: viewerArg,
-			write: true,
 			description:
-				"Enable or disable future memory distillation without replacing existing content. Clear deletes content; it may regrow unless disabled. --clear requires --yes when stdin is not a terminal, including dry-run.",
-			flags: [
-				{
-					name: "disable",
-					type: "boolean",
-					description: "Disable future memory distillation.",
-				},
-				{
-					name: "enable",
-					type: "boolean",
-					description: "Enable future memory distillation.",
-				},
-				{
-					name: "clear",
-					type: "boolean",
-					destructive: true,
-					description: "Delete the memory content (requires --yes when piped).",
-				},
-			],
+				"Use get with --enable or --disable to toggle future memory distillation without replacing content. Clear deletes content; it may regrow unless disabled.",
 			examples: [
 				{
-					cmd: "boldvideo viewers memory member_2048",
+					cmd: "boldvideo viewers memory get member_2048",
 					note: "Read a member's memory.",
 				},
 				{
-					cmd: "boldvideo viewers memory maria@acme.com --clear --yes",
+					cmd: "boldvideo viewers memory clear maria@acme.com --yes",
 					note: "Clear a member's memory content.",
 				},
 			],
 			seeAlso: ["boldvideo viewers progress --help"],
-			async run(ctx, args, flags) {
-				if (
-					[flags.enable, flags.disable, flags.clear].filter(Boolean).length > 1
-				)
-					throw error(
-						"usage_error",
-						"Choose only one of --enable, --disable or --clear.",
-						"boldvideo viewers memory --help",
-						2,
-					);
-				const key = await keyFor(ctx, true);
-				const viewer = await resolveViewer(key, args[0] as string);
-				const action = flags.clear
-					? "clear"
-					: flags.enable
-						? "enable"
-						: flags.disable
-							? "disable"
-							: "read";
-				if (flags["dry-run"] && action !== "read") {
-					const plan = { viewer_id: viewer.id, action, dry_run: true };
-					output(plan, table([plan]), ctx.json);
-					return;
-				}
-				// TODO(bold-js): SDK does not expose viewer memory endpoints.
-				const response = (await request(
-					action === "clear" ? "DELETE" : action === "read" ? "GET" : "PATCH",
-					`/viewers/${encodeURIComponent(String(viewer.id))}/memory`,
-					{
-						key,
-						...(action === "enable" || action === "disable"
-							? { body: { memory: { enabled: action === "enable" } } }
-							: {}),
-					},
-				)) as Envelope<RecordData> | null;
-				const result =
-					action === "clear"
-						? { viewer_id: viewer.id, cleared: true }
-						: (response?.data as RecordData);
-				output(result, table([result]), ctx.json);
-			},
+			subcommands: [
+				{
+					name: "get",
+					summary: "Read memory or toggle future memory distillation.",
+					args: viewerArg,
+					write: true,
+					flags: [
+						{
+							name: "enable",
+							type: "boolean",
+							description: "Enable future memory distillation.",
+						},
+						{
+							name: "disable",
+							type: "boolean",
+							description: "Disable future memory distillation.",
+						},
+					],
+					examples: [
+						{
+							cmd: "boldvideo viewers memory get member_2048",
+							note: "Read a member's memory.",
+						},
+						{
+							cmd: "boldvideo viewers memory get maria@acme.com --disable",
+							note: "Stop future distillation without clearing existing memory.",
+						},
+					],
+					seeAlso: ["boldvideo viewers memory clear --help"],
+					run: memory,
+				},
+				{
+					name: "clear",
+					summary: "Delete a viewer's memory content.",
+					args: viewerArg,
+					write: true,
+					destructive: true,
+					examples: [
+						{
+							cmd: "boldvideo viewers memory clear member_2048 --yes",
+							note: "Clear a member's memory content.",
+						},
+						{
+							cmd: "boldvideo viewers memory clear maria@acme.com --dry-run --yes",
+							note: "Preview clearing memory without deleting content.",
+						},
+					],
+					seeAlso: ["boldvideo viewers memory get --help"],
+					run: memory,
+				},
+			],
 		},
 	],
 };
