@@ -41,10 +41,14 @@ export function apiError(
 	const [code, exitCode] = codes[status] ?? ["api_error", 1];
 	const data =
 		body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+	const details =
+		data.error && typeof data.error === "object"
+			? (data.error as Record<string, unknown>)
+			: data;
 	const result = error(
 		code,
-		typeof data.message === "string"
-			? data.message
+		typeof details.message === "string"
+			? details.message
 			: `API request failed (HTTP ${status}).`,
 		hint,
 		exitCode,

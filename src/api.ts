@@ -76,9 +76,11 @@ export async function request(
 			response.status,
 			data,
 			response.headers.get("x-request-id") ?? undefined,
-			response.status === 401 || response.status === 403
-				? "boldvideo login --help"
-				: "boldvideo whoami",
+			response.status === 401
+				? "Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer."
+				: response.status === 403
+					? "boldvideo login --help"
+					: "boldvideo whoami",
 		);
 	return data;
 }

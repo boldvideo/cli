@@ -1,5 +1,7 @@
 {
-	"account": { "slug": "acme", "name": "Acme Academy" },
-	"key": { "kind": "tenant", "short_id": "key_7c21" },
-	"features": { "viewers": true, "viewer_memory": false, "mcp": true }
+	"data": {
+		"account": { "slug": "acme", "name": "Acme" },
+		"key": { "kind": "tenant", "short_id": "aB12cD34" },
+		"features": { "viewers": true, "viewer_memory": false, "mcp": true }
+	}
 }
