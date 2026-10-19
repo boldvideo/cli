@@ -61,9 +61,14 @@ function run(
 				input: "",
 			});
 	if (result.error) throw result.error;
+	let stdout = result.stdout.replaceAll("\r\n", "\n");
+	if (options.tty && process.platform === "darwin") {
+		// BSD script echoes and erases EOF when its input pipe closes.
+		if (stdout.startsWith("^D\b\b")) stdout = stdout.slice(4);
+	}
 	return {
 		status: result.status,
-		stdout: result.stdout.replaceAll("\r\n", "\n"),
+		stdout,
 		stderr: result.stderr,
 	};
 }
