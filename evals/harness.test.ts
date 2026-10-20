@@ -318,8 +318,12 @@ test("runner resets every repeat, checks answers, saves metrics and gates target
 	try {
 		await cp(import.meta.dir, join(root, "evals"), {
 			recursive: true,
-			filter: (path) => !path.includes("/results"),
+			filter: (path) => !/\/(results|tasks)\/./.test(path),
 		});
+		await cp(
+			join(import.meta.dir, "fixtures/00-example.md"),
+			join(root, "evals/tasks/00-example.md"),
+		);
 		await cp(resolve("dist"), join(root, "dist"), { recursive: true });
 		await cp(resolve("skill"), join(root, "skill"), { recursive: true });
 		await Bun.write(
@@ -546,32 +550,45 @@ test("API checker scores the requested sandbox field and rejects a mismatch", as
 	try {
 		const path = join(root, "task.md");
 		const task = {
-			id: "api-test",
+			id: "99-api-test",
 			version: 1,
 			prompt: "Make the workshop private",
 			starting_state: "workshop",
 			min_calls: 2,
-			trap: null,
-			chain: [],
+			trap: false,
+			chain: false,
 			check: {
 				kind: "api",
+				method: "GET",
 				path: "/admin/videos/workshop",
-				field: "data.privacy_level",
-				equals: "private",
+				jq: '.data.privacy_level == "private"',
 			},
 		};
-		await Bun.write(path, `---\n${JSON.stringify(task)}\n---\n`);
+		const write = () =>
+			Bun.write(
+				path,
+				`---\n${JSON.stringify(task)}\n---\n\n${task.prompt}\n\n`,
+			);
+		await write();
 		const command = [process.execPath, join(import.meta.dir, "check.ts"), path];
 		const env = {
 			BOLDVIDEO_API_KEY: "fixture-key",
 			BOLDVIDEO_API_URL: `http://127.0.0.1:${server.port}/api/v1`,
 		};
-		expect((await run(command, { env })).status).toBe(0);
-		task.check.equals = "public";
-		await Bun.write(path, `---\n${JSON.stringify(task)}\n---\n`);
+		const pass = await run(command, { env });
+		expect(pass.status).toBe(0);
+		expect(JSON.parse(pass.stdout)).toMatchObject({
+			task: "99-api-test",
+			result: "pass",
+		});
+		task.check.jq = '.data.privacy_level == "public"';
+		await write();
 		const mismatch = await run(command, { env });
 		expect(mismatch.status).toBe(1);
-		expect(mismatch.stderr).toContain("does not equal expected value");
+		expect(JSON.parse(mismatch.stdout)).toMatchObject({
+			result: "fail",
+			evidence: { api: { result: false } },
+		});
 	} finally {
 		server.stop(true);
 		await rm(root, { recursive: true, force: true });
