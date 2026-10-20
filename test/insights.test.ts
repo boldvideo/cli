@@ -302,7 +302,7 @@ test("invalid duration and pagination use standard usage errors", async () => {
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toMatchObject({
 			code: "usage_error",
-			hint: "boldvideo insights questions --help",
+			hint: "boldvideo insights questions --help\nRead: boldvideo docs cli",
 			docs: "https://docs.boldvideo.com/cli#usage-error",
 		});
 		if (["--since", "--until"].includes(args[0] ?? ""))

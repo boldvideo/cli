@@ -1,0 +1,103 @@
+{
+	"answer": {
+		"response_type": "answer",
+		"content": "Start with a small paid workshop and validate demand before expanding. [2]\n\nUse the pricing worksheet to choose your first offer. [3]",
+		"conversation_id": "8f92bc73-391c-45e1-908d-b6acb7ba02fb",
+		"sources": [
+			{
+				"id": "chunk-introduction-17",
+				"video_id": "workshop-intro",
+				"title": "Introduction",
+				"timestamp": 0,
+				"timestamp_url": null,
+				"cited": false
+			},
+			{
+				"id": "chunk-pricing-93",
+				"video_id": "a06eaa27-098b-4c60-8e85-90458fef16ee",
+				"title": "Price your workshop",
+				"timestamp": 125,
+				"timestamp_url": "https://acme.boldvideo.io/pricing?t=125",
+				"cited": true,
+				"timestamp_end": 161
+			},
+			{
+				"id": "resource-pricing-worksheet",
+				"video_id": null,
+				"title": "Pricing worksheet",
+				"timestamp": null,
+				"timestamp_url": null,
+				"cited": true
+			}
+		],
+		"usage": { "input_tokens": 431, "output_tokens": 29 }
+	},
+	"clarification": {
+		"response_type": "clarification",
+		"content": "Are you pricing a live workshop or a recorded course?",
+		"conversation_id": "8f92bc73-391c-45e1-908d-b6acb7ba02fb",
+		"sources": [],
+		"usage": { "input_tokens": 57, "output_tokens": 12 }
+	},
+	"search": {
+		"content": "The pricing workshop covers demand validation. [1]",
+		"sources": [
+			{
+				"id": "chunk-pricing-93",
+				"video_id": "a06eaa27-098b-4c60-8e85-90458fef16ee",
+				"title": "Price your workshop",
+				"timestamp": 3661,
+				"timestamp_url": "https://acme.boldvideo.io/pricing?t=3661",
+				"cited": true
+			}
+		],
+		"query": "pricing a live workshop",
+		"context": {
+			"previous_query": "pricing",
+			"session_id": "search-customer-1042"
+		}
+	},
+	"keyword": {
+		"hits": [
+			{
+				"id": "550e8400-e29b-41d4-a716-446655440000_1_5000-10000",
+				"title": "Getting Started",
+				"document_type": "transcript",
+				"duration_ms": 5000,
+				"speaker": "Speaker 1",
+				"text": "The first step is to connect your account...",
+				"timestamp_end_ms": 10000,
+				"timestamp_start_ms": 5000,
+				"video_id": "550e8400-e29b-41d4-a716-446655440000"
+			},
+			{
+				"id": "early-bird-workshop-2",
+				"title": "Early bird pricing",
+				"document_type": "attachment",
+				"text": "Offer early bird pricing for your first workshop.",
+				"video_id": "workshop-pricing"
+			}
+		],
+		"page": 1,
+		"per_page": 20,
+		"total_hits": 2,
+		"processing_time_ms": 4
+	},
+	"unauthorized": {
+		"error": "Invalid API token",
+		"status": 401,
+		"timestamp": "2026-10-19T12:00:00Z"
+	},
+	"forbidden": {
+		"type": "error",
+		"code": "forbidden",
+		"message": "Access denied",
+		"retryable": false
+	},
+	"entitlement": {
+		"type": "error",
+		"code": "feature_disabled",
+		"message": "AI feature not available",
+		"retryable": false
+	}
+}

@@ -293,7 +293,7 @@ const questions: Command = {
 			}
 		}
 		if (markdown) {
-			output(null, questionMarkdown(page.data), "md");
+			output(null, questionMarkdown(page.data), "text");
 			if (next) hint(`More results: ${next}`);
 			return;
 		}

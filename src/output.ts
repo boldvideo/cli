@@ -31,11 +31,11 @@ export function table(
 export function output(
 	data: unknown,
 	text: string,
-	format: boolean | "md" = false,
+	json: boolean | "text" = false,
 ): void {
 	process.stdout.write(
 		redact(
-			`${format === true || (format !== "md" && !process.stdout.isTTY) ? JSON.stringify(data) : text}\n`,
+			`${json !== "text" && (json || !process.stdout.isTTY) ? JSON.stringify(data) : text}\n`,
 		),
 	);
 }

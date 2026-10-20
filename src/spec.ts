@@ -5,7 +5,10 @@ export type Flags = Record<string, FlagValue | undefined>;
 
 export interface Flag {
 	name: string;
+	short?: string;
 	type: "string" | "number" | "boolean" | "list";
+	/** Preserve each repeated value verbatim instead of splitting comma lists. */
+	verbatim?: boolean;
 	default?: FlagValue;
 	description: string;
 	required?: boolean;
@@ -23,7 +26,12 @@ export interface Command {
 	name: string;
 	summary: string;
 	description?: string;
-	args?: { name: string; description: string; required?: boolean }[];
+	args?: {
+		name: string;
+		description: string;
+		required?: boolean;
+		variadic?: boolean;
+	}[];
 	flags?: Flag[];
 	examples: [{ cmd: string; note: string }, { cmd: string; note: string }];
 	seeAlso: string[];
