@@ -1,4 +1,11 @@
-import { chmod, copyFile, mkdir, symlink, writeFile } from "node:fs/promises";
+import {
+	chmod,
+	copyFile,
+	cp,
+	mkdir,
+	symlink,
+	writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 import type { Mode } from "./adapters";
 
@@ -50,11 +57,9 @@ export async function sandbox(
 	];
 	if (mode === "one-search") shellTools.push("web_search");
 	if (mode === "skill") {
-		await mkdir(join(cwd, "skill"));
-		await copyFile(
-			join(import.meta.dir, "../skill/SKILL.md"),
-			join(cwd, "skill/SKILL.md"),
-		);
+		await cp(join(import.meta.dir, "../skill"), join(cwd, "skill"), {
+			recursive: true,
+		});
 	}
 	await writeFile(
 		settings,

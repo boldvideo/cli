@@ -348,6 +348,7 @@ const prompt = args[args.indexOf('-p') + 1];
 const skill = existsSync('skill/SKILL.md');
 if ((readdirSync('.').length && !skill) || process.env.EVAL_STARTING_STATE) process.exit(2);
 if (skill && !prompt.includes(readFileSync('skill/SKILL.md', 'utf8'))) process.exit(5);
+if (skill && !['kajabi-migration', 'weekly-questions-digest', 'customer-onboarding'].every(name => existsSync('skill/recipes/' + name + '.md'))) process.exit(7);
 const searchAllowed = args.includes('Bash,WebSearch');
 if (searchAllowed && !prompt.includes('You may use web search at most once.')) process.exit(6);
 if (!spawnSync('curl', ['--version']).error) process.exit(3);
