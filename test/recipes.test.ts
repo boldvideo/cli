@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "../src/cli";
 import { commands } from "../src/commands";
-import { words } from "./examples";
+import { words } from "./words";
 
 // Only known sibling paths may skip; a typo in an installed command must fail.
 const siblings = [

@@ -14,7 +14,6 @@ import { commands } from "../src/commands";
 import { commandTree, rootCommand } from "../src/help";
 import { type Command, commandFlags } from "../src/spec";
 import { fixture } from "./commands";
-import { words } from "./examples";
 import { run as execute } from "./run";
 import { words } from "./words";
 
