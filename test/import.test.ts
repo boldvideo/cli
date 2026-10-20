@@ -403,7 +403,7 @@ test("wait deadline interrupts sleeps and in-flight reads with exit 5 and a stat
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toMatchObject({
 			code: "timed_out",
-			hint: "boldvideo import status 'run_taki_20261019' --profile 'customer-demo'",
+			hint: "boldvideo import status 'run_taki_20261019' --profile 'customer-demo'\nRead: boldvideo docs cli",
 		});
 	}
 });
@@ -583,7 +583,7 @@ test("collections resolve exact names, IDs and slugs with one lookup; missing an
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toMatchObject({
 			message: expect.stringContaining(name),
-			hint: "boldvideo collections list",
+			hint: "boldvideo collections list\nRead: boldvideo docs cli",
 		});
 	}
 	expect(calls.some((call) => call.method === "POST")).toBe(false);
@@ -621,7 +621,7 @@ test("status accepts video identifiers, waits for readiness and preserves not-fo
 	]);
 	expect(timeout.status).toBe(5);
 	expect(JSON.parse(timeout.stderr).hint).toBe(
-		"boldvideo import status 'paid-workshops'",
+		"boldvideo import status 'paid-workshops'\nRead: boldvideo docs cli",
 	);
 });
 
@@ -814,6 +814,8 @@ test("empty, conflicting and unreadable inputs fail before writing; missing coll
 	});
 	expect(missing.status).toBe(4);
 	expect(missing.stdout).toBe("");
-	expect(JSON.parse(missing.stderr).hint).toBe("boldvideo collections list");
+	expect(JSON.parse(missing.stderr).hint).toBe(
+		"boldvideo collections list\nRead: boldvideo docs cli",
+	);
 	expect(calls.some((call) => call.method === "POST")).toBe(false);
 });
