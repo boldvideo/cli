@@ -81,9 +81,9 @@ your reset/API arrangement independently isolates each attempt.
 
 ```sh
 printf 'Installed version: 0.1.0\n' > /tmp/boldvideo-answer.txt
-bun evals/run.ts --agent manual --tasks 'evals/tasks/00-example.md' \
+bun evals/run.ts --agent manual --tasks 'evals/fixtures/00-example.md' \
   --answer /tmp/boldvideo-answer.txt
-bun evals/check.ts evals/tasks/00-example.md --answer /tmp/boldvideo-answer.txt
+bun evals/check.ts evals/fixtures/00-example.md --answer /tmp/boldvideo-answer.txt
 ```
 
 Manual prints the prompt and reads the existing answer file (the same file for
@@ -119,8 +119,8 @@ check:
 ```
 
 API checks issue a read-only GET under `BOLDVIDEO_API_URL`, refusing redirects.
-The example branch was absent when work started, so `00-example.md` is intentionally
-kept as a stateless local smoke task; it is not a representative benchmark suite.
+`evals/fixtures/00-example.md` is a stateless local smoke task used by the harness
+tests and manual debugging; the benchmark suite lives in `evals/tasks/`.
 
 ## Results and targets
 
@@ -168,7 +168,7 @@ Regressions are informational; targets and validity determine exit status.
 ## Nightly runs and just
 
 `just eval` delegates to `bun evals/run.ts`; `just eval-one
-evals/tasks/00-example.md` selects one task (still three repeats by default).
+evals/fixtures/00-example.md` selects one task (still three repeats by default).
 
 `.github/workflows/eval-nightly.yml` runs cold mode at 03:17 UTC daily, serially,
 with three repeats. Configure repository secrets `BOLDVIDEO_API_KEY`,

@@ -6,7 +6,7 @@ How this repo is built, in the order an agent needs it.
 
 `boldvideo` is one binary that does everything the Bold admin UI can, built so an agent with a shell and nothing else can run a video library. `--help` is the only documentation a cold agent gets, so help text is product, not decoration.
 
-One name everywhere: the binary, the npm package, the docs term and the env prefix are all `boldvideo`. No alias, no second name.
+One name everywhere: the binary, the primary npm package, the docs term and the env prefix are all `boldvideo`. The compatibility npm package `@boldvideo/cli` delegates to the same binary; it adds no second command name.
 
 ## Stack (decided 2026-10-19, do not relitigate inside a ticket)
 
@@ -63,6 +63,16 @@ The full contract lives in `docs/contract.md` and is enforced by tests every com
 ## Help text is tuned by evals
 
 Help wording is measured against a cold-agent task suite (project milestone M3). Do not reword help or error text without a failing eval transcript as the reason. Examples use realistic values, never `foo` or a bare `<id>`.
+
+## Stability
+
+Commands and flags that ship in 0.1.0 are the baseline and are never renamed or
+removed; additions only. `docs/baseline-0.1.0.md` records the baseline generated
+from the built CLI's `help --json` by `bun run baseline:generate`. Until the
+0.1.0 cut is assembled, this is a provisional snapshot of merged commands, not
+a promise that commands on sibling branches have shipped. Regenerate it on the
+final release-preparation commit, review additions, and freeze it at release.
+Never regenerate or edit the snapshot to hide a failing stability test.
 
 ## Taste
 

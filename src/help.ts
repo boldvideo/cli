@@ -22,7 +22,7 @@ export function rootCommand(commands: Command[]): Command {
 	};
 }
 
-export function commandTree(command: Command): object {
+export function commandTree(command: Command): Command {
 	const { run: _run, subcommands, ...data } = command;
 	return {
 		...data,
@@ -44,7 +44,10 @@ export function showHelp(command: Command, path: string[], json = false): void {
 	const root = path.length === 0;
 	const invocation = ["boldvideo", ...path].join(" ");
 	const args = command.args
-		?.map((arg) => (arg.required === false ? `[${arg.name}]` : `<${arg.name}>`))
+		?.map((arg) => {
+			const name = `${arg.name}${arg.variadic ? "..." : ""}`;
+			return arg.required === false ? `[${name}]` : `<${name}>`;
+		})
 		.join(" ");
 	const synopsis = `${invocation}${command.subcommands ? " <command>" : ""}${args ? ` ${args}` : ""} [flags]`;
 	const flags = commandFlags(command).map((flag) => ({
