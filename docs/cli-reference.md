@@ -70,6 +70,315 @@ Read the command tree as JSON.
 boldvideo help --json
 ```
 
+## boldvideo import
+
+Import videos and wait until their content is searchable.
+
+```sh
+boldvideo import <command> [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Import a YouTube channel and wait for readiness.
+
+```sh
+boldvideo import youtube https://www.youtube.com/@takimoore --wait
+```
+
+Submit one direct video URL.
+
+```sh
+boldvideo import url https://cdn.example.com/paid-workshops.mp4 --title "Paid workshops"
+```
+
+## boldvideo import youtube
+
+Import a YouTube video, playlist or channel.
+
+```sh
+boldvideo import youtube [source_url] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| source_url | No | HTTP or HTTPS source URL; otherwise read one URL per line from stdin or --from. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --from | string | — | Read URLs one per line from a file instead of a positional URL or stdin. |
+| --title | string | — | Single-video title; required for direct media URLs. |
+| --description | string | — | Single-video description. |
+| --tags | list | — | Tag names, comma-separated or repeated. |
+| --collection | list | — | Collection IDs or exact names, comma-separated or repeated. |
+| --type | string | — | Video type UUID or slug. |
+| --privacy | string | "unlisted" | Visibility: public, unlisted or private. |
+| --published-at | string | — | Single: ISO date or datetime with timezone. Run: source (default), now or none. |
+| --external-id | string | — | Single-video external identifier. |
+| --language | string | — | Single-video language code. |
+| --max | number | — | Maximum videos in a playlist/channel run (positive integer). |
+| --order | string | — | Playlist/channel order: latest or oldest. |
+| --wait | boolean | false | Wait until imported videos are transcribed and indexed. |
+| --poll-interval | number | 5 | Seconds between polls (positive number). |
+| --timeout | number | 3600 | Maximum seconds to wait (positive number; default 60 minutes). |
+
+### Examples
+
+Import one video and wait for a searchable transcript.
+
+```sh
+boldvideo import youtube https://www.youtube.com/watch?v=aqz-KE-bpKQ --wait
+```
+
+Import a channel into a named collection.
+
+```sh
+boldvideo import youtube https://www.youtube.com/@takimoore --collection "Coaching"
+```
+
+## boldvideo import url
+
+Import a direct video URL or a YouTube/Vimeo video.
+
+```sh
+boldvideo import url [source_url] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| source_url | No | HTTP or HTTPS source URL; otherwise read one URL per line from stdin or --from. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --from | string | — | Read URLs one per line from a file instead of a positional URL or stdin. |
+| --title | string | — | Single-video title; required for direct media URLs. |
+| --description | string | — | Single-video description. |
+| --tags | list | — | Tag names, comma-separated or repeated. |
+| --collection | list | — | Collection IDs or exact names, comma-separated or repeated. |
+| --type | string | — | Video type UUID or slug. |
+| --privacy | string | "unlisted" | Visibility: public, unlisted or private. |
+| --published-at | string | — | Single: ISO date or datetime with timezone. Run: source (default), now or none. |
+| --external-id | string | — | Single-video external identifier. |
+| --language | string | — | Single-video language code. |
+| --max | number | — | Maximum videos in a playlist/channel run (positive integer). |
+| --order | string | — | Playlist/channel order: latest or oldest. |
+| --wait | boolean | false | Wait until imported videos are transcribed and indexed. |
+| --poll-interval | number | 5 | Seconds between polls (positive number). |
+| --timeout | number | 3600 | Maximum seconds to wait (positive number; default 60 minutes). |
+
+### Examples
+
+Import a workshop into a collection and wait for readiness.
+
+```sh
+boldvideo import url https://cdn.example.com/paid-workshops.mp4 --title "Paid workshops" --collection workshops --wait
+```
+
+Preview a Vimeo import published at midnight UTC.
+
+```sh
+boldvideo import url https://vimeo.com/76979871 --published-at 2026-10-18 --dry-run
+```
+
+## boldvideo import status
+
+Show a video or import run, or resume waiting for readiness.
+
+```sh
+boldvideo import status <id-or-run> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id-or-run | Yes | Video UUID, hashid, slug or import run identifier. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --wait | boolean | false | Wait until imported videos are transcribed and indexed. |
+| --poll-interval | number | 5 | Seconds between polls (positive number). |
+| --timeout | number | 3600 | Maximum seconds to wait (positive number; default 60 minutes). |
+| --page | number | 1 | Run video page (positive integer); --wait checks every page. |
+
+### Examples
+
+Inspect a channel import.
+
+```sh
+boldvideo import status run_taki_20261019
+```
+
+Resume waiting for up to two hours.
+
+```sh
+boldvideo import status run_taki_20261019 --wait --timeout 7200
+```
+
+## boldvideo import cancel
+
+Cancel an import run; an already-submitted batch drains.
+
+```sh
+boldvideo import cancel <run_id> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| run_id | Yes | Import run identifier. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Cancel further submission; the current batch drains.
+
+```sh
+boldvideo import cancel run_taki_20261019 --yes
+```
+
+Preview cancellation without changing the run.
+
+```sh
+boldvideo import cancel run_taki_20261019 --dry-run --yes
+```
+
+## boldvideo ask
+
+Ask your library a question and show cited moments.
+
+Sources keep their original citation numbers. --limit bounds displayed sources, not retrieval; increasing it regenerates the answer.
+
+```sh
+boldvideo ask <prompt> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| prompt | Yes | Question to ask your video library. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --collection | string | — | Restrict the question to this collection ID or slug. |
+| --as | string | — | Personalize for a viewer UUID or external ID. |
+| --conversation | string | — | Continue this conversation ID. |
+| --no-sources | boolean | false | Omit sources from output; JSON reports the omitted count. |
+
+### Examples
+
+Ask a collection and show timestamped sources.
+
+```sh
+boldvideo ask "How should I price my first workshop?" --collection paid-workshops
+```
+
+Continue a personalized conversation.
+
+```sh
+boldvideo ask "What should I try next?" --as customer-1042 --conversation 8f92bc73-391c-45e1-908d-b6acb7ba02fb
+```
+
+## boldvideo search
+
+Search your library with AI or find keyword matches.
+
+AI search shows a summary with cited sources. --limit bounds displayed sources, not retrieval; increasing it regenerates the summary. --keyword uses paginated keyword results instead. --fields selects source or keyword-result fields.
+
+```sh
+boldvideo search <query> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| query | Yes | Question or keywords to search for. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --keyword | boolean | false | Search keywords without AI synthesis. |
+| --page | number | 1 | Keyword results page (positive integer; requires --keyword). |
+
+### Examples
+
+Find relevant moments with an AI summary.
+
+```sh
+boldvideo search "pricing a live workshop" --limit 5
+```
+
+Find keyword matches without AI.
+
+```sh
+boldvideo search "early bird" --keyword --fields id,title
+```
+
 ## boldvideo help
 
 Show the command tree and exit codes.
@@ -379,6 +688,1030 @@ Preview removing a named profile.
 
 ```sh
 boldvideo logout --profile customer-demo --dry-run --yes
+```
+
+## boldvideo videos
+
+Browse library videos and retrieve transcripts.
+
+```sh
+boldvideo videos <command> [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+Browse the first page of videos.
+
+```sh
+boldvideo videos list
+```
+
+Inspect a video by slug.
+
+```sh
+boldvideo videos get paid-workshops
+```
+
+## boldvideo videos list
+
+List a bounded page of library videos.
+
+```sh
+boldvideo videos list [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --status | string | — | Filter by video status. |
+| --privacy | string | — | Filter by video privacy. |
+| --collection | string | — | Filter by video collection. |
+| --tag | string | — | Filter by video tag. |
+| --type | string | — | Filter by video type. |
+| --since | string | — | Videos updated since this ISO timestamp. |
+| --page | number | 1 | Page number (positive integer). |
+
+### Examples
+
+Find ready private videos with an admin key.
+
+```sh
+boldvideo videos list --status ready --privacy private --limit 10
+```
+
+Select fields from the second page.
+
+```sh
+boldvideo videos list --collection paid-workshops --fields internal_id,title --page 2
+```
+
+## boldvideo videos get
+
+Show the full video record by UUID, hashid or slug.
+
+```sh
+boldvideo videos get <id> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | Yes | Video UUID, hashid or slug. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+Inspect a video by slug.
+
+```sh
+boldvideo videos get paid-workshops
+```
+
+Retrieve a complete admin record by UUID.
+
+```sh
+boldvideo videos get 30c0d0a0-278c-4c90-b15c-e64e197abf12 --json
+```
+
+## boldvideo videos transcript
+
+Retrieve a video transcript or save it to a file.
+
+Defaults to txt on a terminal and json when piped. Piped text formats are JSON strings; --out saves the raw body.
+
+```sh
+boldvideo videos transcript <id> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | Yes | Video UUID, hashid or slug. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --format | string | — | Transcript format: txt, srt, vtt or json. |
+| --out | string | — | Save the transcript body to this file. |
+
+### Examples
+
+Read the transcript in the default format.
+
+```sh
+boldvideo videos transcript paid-workshops
+```
+
+Save subtitles to a file.
+
+```sh
+boldvideo videos transcript paid-workshops --format srt --out paid-workshops.srt
+```
+
+## boldvideo videos update
+
+Update metadata and visibility for one or more videos.
+
+Processes IDs in order and continues on individual failures. Reads one ID per stdin line when no IDs are given. Exit 1 means at least one video failed; stdout still contains every result. --dry-run previews without writing.
+
+```sh
+boldvideo videos update [id] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | No | Video UUIDs, hashids or slugs; omit to read one per stdin line. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --title | string | — | Replace the video title. |
+| --description | string | — | Replace the description; an empty string clears it. |
+| --published-at | string | — | ISO date or datetime (UTC if no timezone), or none to clear. |
+| --type | string | — | Video type UUID or slug. |
+| --privacy | string | — | Visibility: public, unlisted or private. |
+| --tags | list | — | Replace tags, comma-separated or repeated; an empty value clears them. |
+| --add-tags | list | — | Add tags, comma-separated or repeated. |
+| --remove-tags | list | — | Remove tags, comma-separated or repeated. |
+| --collections | list | — | Replace collections, comma-separated or repeated; an empty value clears them. |
+| --add-collection | list | — | Add collections, comma-separated or repeated. |
+| --remove-collection | list | — | Remove collections, comma-separated or repeated. |
+
+### Examples
+
+Rename a video and change visibility.
+
+```sh
+boldvideo videos update paid-workshops --title 'Paid workshops: October' --privacy unlisted
+```
+
+Apply the same metadata changes to multiple videos.
+
+```sh
+boldvideo videos update paid-workshops sales-onboarding --add-tags sales,training --remove-collection archived
+```
+
+## boldvideo videos publish
+
+Publish one or more videos, optionally setting the publication date.
+
+Processes IDs in order and continues on individual failures. Reads one ID per stdin line when no IDs are given. Exit 1 means at least one video failed; stdout still contains every result. --dry-run previews without writing.
+
+```sh
+boldvideo videos publish [id] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | No | Video UUIDs, hashids or slugs; omit to read one per stdin line. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --published-at | string | — | Publication ISO date or datetime (UTC if no timezone). |
+
+### Examples
+
+Publish two videos in sequence.
+
+```sh
+boldvideo videos publish paid-workshops sales-onboarding
+```
+
+Preview publishing with an explicit date.
+
+```sh
+boldvideo videos publish paid-workshops --published-at 2026-10-19T10:00:00Z --dry-run
+```
+
+## boldvideo videos unpublish
+
+Unpublish one or more videos.
+
+Processes IDs in order and continues on individual failures. Reads one ID per stdin line when no IDs are given. Exit 1 means at least one video failed; stdout still contains every result. --dry-run previews without writing.
+
+```sh
+boldvideo videos unpublish [id] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | No | Video UUIDs, hashids or slugs; omit to read one per stdin line. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Unpublish two videos in sequence.
+
+```sh
+boldvideo videos unpublish paid-workshops sales-onboarding
+```
+
+Preview unpublishing without changing the video.
+
+```sh
+boldvideo videos unpublish paid-workshops --dry-run
+```
+
+## boldvideo videos delete
+
+Delete one or more videos after confirmation.
+
+Processes IDs in order and continues on individual failures. Reads one ID per stdin line when no IDs are given. Exit 1 means at least one video failed; stdout still contains every result. --dry-run previews without writing. On a terminal, asks once listing video titles unless --yes is given. Piped stdin requires --yes, including with --dry-run.
+
+```sh
+boldvideo videos delete [id] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | No | Video UUIDs, hashids or slugs; omit to read one per stdin line. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Delete two videos without an interactive prompt.
+
+```sh
+boldvideo videos delete paid-workshops sales-onboarding --yes
+```
+
+Preview deletion, including the video's title.
+
+```sh
+boldvideo videos delete paid-workshops --dry-run --yes
+```
+
+## boldvideo collections
+
+Organize the video library into collections.
+
+```sh
+boldvideo collections <command> [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+Find collections in the library.
+
+```sh
+boldvideo collections list
+```
+
+Create a collection for customer workshops.
+
+```sh
+boldvideo collections create "Customer workshops"
+```
+
+## boldvideo collections list
+
+List collections, including empty collections.
+
+```sh
+boldvideo collections list [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --offset | number | 0 | Start at this result (nonnegative integer). |
+
+### Examples
+
+Show the first page of collections.
+
+```sh
+boldvideo collections list
+```
+
+Select collection fields for a bounded page.
+
+```sh
+boldvideo collections list --limit 5 --fields id,name,video_count
+```
+
+## boldvideo collections create
+
+Create a collection or return the existing collection by name.
+
+```sh
+boldvideo collections create <name> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| name | Yes | Collection name. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --parent | string | — | Parent collection UUID or slug. |
+
+### Examples
+
+Create a root collection.
+
+```sh
+boldvideo collections create "Customer workshops"
+```
+
+Preview a nested collection.
+
+```sh
+boldvideo collections create "Pricing lessons" --parent customer-workshops --dry-run
+```
+
+## boldvideo collections rename
+
+Rename a collection without changing its memberships.
+
+```sh
+boldvideo collections rename <id> <name> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| id | Yes | Collection UUID or slug. |
+| name | Yes | New collection name. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Rename a collection by slug.
+
+```sh
+boldvideo collections rename customer-workshops "Customer training"
+```
+
+Preview a rename by UUID.
+
+```sh
+boldvideo collections rename 8c36b95c-7be2-4b7e-bf63-2ee639f7a246 "Advanced lessons" --dry-run
+```
+
+## boldvideo collections add
+
+Add videos to a collection without duplicating memberships.
+
+When no video arguments are given, read one video UUID, hashid or slug per line from piped stdin.
+
+```sh
+boldvideo collections add <collection> [video] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| collection | Yes | Collection UUID or slug. |
+| video | No | Video UUIDs, hashids or slugs; otherwise read stdin. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Add two video memberships.
+
+```sh
+boldvideo collections add customer-workshops pricing-masterclass onboarding-basics
+```
+
+Preview a membership change using a video hashid.
+
+```sh
+boldvideo collections add customer-workshops aB12cD34 --dry-run
+```
+
+## boldvideo collections remove
+
+Remove collection memberships without deleting videos.
+
+When no video arguments are given, read one video UUID, hashid or slug per line from piped stdin.
+
+```sh
+boldvideo collections remove <collection> [video] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| collection | Yes | Collection UUID or slug. |
+| video | No | Video UUIDs, hashids or slugs; otherwise read stdin. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Remove two video memberships.
+
+```sh
+boldvideo collections remove customer-workshops pricing-masterclass onboarding-basics
+```
+
+Preview a membership change using a video hashid.
+
+```sh
+boldvideo collections remove customer-workshops aB12cD34 --dry-run
+```
+
+## boldvideo collections videos
+
+List videos in a collection.
+
+```sh
+boldvideo collections videos <collection> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| collection | Yes | Collection UUID or slug. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --offset | number | 0 | Start at this result (nonnegative integer). |
+
+### Examples
+
+Browse a collection's videos.
+
+```sh
+boldvideo collections videos customer-workshops
+```
+
+Select video identifiers and titles.
+
+```sh
+boldvideo collections videos customer-workshops --limit 5 --fields id,title
+```
+
+## boldvideo viewers
+
+Sync members and inspect viewer progress and memory.
+
+```sh
+boldvideo viewers <command> [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+List account members.
+
+```sh
+boldvideo viewers list
+```
+
+Preview member changes.
+
+```sh
+boldvideo viewers sync members.csv --dry-run
+```
+
+## boldvideo viewers list
+
+List a bounded page of viewers.
+
+```sh
+boldvideo viewers list [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --page | number | 1 | Page number (positive integer). |
+
+### Examples
+
+List ten members.
+
+```sh
+boldvideo viewers list --limit 10
+```
+
+Project the second page.
+
+```sh
+boldvideo viewers list --page 2 --fields id,email
+```
+
+## boldvideo viewers get
+
+Get a viewer by UUID, email or external ID.
+
+```sh
+boldvideo viewers get <viewer> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| viewer | Yes | Viewer UUID, email or external ID. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+Find a member by email.
+
+```sh
+boldvideo viewers get maria@acme.com
+```
+
+Find a member by your platform ID.
+
+```sh
+boldvideo viewers get member_2048
+```
+
+## boldvideo viewers sync
+
+Create or update viewers from CSV, JSON or stdin.
+
+Rows require external_id and may include email and name. Every other column becomes a key in traits; JSON values retain their types and CSV values are strings. New viewers require name. Omitted fields remain unchanged; supplied traits replace the map. Sync never deletes unless --prune is set. Prune snapshots all pages, then deletes viewers absent from the file only if every sync row succeeded. Four sequential lanes preserve duplicate-ID order. Each request retries a 429 once using Retry-After; other failures are not retried. Dry-run reports planned actions without writes. Partial failures return row errors and exit 1.
+
+```sh
+boldvideo viewers sync <file> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| file | Yes | CSV file, JSON array file, or - for stdin (JSON detected by leading [). |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --prune | boolean | — | Delete viewers absent from the input (requires --yes when piped). |
+
+### Examples
+
+Preview member changes without writing.
+
+```sh
+boldvideo viewers sync members.csv --dry-run
+```
+
+Read a member export from piped stdin.
+
+```sh
+boldvideo viewers sync -
+```
+
+## boldvideo viewers progress
+
+Show a viewer's watch progress.
+
+```sh
+boldvideo viewers progress <viewer> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| viewer | Yes | Viewer UUID, email or external ID. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --video | string | — | Restrict progress to this video ID. |
+
+### Examples
+
+Inspect a member's viewing history.
+
+```sh
+boldvideo viewers progress member_2048
+```
+
+Inspect progress on one video.
+
+```sh
+boldvideo viewers progress maria@acme.com --video onboarding
+```
+
+## boldvideo viewers memory
+
+Read, toggle or clear a viewer's AI memory.
+
+Use get with --enable or --disable to toggle future memory distillation without replacing content. Clear deletes content; it may regrow unless disabled.
+
+```sh
+boldvideo viewers memory <command> [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+Read a member's memory.
+
+```sh
+boldvideo viewers memory get member_2048
+```
+
+Clear a member's memory content.
+
+```sh
+boldvideo viewers memory clear maria@acme.com --yes
+```
+
+## boldvideo viewers memory get
+
+Read memory or toggle future memory distillation.
+
+```sh
+boldvideo viewers memory get <viewer> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| viewer | Yes | Viewer UUID, email or external ID. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --enable | boolean | — | Enable future memory distillation. |
+| --disable | boolean | — | Disable future memory distillation. |
+
+### Examples
+
+Read a member's memory.
+
+```sh
+boldvideo viewers memory get member_2048
+```
+
+Stop future distillation without clearing existing memory.
+
+```sh
+boldvideo viewers memory get maria@acme.com --disable
+```
+
+## boldvideo viewers memory clear
+
+Delete a viewer's memory content.
+
+```sh
+boldvideo viewers memory clear <viewer> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| viewer | Yes | Viewer UUID, email or external ID. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+
+### Examples
+
+Clear a member's memory content.
+
+```sh
+boldvideo viewers memory clear member_2048 --yes
+```
+
+Preview clearing memory without deleting content.
+
+```sh
+boldvideo viewers memory clear maria@acme.com --dry-run --yes
+```
+
+## boldvideo insights
+
+Explore member questions and content gaps.
+
+```sh
+boldvideo insights <command> [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+
+### Examples
+
+last week's questions
+
+```sh
+boldvideo insights questions --since 14d --until 7d --format md
+```
+
+questions for one collection
+
+```sh
+boldvideo insights questions --collection a31c608a-2ab7-457f-8734-4f8f055d2e08
+```
+
+## boldvideo insights questions
+
+Read member questions and identify content gaps.
+
+Requires an admin key. Windows are half-open [since, until); dates, ISO 8601 timestamps and Nd/Nh durations are passed through verbatim. Until defaults to the server's now. Results are newest first as served. Grouping counts only the fetched page: video counts each question once per distinct source video (none/unobserved are separate); day uses the date in asked_at. Terminal sources '?' means unobserved, 0 means none; only question text is shortened.
+
+```sh
+boldvideo insights questions [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --since | string | "7d" | Window start: ISO timestamp, date, or Nd/Nh duration. |
+| --until | string | — | Exclusive window end: ISO timestamp, date, or Nd/Nh duration; default now. |
+| --collection | string | — | Filter by collection UUID. |
+| --video | string | — | Filter by video UUID, hashid or slug. |
+| --kind | string | — | Filter by question kind. |
+| --channel | string | — | Filter by channel. |
+| --outcome | string | — | Filter by classification outcome. |
+| --status | string | — | Filter by review status. |
+| --reason | string | — | Filter by classification reason. |
+| --needs-a-look | boolean | — | Only questions needing a look. |
+| --include-team | boolean | — | Include questions from team members. |
+| --include-noise | boolean | — | Include questions classified as noise. |
+| --include-pending | boolean | — | Include pending questions. |
+| --page | number | 1 | Page number (positive integer); --limit sets page_size, maximum 100. |
+| --group-by | string | — | Count by video, outcome or day over the fetched page only. |
+| --format | string | — | Use md for a compact Markdown question list, even when piped. --json wins; otherwise md cannot combine with --group-by or --fields. |
+
+### Examples
+
+last week's questions
+
+```sh
+boldvideo insights questions --since 14d --until 7d --format md
+```
+
+questions for one collection
+
+```sh
+boldvideo insights questions --collection a31c608a-2ab7-457f-8734-4f8f055d2e08
+```
+
+## boldvideo api
+
+Call any Bold API endpoint with the active key.
+
+Paths are relative to /api/v1. Use --list [filter] to discover endpoints. -f preserves strings; -F parses JSON values. --input reads a JSON file or stdin (-), and cannot be combined with fields. --paginate concatenates data arrays, bounded by --limit (default 20); --fields projects pagination or discovery results. DELETE requires --yes on piped stdin, including dry-run.
+
+```sh
+boldvideo api [method] [path] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| method | No | GET, POST, PUT, PATCH, DELETE, or an optional --list filter. |
+| path | No | Endpoint path, including optional query parameters. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --limit | number | 20 | Maximum items to return (positive integer). |
+| --fields | list | — | API fields to include, comma-separated or repeated. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes | boolean | false | Confirm a destructive operation. |
+| --field | list | — | String body field (-f key=value), repeatable. |
+| --typed-field | list | — | JSON body field (-F key=value), repeatable. |
+| --query | list | — | Query parameter (-q key=value), repeatable. |
+| --input | string | — | Read the whole JSON body from a file, or - for stdin. |
+| --paginate | boolean | false | Follow Link or meta pagination up to --limit items. |
+| --list | boolean | false | Fetch OpenAPI and list methods, paths and summaries. |
+| --offset | number | 0 | Skip this many endpoints in --list results. |
+
+### Examples
+
+Read the video response as JSON.
+
+```sh
+boldvideo api GET /videos
+```
+
+Create a collection with a string field.
+
+```sh
+boldvideo api POST /collections -f title="Paid workshops"
 ```
 
 ## boldvideo docs
