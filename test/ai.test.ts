@@ -366,7 +366,7 @@ test("401 envelopes, generic 403 and AI entitlement use stable errors and specif
 			expect(JSON.parse(result.stderr)).toEqual({
 				code,
 				message: "message" in body ? body.message : body.error,
-				hint,
+				hint: `${hint}\nRead: boldvideo docs cli`,
 				docs: `https://docs.boldvideo.com/cli#${code.replaceAll("_", "-")}`,
 				request_id: "req_ai_2033",
 			});

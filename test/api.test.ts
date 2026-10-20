@@ -288,10 +288,11 @@ test("HTTP failures preserve details and request IDs with stable codes and exits
 		expect(JSON.parse(result.stderr)).toEqual({
 			code,
 			message: fixture.failure.error.message,
-			hint:
+			hint: `${
 				status === 401 || status === 403
 					? "boldvideo login --help"
-					: "boldvideo api --help",
+					: "boldvideo api --help"
+			}\nRead: boldvideo docs cli`,
 			docs: `https://docs.boldvideo.com/cli#${code.replaceAll("_", "-")}`,
 			request_id: "req_header_2030",
 			details: fixture.failure,
