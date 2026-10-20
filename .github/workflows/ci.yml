@@ -35,6 +35,17 @@ jobs:
           name: package
           path: boldvideo-*.tgz
 
+  reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+      - run: bun install --frozen-lockfile
+      - run: bun run docs:reference
+      - run: git diff --exit-code -- docs/cli-reference.md
+
   smoke:
     needs: check
     runs-on: ubuntu-latest

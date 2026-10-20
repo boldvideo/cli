@@ -19,6 +19,7 @@
 	},
 	"scripts": {
 		"build": "bun build src/main.ts --target=node --outfile=dist/boldvideo.js",
+		"docs:reference": "bun scripts/docs-reference.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test",
 		"check": "biome check --write .",
