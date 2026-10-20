@@ -4,6 +4,7 @@ import { ask } from "./ask";
 import { collections } from "./collections";
 import { docs } from "./docs";
 import { help } from "./help";
+import { insights } from "./insights";
 import { login } from "./login";
 import { logout, profiles } from "./profiles";
 import { search } from "./search";
@@ -20,6 +21,7 @@ export const commands: Command[] = [
 	collections,
 	ask,
 	search,
+	insights,
 	api,
 	docs,
 ];
