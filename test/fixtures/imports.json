@@ -1,0 +1,217 @@
+{
+	"created": {
+		"data": {
+			"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12",
+			"title": "Paid workshops",
+			"status": "queued",
+			"privacy_level": "unlisted",
+			"ready": false,
+			"failure_reason": null
+		},
+		"deduplicated": false
+	},
+	"processing": {
+		"data": {
+			"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12",
+			"title": "Paid workshops",
+			"status": "processing",
+			"privacy_level": "unlisted",
+			"ready": false,
+			"failure_reason": null
+		}
+	},
+	"ready": {
+		"data": {
+			"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12",
+			"title": "Paid workshops",
+			"status": "ready",
+			"privacy_level": "unlisted",
+			"ready": true,
+			"failure_reason": null
+		}
+	},
+	"failed": {
+		"data": {
+			"internal_id": "sales-follow-up",
+			"title": "Sales follow-up",
+			"status": "failed",
+			"privacy_level": "unlisted",
+			"ready": false,
+			"failure_reason": "Audio could not be transcribed."
+		}
+	},
+	"queued": {
+		"data": {
+			"run_id": "run_taki_20261019",
+			"source_url": "https://www.youtube.com/@takimoore",
+			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"status": "queued",
+			"counts": {
+				"total": null,
+				"queued": 0,
+				"running": 0,
+				"done": 0,
+				"failed": 0,
+				"skipped": 0,
+				"canceled": 0
+			},
+			"started_at": null,
+			"finished_at": null,
+			"videos": [],
+			"meta": {
+				"page": 1,
+				"page_size": 1,
+				"total_entries": 0,
+				"total_pages": 0
+			}
+		}
+	},
+	"running": {
+		"data": {
+			"run_id": "run_taki_20261019",
+			"source_url": "https://www.youtube.com/@takimoore",
+			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"status": "running",
+			"counts": {
+				"total": 2,
+				"queued": 0,
+				"running": 1,
+				"done": 1,
+				"failed": 0,
+				"skipped": 0,
+				"canceled": 0
+			},
+			"started_at": "2026-10-19T09:00:00Z",
+			"finished_at": null,
+			"videos": [
+				{
+					"source_url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+					"status": "done",
+					"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12"
+				}
+			],
+			"meta": {
+				"page": 1,
+				"page_size": 1,
+				"total_entries": 2,
+				"total_pages": 2
+			}
+		}
+	},
+	"completed": {
+		"data": {
+			"run_id": "run_taki_20261019",
+			"source_url": "https://www.youtube.com/@takimoore",
+			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"status": "completed",
+			"counts": {
+				"total": 2,
+				"queued": 0,
+				"running": 0,
+				"done": 2,
+				"failed": 0,
+				"skipped": 0,
+				"canceled": 0
+			},
+			"started_at": "2026-10-19T09:00:00Z",
+			"finished_at": "2026-10-19T09:01:00Z",
+			"videos": [
+				{
+					"source_url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+					"status": "done",
+					"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12"
+				}
+			],
+			"meta": {
+				"page": 1,
+				"page_size": 1,
+				"total_entries": 2,
+				"total_pages": 2
+			}
+		}
+	},
+	"second_page": {
+		"data": {
+			"run_id": "run_taki_20261019",
+			"source_url": "https://www.youtube.com/@takimoore",
+			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"status": "completed",
+			"counts": {
+				"total": 2,
+				"queued": 0,
+				"running": 0,
+				"done": 2,
+				"failed": 0,
+				"skipped": 0,
+				"canceled": 0
+			},
+			"started_at": "2026-10-19T09:00:00Z",
+			"finished_at": "2026-10-19T09:01:00Z",
+			"videos": [
+				{
+					"source_url": "https://www.youtube.com/watch?v=ScMzIvxBSi4",
+					"status": "done",
+					"internal_id": "sales-follow-up"
+				}
+			],
+			"meta": {
+				"page": 2,
+				"page_size": 1,
+				"total_entries": 2,
+				"total_pages": 2
+			}
+		}
+	},
+	"mixed_run": {
+		"data": {
+			"run_id": "run_taki_20261019",
+			"source_url": "https://www.youtube.com/@takimoore",
+			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"status": "completed",
+			"counts": {
+				"total": 3,
+				"queued": 0,
+				"running": 0,
+				"done": 1,
+				"failed": 1,
+				"skipped": 1,
+				"canceled": 0
+			},
+			"started_at": "2026-10-19T09:00:00Z",
+			"finished_at": "2026-10-19T09:01:00Z",
+			"videos": [
+				{
+					"source_url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+					"status": "done",
+					"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12"
+				},
+				{
+					"source_url": "https://www.youtube.com/watch?v=ScMzIvxBSi4",
+					"status": "failed",
+					"error": "Source video is private."
+				},
+				{
+					"source_url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+					"status": "skipped"
+				}
+			],
+			"meta": {
+				"page": 1,
+				"page_size": 20,
+				"total_entries": 3,
+				"total_pages": 1
+			}
+		}
+	},
+	"validation": {
+		"error": "validation_failed",
+		"details": { "collection_ids": ["not found"], "video_type": ["not found"] }
+	},
+	"preflight": {
+		"error": "managed_youtube_preflight_required",
+		"details": {
+			"channel": "takimoore",
+			"reason": "Connect channel in Mission Control"
+		}
+	}
+}

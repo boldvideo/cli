@@ -1,0 +1,22 @@
+{
+	"data": {
+		"type": "video",
+		"id": "k8N2pQ",
+		"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12",
+		"slug": "paid-workshops",
+		"imported_from": "url",
+		"title": "Paid workshops",
+		"teaser": "Run your first paid workshop.",
+		"description": "A practical guide to paid workshops.",
+		"duration": 125.75,
+		"published_at": "2026-10-18T10:00:00Z",
+		"tags": [{ "id": "sales", "name": "Sales", "slug": "sales" }],
+		"transcript": { "json": null, "text": null },
+		"subtitles": null,
+		"chapters": [],
+		"chapters_url": null,
+		"attachments": [],
+		"playback_policy": "public",
+		"languages": []
+	}
+}
