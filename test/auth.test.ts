@@ -312,7 +312,7 @@ test("flat and nested 401 errors keep the auth hint and prevent admin writes", a
 			expect(JSON.parse(result.stderr)).toEqual({
 				code: "not_authenticated",
 				message: "Unauthorized",
-				hint: "Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.",
+				hint: "Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.\nRead: boldvideo docs cli",
 				docs: "https://docs.boldvideo.com/cli#not-authenticated",
 				request_id: "req_auth",
 			});

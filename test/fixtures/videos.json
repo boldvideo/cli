@@ -1,0 +1,22 @@
+{
+	"data": [
+		{
+			"internal_id": "30c0d0a0-278c-4c90-b15c-e64e197abf12",
+			"id": "k8N2pQ",
+			"slug": "paid-workshops",
+			"title": "Paid workshops",
+			"status": "ready",
+			"privacy_level": "private",
+			"published_at": "2026-10-18T10:00:00Z",
+			"tags": [{ "id": "sales", "name": "Sales", "slug": "sales" }],
+			"collections": [{ "id": "workshops", "name": "Workshops" }],
+			"video_type": "workshop",
+			"duration": 125,
+			"import_source": "url",
+			"external_id": "workshop-2026-10",
+			"created_at": "2026-10-17T09:00:00Z",
+			"updated_at": "2026-10-18T10:05:00Z"
+		}
+	],
+	"meta": { "page": 1, "page_size": 1, "total_entries": 2, "total_pages": 2 }
+}

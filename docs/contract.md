@@ -11,6 +11,12 @@ The rules below govern shipped commands and future additions.
   or whenever `--json` is passed. No prose, ANSI escapes or progress on stdout in
   JSON mode. This includes help and version: piped `--version` returns
   `{"version":"0.1.0"}`; piped help returns command metadata.
+- `insights questions --format md` explicitly selects Markdown even when piped
+  for report exports; `--json` still takes precedence. Markdown is a question
+  list, so it cannot combine with `--group-by` or `--fields` unless JSON is selected.
+- Exception: `docs <topic>` prints raw markdown even when piped; `--json` wraps
+  it as `{url, title, markdown}`. Its first line identifies the canonical page URL.
+  `docs cli` renders the installed tree offline via `commandTreeToMarkdown(tree)` in `src/docs-markdown.ts`; known `docs` URLs append their `boldvideo docs <topic>` command to error hints.
 - Terminal output is plain text or a space-padded table with bold headers,
   two spaces between columns and no box drawing. Values and IDs are never
   truncated. Empty results without known columns say `No results.`.
@@ -27,6 +33,7 @@ The rules below govern shipped commands and future additions.
 - Use `output()`, `outputList()` and `hint()`, not direct writes from commands.
   Their final output and the error formatter redact environment, stored and
   supplied login keys, including their JSON-escaped representations.
+  `output(data, text, "text")` explicitly selects redacted text on any stream.
 
 ## Lists and identifiers
 
@@ -60,7 +67,7 @@ traces are not printed, including with `--debug`.
 Nonterminal stderr receives exactly one newline-terminated JSON object:
 
 ```json
-{"code":"unknown_command","message":"Unknown command 'hlep'.","hint":"boldvideo help --help","docs":"https://docs.boldvideo.com/cli#unknown-command"}
+{"code":"unknown_command","message":"Unknown command 'hlep'.","hint":"boldvideo help --help\nRead: boldvideo docs cli","docs":"https://docs.boldvideo.com/cli#unknown-command"}
 ```
 
 - `code`: stable snake_case; never depend on an API's mutable message.
