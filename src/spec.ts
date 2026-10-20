@@ -1,3 +1,5 @@
+import type { Credential } from "./auth";
+
 export type FlagValue = string | number | boolean | string[];
 export type Flags = Record<string, FlagValue | undefined>;
 
@@ -14,6 +16,7 @@ export interface Context {
 	debug: boolean;
 	commands: Command[];
 	path: string[];
+	credential?: Credential;
 }
 
 export interface Command {
@@ -27,6 +30,8 @@ export interface Command {
 	write?: boolean;
 	destructive?: boolean;
 	list?: boolean;
+	/** Defaults to any; local commands explicitly opt out. */
+	auth?: "any" | "admin" | "none";
 	subcommands?: Command[];
 	run?: (ctx: Context, args: string[], flags: Flags) => void | Promise<void>;
 }
@@ -51,6 +56,12 @@ export function commandFlags(command: Command): Flag[] {
 			default: false,
 			description:
 				"Enable diagnostics on terminal stderr; never print API keys.",
+		},
+		{
+			name: "profile",
+			type: "string",
+			description:
+				"Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence.",
 		},
 		...(command.list
 			? [

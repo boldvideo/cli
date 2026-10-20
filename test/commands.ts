@@ -1,4 +1,6 @@
 import { writeFileSync } from "node:fs";
+import { request } from "../src/api";
+import { type Credential, resolveKey } from "../src/auth";
 import { apiError } from "../src/errors";
 import { hint, output, outputList } from "../src/output";
 import type { Command } from "../src/spec";
@@ -20,6 +22,7 @@ export const fixture: Command = {
 		{
 			name: "list",
 			summary: "List recorded workshop videos.",
+			auth: "none",
 			list: true,
 			flags: [
 				{
@@ -58,6 +61,7 @@ export const fixture: Command = {
 		{
 			name: "delete",
 			summary: "Delete a test video.",
+			auth: "none",
 			destructive: true,
 			args: [{ name: "video", description: "Video ID or slug." }],
 			flags: [
@@ -92,6 +96,7 @@ export const fixture: Command = {
 		{
 			name: "echo",
 			summary: "Exercise typed flags and redacted output.",
+			auth: "none",
 			write: true,
 			args: [{ name: "title", description: "Workshop title." }],
 			flags: [
@@ -126,6 +131,7 @@ export const fixture: Command = {
 		{
 			name: "fail",
 			summary: "Format a recorded API error.",
+			auth: "none",
 			flags: [
 				{
 					name: "status",
@@ -158,14 +164,39 @@ export const fixture: Command = {
 			seeAlso: ["boldvideo help exit-codes"],
 			run(_ctx, _args, flags) {
 				if (flags.internal)
-					throw new Error(
-						`Unexpected failure: ${process.env.BOLDVIDEO_API_KEY ?? "no key"}`,
-					);
+					throw new Error(`Unexpected failure: ${resolveKey().key}`);
 				throw apiError(
 					Number(flags.status),
 					apiFailure,
 					flags["request-id"] as string | undefined,
 				);
+			},
+		},
+		{
+			name: "admin-write",
+			summary: "Exercise the admin authorization boundary.",
+			auth: "admin",
+			write: true,
+			examples: [
+				{
+					cmd: "boldvideo fixture admin-write --dry-run",
+					note: "Preview an admin write.",
+				},
+				{
+					cmd: "boldvideo fixture admin-write",
+					note: "Send an authorized test write.",
+				},
+			],
+			seeAlso: ["boldvideo whoami"],
+			async run(ctx, _args, flags) {
+				const result = flags["dry-run"]
+					? { dry_run: true }
+					: await request("POST", "/admin-test", {
+							key: (ctx.credential as Credential).key,
+							body: { title: "Paid workshops" },
+							query: { notify: false, count: 2 },
+						});
+				output(result, "Admin write accepted.", ctx.json);
 			},
 		},
 	],
