@@ -1,0 +1,16 @@
+{
+	"txt": "Welcome to paid workshops.\n",
+	"srt": "1\n00:00:01,250 --> 00:00:04,500\nWelcome to paid workshops.\n",
+	"vtt": "WEBVTT\n\n00:00:01.250 --> 00:00:04.500\nWelcome to paid workshops.\n",
+	"json": {
+		"language": "en",
+		"segments": [
+			{
+				"start": 1.25,
+				"end": 4.5,
+				"text": "Welcome to paid workshops.",
+				"speaker": "Marcel"
+			}
+		]
+	}
+}

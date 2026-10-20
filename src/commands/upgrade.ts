@@ -9,6 +9,7 @@ const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 export const upgrade: Command = {
 	name: "upgrade",
 	summary: "Show how to upgrade this installation without changing it.",
+	auth: "none",
 	description:
 		"Detect the install channel and print its upgrade command; never replace the running executable. Check npm for the latest version unless --no-check is passed. Check failures are ignored.",
 	flags: [

@@ -1,10 +1,8 @@
-name: Release binaries
+name: Release
 
-# BOLD-2043's npm publishing branch did not exist when this workflow was added.
-# npm publishing is added separately; the npm artifact remains dist/boldvideo.js.
 on:
   push:
-    tags: ["v[0-9]*"]
+    tags: [v*]
 
 permissions:
   contents: read
@@ -14,118 +12,102 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  binaries:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify tag matches package version
+        run: |
+          expected=$(node -p '"v" + require("./package.json").version')
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version ($expected)."
+            exit 1
+          fi
+          node -e 'const main = require("./package.json"); const alias = require("./packages/cli-alias/package.json"); if (alias.version !== main.version || alias.dependencies.boldvideo !== main.version) { console.error("Alias version and dependency must match package.json version"); process.exit(1); }'
+
+  check:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Publish to npm with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::Missing repository secret NPM_TOKEN. Add an npm publish token before releasing."
+            exit 1
+          fi
+          npm publish boldvideo-[0-9]*.tgz --provenance --access public
+          npm publish boldvideo-cli-*.tgz --provenance --access public
+
+  smoke:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BOLDVIDEO_API_KEY: ${{ secrets.BOLDVIDEO_SMOKE_API_KEY }}
+      BOLDVIDEO_API_URL: ${{ secrets.BOLDVIDEO_SMOKE_API_URL }}
+      BOLDVIDEO_SMOKE_YOUTUBE_URL: ${{ secrets.BOLDVIDEO_SMOKE_YOUTUBE_URL }}
+    steps:
+      - name: Check non-customer smoke credentials
+        id: credentials
+        run: |
+          if [ -z "$BOLDVIDEO_API_KEY" ] || [ -z "$BOLDVIDEO_API_URL" ] || [ -z "$BOLDVIDEO_SMOKE_YOUTUBE_URL" ]; then
+            echo "::notice::Skipping live smoke: configure BOLDVIDEO_SMOKE_API_KEY, BOLDVIDEO_SMOKE_API_URL and BOLDVIDEO_SMOKE_YOUTUBE_URL for a non-customer account."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.credentials.outputs.enabled == 'true'
+        with:
+          node-version: 22
+      - name: Install the published version
+        if: steps.credentials.outputs.enabled == 'true'
+        run: npm install --global "boldvideo@${GITHUB_REF_NAME#v}"
+      - name: Import the smoke YouTube source and wait
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo import youtube "$BOLDVIDEO_SMOKE_YOUTUBE_URL" --wait
+      - name: Ask with cited timestamps
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+      - name: Search the smoke library
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo search "paid workshops"
+
+  release:
+    needs: [publish, smoke]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/download-artifact@v4
         with:
-          bun-version: 1.3.10
-      - run: bun install --frozen-lockfile
-      - name: Check stable tag matches package version
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          bun -e 'import p from "./package.json"; if (!/^v\d+\.\d+\.\d+$/.test(process.env.TAG) || process.env.TAG !== "v" + p.version) throw new Error("Tag must match package version")'
-      - run: bun run build
-      - run: bun run typecheck
-      - run: bun test
-      - run: bun run ci:lint
-      - run: bun run build:binaries
-      - name: Verify checksums and host executable
-        run: |
-          (cd dist/bin && sha256sum --check checksums.txt)
-          dist/bin/boldvideo-linux-x64 --version > version.json
-          bun -e 'import p from "./package.json"; if ((await Bun.file("version.json").json()).version !== p.version) throw new Error("Wrong binary version")'
-          dist/bin/boldvideo-linux-x64 --help
-      - name: Create release or attach assets to existing release
+          name: package
+      - name: Create GitHub release with checked tarballs
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          # release-binaries.yml runs on the same tag and may have created the release already.
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
           fi
-          gh release upload "$TAG" dist/bin/boldvideo-* dist/bin/checksums.txt --clobber
-      - uses: actions/upload-artifact@v4
-        with:
-          name: binaries
-          path: dist/bin/
-
-  homebrew:
-    needs: binaries
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    env:
-      TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-    steps:
-      - name: Skip tap update when token is absent
-        if: env.TAP_GITHUB_TOKEN == ''
-        run: echo '::notice::TAP_GITHUB_TOKEN is absent; skipping Homebrew update.'
-      - uses: actions/checkout@v4
-        if: env.TAP_GITHUB_TOKEN != ''
-      - uses: oven-sh/setup-bun@v2
-        if: env.TAP_GITHUB_TOKEN != ''
-        with:
-          bun-version: 1.3.10
-      - uses: actions/download-artifact@v4
-        if: env.TAP_GITHUB_TOKEN != ''
-        with:
-          name: binaries
-          path: dist/bin
-      - name: Generate formula and open tap PR (or save fallback branch)
-        if: env.TAP_GITHUB_TOKEN != ''
-        env:
-          GH_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-          CLI_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          bun scripts/update-formula.ts "$TAG" dist/bin/checksums.txt packaging/homebrew/boldvideo.rb
-          gh auth setup-git
-          if gh repo clone boldvideo/homebrew-tap tap; then
-            cd tap
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            branch="boldvideo-$TAG"
-            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-              git fetch origin "$branch"
-              git switch -c "$branch" FETCH_HEAD
-            else
-              git switch -c "$branch"
-            fi
-            mkdir -p Formula
-            cp ../packaging/homebrew/boldvideo.rb Formula/boldvideo.rb
-            git add Formula/boldvideo.rb
-            if ! git diff --cached --quiet; then
-              git commit -m "Bump boldvideo to $TAG"
-              git push origin "$branch"
-            fi
-            if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
-              gh pr create --title "Bump boldvideo to $TAG" --body "Update binaries and SHA-256 checksums from boldvideo/cli $TAG.
-
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)."
-            fi
-          else
-            echo '::notice::Tap unreachable; saving formula on cli homebrew-tap branch.'
-            cp packaging/homebrew/boldvideo.rb "$RUNNER_TEMP/boldvideo.rb"
-            git restore packaging/homebrew/boldvideo.rb
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            if git ls-remote --exit-code --heads origin homebrew-tap >/dev/null 2>&1; then
-              git fetch origin homebrew-tap
-              git switch -C homebrew-tap FETCH_HEAD
-            else
-              git switch --orphan homebrew-tap
-            fi
-            mkdir -p Formula
-            cp "$RUNNER_TEMP/boldvideo.rb" Formula/boldvideo.rb
-            git add Formula/boldvideo.rb
-            if ! git diff --cached --quiet; then
-              git commit -m "Bump boldvideo to $TAG"
-              GH_TOKEN="$CLI_TOKEN" gh auth setup-git
-              GH_TOKEN="$CLI_TOKEN" git push origin homebrew-tap
-            fi
-          fi
+          gh release upload "$GITHUB_REF_NAME" boldvideo-*.tgz --clobber

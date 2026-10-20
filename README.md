@@ -1,71 +1,96 @@
 # boldvideo
 
-The command-line door to [Bold](https://boldvideo.com), for operators and their coding agents.
+Run your [Bold](https://boldvideo.com) video library from a shell, or hand it to an agent.
 
-```sh
-npx boldvideo import youtube https://www.youtube.com/@takimoore --wait
-npx boldvideo ask "What does Taki say about paid workshops versus free webinars?"
-```
+**Pre-release:** v0.1.0 has not shipped. Check `boldvideo --help` for what the
+installed binary can do.
 
 ## Install
 
-After the first publication, choose in this order:
+After the first release, pick one:
 
 ```sh
-# 1. npx: use Node 22+ without a global install
+# npx: no global install, needs Node 22+
 npx --yes boldvideo@latest --help
 
-# 2. Homebrew: managed standalone binary, no Node required
+# npm: global install, needs Node 22+
+npm install -g boldvideo
+
+# Homebrew: standalone binary, no Node required
 brew install boldvideo/tap/boldvideo
 
-# 3. Install script: no Node or Homebrew (URL not yet live)
+# Install script: no Node or Homebrew (URL not yet live)
 curl -fsSL https://boldvideo.com/install.sh | sh
 ```
 
-See [installation requirements and release status](docs/install.md). Global npm
-installation is also available for Node users: `npm install -g boldvideo`.
-Run `boldvideo upgrade` to print the right upgrade command for your installation;
-it never upgrades or replaces files itself. Use `--no-check` to stay offline.
+See [installation requirements and release status](docs/install.md).
+`boldvideo upgrade` prints the right upgrade command for how you installed; it
+never replaces files itself. Use `--no-check` to stay offline.
 
-Everything the admin UI can do, from a shell. JSON when piped, tables when not. `--help` on every command, with examples that work.
-
-Status: pre-release. Commands land one at a time; see `boldvideo --help` for what exists today.
-
-## Requirements and current commands
-
-Node **22 or newer** is required for npx/npm, but not standalone installations.
-Version 0.1.0 implements `--version`, `--help`, `help --json`, `help exit-codes`
-and `upgrade`; the import and ask examples above
-describe the planned interface, not commands available in this release.
-
-Help and version are JSON when piped, like every other success response. In a
-terminal they print readable text. Read the [command contract](docs/contract.md)
-for streams, exit codes, pagination, write safety and the auth integration point.
-
-## Development
-
-Use Bun 1.3.10 and TypeScript 6. Terminal tests use the platform's `script`
-utility: util-linux on Linux or the built-in BSD version on macOS. CI runs the
-suite on both platforms.
+Authenticate with your API key from **Settings → Developer** in Bold:
 
 ```sh
-bun install --frozen-lockfile
-bun run build
-bun run typecheck
-bun test
-bun run check
-bun run ci:lint
-npm pack
-npx ./boldvideo-0.1.0.tgz --version
-npx ./boldvideo-0.1.0.tgz --help
+export BOLDVIDEO_API_KEY='your-bold-api-key'
 ```
 
-The Node-targeted build is one bundled executable; end users do not need Bun or
-TypeScript. CI smoke-tests the packed package on Node 22 and 24. No publish
-workflow for npm is configured; the tag-triggered binary release pipeline is
-prepared but has not been run. See [install paths and release preparation](docs/install.md)
-for npx, Homebrew, and the install script (not yet live).
-Dependency declaration checking is skipped because Bun
-and Node ambient declarations overlap; all source and tests remain strict.
+## Three commands: import, ask, search
+
+Intended v0.1 surface: import a YouTube channel and wait for processing, ask a
+question with cited video timestamps, then find related material:
+
+```sh
+boldvideo import youtube https://www.youtube.com/@takimoore --wait
+boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+boldvideo search "paid workshops"
+```
+
+## v0.1 commands
+
+Intended cut, not a claim that sibling branches have shipped. Run
+[`boldvideo --help`](https://docs.boldvideo.com/cli) for the installed binary's
+source of truth, then `<command> --help` for its flags.
+
+| Command | Purpose |
+| --- | --- |
+| `login` | Store credentials for a Bold account. |
+| `whoami` | Show the active account. |
+| `profiles` | Manage stored account profiles. |
+| `import youtube` | Import a YouTube video or channel; `--wait` waits for ingest. |
+| `import url` | Import a video from its source URL. |
+| `videos list` | List a bounded page of videos. |
+| `videos get` | Read one video's details. |
+| `videos transcript` | Read a video's transcript. |
+| `videos update` | Edit a video's metadata. |
+| `videos publish` | Publish a video. |
+| `videos unpublish` | Unpublish a video. |
+| `videos delete` | Delete a video with confirmation. |
+| `collections …` | List, create, rename, and add or remove videos. |
+| `viewers …` | List, get, sync, progress and memory. |
+| `insights questions` | What viewers asked, since a date or duration. |
+| `ask` | Ask the library a question with cited timestamps. |
+| `search` | Find relevant video content. |
+| `api` | Call an arbitrary API method and path. |
+| `docs` | Read documentation, including `docs cli`. |
+| `help` | Read command metadata and examples. |
+| `help exit-codes` | Look up stable process exit codes. |
+| `upgrade` | Print the upgrade command for this installation. |
+| `--version` | Print the installed version. |
+
+Folder import (`import dir`) is not in the v0.1.0 cut.
+
+## For agents
+
+- JSON automatically when piped; readable tables in a terminal. Use `--json`
+  to request JSON explicitly. Errors go to stderr, never stdout.
+- `--help` works everywhere; `boldvideo help --json` exposes command metadata.
+- `boldvideo docs cli` opens the CLI reference (intended v0.1 surface).
+- Stable exit codes: **0** success, **1** general failure, **2** usage,
+  **3** auth/permissions, **4** not found, **5** timeout.
+  Run `boldvideo help exit-codes` for details.
+
+[CLI reference](https://docs.boldvideo.com/cli) ·
+[Repository](https://github.com/boldvideo/cli) ·
+[Command contract](docs/contract.md) · [Releasing](docs/releasing.md) ·
+[Install paths](docs/install.md)
 
 MIT.

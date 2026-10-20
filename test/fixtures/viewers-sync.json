@@ -1,0 +1,22 @@
+[
+	{
+		"external_id": "member_2050",
+		"name": "Sam Rivera",
+		"first_name": "Sam",
+		"avatar_url": "https://acme.com/sam.jpg"
+	},
+	{
+		"external_id": "member_2049",
+		"name": "Alexandra Kim",
+		"display_name": "Alex",
+		"plan": "enterprise"
+	},
+	{
+		"external_id": "member_2048",
+		"name": "Maria Garcia",
+		"cohort": "autumn",
+		"plan": "pro"
+	},
+	{ "external_id": "member_rejected", "name": "Rejected Member" },
+	{ "name": "Missing External ID" }
+]

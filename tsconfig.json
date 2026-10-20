@@ -11,5 +11,5 @@
 		"noUncheckedIndexedAccess": true,
 		"types": ["node", "bun-types"]
 	},
-	"include": ["src", "test", "scripts"]
+	"include": ["src", "test", "evals", "scripts"]
 }

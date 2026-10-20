@@ -1,0 +1,28 @@
+{
+	"name": "@boldvideo/cli",
+	"version": "0.1.0",
+	"description": "Compatibility package for the boldvideo CLI.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/boldvideo/cli.git",
+		"directory": "packages/cli-alias"
+	},
+	"type": "module",
+	"bin": {
+		"boldvideo": "bin/boldvideo.js"
+	},
+	"files": [
+		"bin"
+	],
+	"engines": {
+		"node": ">=22"
+	},
+	"dependencies": {
+		"boldvideo": "0.1.0"
+	},
+	"publishConfig": {
+		"provenance": true,
+		"access": "public"
+	}
+}

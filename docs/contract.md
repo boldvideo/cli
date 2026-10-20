@@ -3,8 +3,7 @@
 This contract applies to every command. The registered command objects in
 `src/commands/` are the source of truth for command reference material; read them
 with `boldvideo help --json`, rather than maintaining a second command reference.
-Help, version and advisory upgrade instructions ship in 0.1.0. The rules below
-also govern future commands.
+The rules below govern shipped commands and future additions.
 
 ## Streams and color
 
@@ -12,6 +11,12 @@ also govern future commands.
   or whenever `--json` is passed. No prose, ANSI escapes or progress on stdout in
   JSON mode. This includes help and version: piped `--version` returns
   `{"version":"0.1.0"}`; piped help returns command metadata.
+- `insights questions --format md` explicitly selects Markdown even when piped
+  for report exports; `--json` still takes precedence. Markdown is a question
+  list, so it cannot combine with `--group-by` or `--fields` unless JSON is selected.
+- Exception: `docs <topic>` prints raw markdown even when piped; `--json` wraps
+  it as `{url, title, markdown}`. Its first line identifies the canonical page URL.
+  `docs cli` renders the installed tree offline via `commandTreeToMarkdown(tree)` in `src/docs-markdown.ts`; known `docs` URLs append their `boldvideo docs <topic>` command to error hints.
 - Terminal output is plain text or a space-padded table with bold headers,
   two spaces between columns and no box drawing. Values and IDs are never
   truncated. Empty results without known columns say `No results.`.
@@ -19,13 +24,16 @@ also govern future commands.
   they are dim and suppressed if stderr is not a terminal. `--debug` enables
   command diagnostics, not a raw credential-bearing dump. It never changes the
   success or error format.
+  Viewer diagnostics must not include emails or traits; explicitly requested
+  viewer records on stdout remain unchanged by `--debug`.
 - Stdout and stderr detect terminals independently. `--json` controls success
   output; errors follow stderr's terminal status. A nonempty `NO_COLOR` disables
   color on both streams. Color conveys meaning: red error codes, cyan error
   hints, bold table headers. No color is emitted to pipes.
 - Use `output()`, `outputList()` and `hint()`, not direct writes from commands.
-  Their final output and the error formatter redact `BOLDVIDEO_API_KEY`, including
-  its JSON-escaped representation.
+  Their final output and the error formatter redact environment, stored and
+  supplied login keys, including their JSON-escaped representations.
+  `output(data, text, "text")` explicitly selects redacted text on any stream.
 
 ## Lists and identifiers
 
@@ -59,7 +67,7 @@ traces are not printed, including with `--debug`.
 Nonterminal stderr receives exactly one newline-terminated JSON object:
 
 ```json
-{"code":"unknown_command","message":"Unknown command 'hlep'.","hint":"boldvideo help --help","docs":"https://docs.boldvideo.com/cli#unknown-command"}
+{"code":"unknown_command","message":"Unknown command 'hlep'.","hint":"boldvideo help --help\nRead: boldvideo docs cli","docs":"https://docs.boldvideo.com/cli#unknown-command"}
 ```
 
 - `code`: stable snake_case; never depend on an API's mutable message.
@@ -70,13 +78,40 @@ Nonterminal stderr receives exactly one newline-terminated JSON object:
 
 Terminal stderr prints the same fields on separate lines; the hint is visibly
 set apart. Failures do not produce success output. `--json` does not change error
-stream selection.
+stream selection. Bulk video mutations are the exception: stdout contains one
+result per supplied ID, including per-item errors. Any failed item produces a
+single `bulk_failed` error on stderr with exit 1 and the failed IDs in its hint.
+
+Batch sync is the exception: it emits one ordered result array with a standard
+error object on each failed row, continues processing other rows, and exits 1 if
+any row failed. Terminal output includes the action table and summary. Dry-run
+reports planned actions without writing; it cannot predict server-side write
+validation failures.
+
+Sync never deletes by default. Explicit prune snapshots all viewer pages before
+writes and matches against the input's external IDs. If any input row fails,
+pruning is skipped. Deletion failures are reported individually and do not stop
+the remaining deletions. Confirmed empty input prunes all viewers; dry-run plans
+the same deletions without writing.
+
+Bulk imports from stdin or `--from` are the partial-success exception: stdout
+contains one ordered array of per-URL results, even for one URL. Successes have
+`source_url`, `ok: true` and `video` or `run`; failures have `source_url`,
+`ok: false` and `error` with the standard fields (without `exitCode`). Dry-run
+successes contain `dry_run`, `method`, `path` and `body` instead. Every URL is
+attempted sequentially, including repeated URLs. Any item failure produces an
+aggregate `bulk_failed` error on stderr and exit 1 after all results are printed.
+With `--wait`, each item's readiness wait has its own timeout; a timeout is a
+per-item failure, not a reason to abandon the rest. Positional single-URL imports
+retain their record output and specific failure exit codes. Input/authentication
+and collection-resolution errors before processing remain command-wide failures.
 
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
-adapter uses `body.request_id`. It uses `body.message` when supplied. Auth/API
+adapter uses `body.request_id`. It reads `body.error.message` for nested errors
+or `body.message` for flat errors, keeping CLI codes determined by HTTP status. Auth/API
 commands remain responsible for making requests and adapting any SDK-specific
-exception shape; no network or authentication module ships yet.
+exception shape; `src/api.ts` handles fetch responses.
 
 | Exit | Meaning | Codes currently used |
 | --- | --- | --- |
@@ -94,6 +129,9 @@ meanings from `src/exit-codes.ts`.
 
 - `write: true` or `destructive: true` automatically adds boolean `--dry-run` and
   `--yes`, both false by default. `destructive: true` implies a write for flags.
+- A boolean flag may declare `destructive: true` on a `write: true` command.
+  Confirmation is then required only when that flag is set (for example, sync
+  `--prune`), not for other invocations of the same command.
 - Before running a destructive handler, the dispatcher requires `--yes` when
   stdin is not a terminal. This also applies to previews: use `--dry-run --yes`.
   Help never requires confirmation. The refusal hint reproduces the original
@@ -111,7 +149,12 @@ related command invocations, optional list/write/destructive markers, subcommand
 and `run(ctx, args, flags)`. Groups can omit `run`; invoking one then displays its
 help. The help group has a handler because `help --json` returns the whole tree.
 
-Positionals are required unless marked `required: false`. Flag types are
+Positionals are required unless marked `required: false`. A final argument marked
+`variadic: true` accepts all remaining positionals and appears as `id...` in help.
+Bulk video mutations make it optional so IDs can also come from piped stdin, one
+per line, when no positional IDs are supplied. With the bounded list envelope,
+use `boldvideo videos list --json | jq -r '.items[].internal_id' | boldvideo videos publish`.
+Flag types are
 `string`, `number`, `boolean` and `list`; defaults and required flags are enforced
 by the dispatcher. Number values must be finite. Following `node:util.parseArgs`,
 use `--rating=-3.5` for a negative flag value, and `--` before a positional that
@@ -135,21 +178,60 @@ errors use a synthetic fixture; tests require no network. Terminal tests use
 the platform's `script` utility (util-linux on Linux, BSD on macOS) for real
 pseudo-terminals, with platform-specific arguments confined to the test helper.
 
+Import `run(argv, options)` from `test/run.ts` for all process-based tests.
+It takes a full executable argv and asynchronously returns
+`{ status, stdout, stderr }`, allowing loopback servers to keep responding.
+Options are `env`, `tty`, `columns`, `stderr: "tty" | "pipe"`, and `input`. `waitFor` delays
+input until a stdout prompt appears. For shell continuation commands, pass
+`["sh", "-c", command]`. Suites supply their isolated config directories through
+`env`. Keep all `script` spawning and platform handling in this helper.
+
 Examples must be realistic and copy-pasteable, never `foo` or placeholders like
 `<id>`. After this initial baseline, help and error wording change only in
 response to a failing cold-agent eval transcript.
 
-## Authentication boundary for BOLD-2028
+## Authentication
 
-Resolve `BOLDVIDEO_API_KEY` before stored profiles. `BOLDVIDEO_API_URL` overrides
+Commands default to `auth: "any"`. The dispatcher resolves a credential before
+calling the handler and supplies it as `ctx.credential`. Set `auth: "admin"` to
+check the live `/me` identity before the handler can write. Set `auth: "none"` on
+local commands such as login, help and profile management. Help and version
+always work without credentials. Auth requirements are not inherited by children.
+
+`src/auth.ts` exports:
+
+- `resolveKey(profile?)`: environment key, then explicit profile, then active
+  profile; returns `{ key, profile }`, with `profile: null` for environment auth.
+  An explicit missing profile never falls back to another stored profile.
+- `loadProfiles()` / `saveProfiles(data)`: read and atomically replace
+  `profiles.json` under `$XDG_CONFIG_HOME/boldvideo`, `~/.config/boldvideo`, or
+  `%APPDATA%/boldvideo` on Windows. POSIX modes are 0700 for the directory and
+  0600 for the file. The shape is `{ active: string | null, profiles: { [name]:
+  { key: string } } }`. Corrupt files fail without being overwritten.
+- `identity(key)`: fetch and parse `/me`; its wire-format adapter is isolated
+  in `parseIdentity`, which unwraps `data`. The response from BOLD_admin PR #717
+  is recorded in `test/fixtures/me.json`; callers still receive `Identity` directly.
+- `Credential`, `Profiles`, `Identity`: the types for those return values.
+
+Login verifies the supplied key, saves it under the account slug (or `--profile`)
+and activates that profile. With no token flag it reads piped stdin or prompts
+without echo. Profile switching does not override `BOLDVIDEO_API_KEY`. Removing
+the active profile clears the default rather than silently switching accounts.
+Logout removes a stored key, not an environment variable. All local writes
+support dry-run; logout and profile removal require `--yes` on piped stdin.
+
+`src/api.ts` exports `apiUrl()` and
+`request(method, path, { key, body?, query? })`. Requests use Bearer auth, stay
+under the API base URL, refuse redirects, parse JSON (null for empty responses),
+and translate HTTP errors and request IDs through `apiError`. A request times
+out after 30 seconds with exit 5. `BOLDVIDEO_API_URL` overrides
 `https://app.boldvideo.io/api/v1`. OpenAPI is at
-`https://app.boldvideo.io/api/openapi`. Load `@boldvideo/bold-js` inside commands
-that need it, never in the dispatcher or at module top level.
+`https://app.boldvideo.io/api/openapi`.
 
-Add auth commands to `src/commands/index.ts`; the help tree and generic checks
-will discover them. Use exit 3 for missing credentials or permissions and supply
-a concrete login/profile hint once those commands exist. Extend output redaction
-to the resolved profile credential before introducing stored keys; currently only
-the environment key exists. Never log credentials, request headers or SDK error
-objects directly. SDK-uncovered endpoints belong in a small authenticated fetch
-helper in `src/api.ts` with a `// TODO(bold-js)` comment.
+Never log credentials, request headers or SDK error objects. Load
+`@boldvideo/bold-js` inside commands that need it, never in the dispatcher or at
+module top level. SDK-uncovered endpoints use `request` with a `// TODO(bold-js)`
+comment at the call site. Tests use fixtures and a loopback server, never the
+live API. BOLD-2013 still owns deployment of `/me`. Missing, invalid, revoked
+or expired keys and inactive accounts all return HTTP 401, which maps to
+`not_authenticated`, exit 3, and the same setup hint as missing local credentials.

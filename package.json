@@ -20,10 +20,13 @@
 	"scripts": {
 		"build": "bun build src/main.ts --target=node --outfile=dist/boldvideo.js",
 		"build:binaries": "bun scripts/build-binaries.ts",
+		"docs:reference": "bun scripts/docs-reference.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test",
 		"check": "biome check --write .",
 		"ci:lint": "biome ci .",
+		"baseline:generate": "bun run build && node scripts/baseline.mjs",
+		"release:check": "node scripts/release-check.mjs",
 		"prepack": "bun run build"
 	},
 	"publishConfig": {

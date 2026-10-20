@@ -1,12 +1,18 @@
+import type { Credential } from "./auth";
+
 export type FlagValue = string | number | boolean | string[];
 export type Flags = Record<string, FlagValue | undefined>;
 
 export interface Flag {
 	name: string;
+	short?: string;
 	type: "string" | "number" | "boolean" | "list";
+	/** Preserve each repeated value verbatim instead of splitting comma lists. */
+	verbatim?: boolean;
 	default?: FlagValue;
 	description: string;
 	required?: boolean;
+	destructive?: boolean;
 }
 
 export interface Context {
@@ -14,19 +20,27 @@ export interface Context {
 	debug: boolean;
 	commands: Command[];
 	path: string[];
+	credential?: Credential;
 }
 
 export interface Command {
 	name: string;
 	summary: string;
 	description?: string;
-	args?: { name: string; description: string; required?: boolean }[];
+	args?: {
+		name: string;
+		description: string;
+		required?: boolean;
+		variadic?: boolean;
+	}[];
 	flags?: Flag[];
 	examples: [{ cmd: string; note: string }, { cmd: string; note: string }];
 	seeAlso: string[];
 	write?: boolean;
 	destructive?: boolean;
 	list?: boolean;
+	/** Defaults to any; local commands explicitly opt out. */
+	auth?: "any" | "admin" | "none";
 	subcommands?: Command[];
 	run?: (ctx: Context, args: string[], flags: Flags) => void | Promise<void>;
 }
@@ -51,6 +65,12 @@ export function commandFlags(command: Command): Flag[] {
 			default: false,
 			description:
 				"Enable diagnostics on terminal stderr; never print API keys.",
+		},
+		{
+			name: "profile",
+			type: "string",
+			description:
+				"Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence.",
 		},
 		...(command.list
 			? [
