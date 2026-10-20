@@ -1,0 +1,10 @@
+# Bold Video Documentation
+
+Full content of every page: https://docs.boldvideo.com/llms-full.txt
+
+## Pages
+
+- [Welcome to Bold](https://docs.boldvideo.com/guides) — What Bold is, how it works, and where to start
+- [Quickstart](https://docs.boldvideo.com/guides/quickstart) — From login to your first shared video
+- [Videos](https://docs.boldvideo.com/sdk/videos) — List, fetch, and search videos with the SDK
+- [Videos](https://docs.boldvideo.com/api/reference/videos)

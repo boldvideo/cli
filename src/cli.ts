@@ -13,6 +13,7 @@ function options(command: Command): ParseArgsOptionsConfig {
 			flag.name,
 			{
 				type: flag.type === "boolean" ? "boolean" : "string",
+				...(flag.short ? { short: flag.short } : {}),
 				multiple: flag.type === "list",
 			},
 		]),
@@ -101,10 +102,12 @@ export function parse(argv: string[], registry = commands) {
 					throw usage(`--${flag.name} must be a number.`);
 				flags[flag.name] = Number(value);
 			} else if (flag.type === "list") {
-				flags[flag.name] = (value as string[])
-					.flatMap((item) => item.split(","))
-					.map((item) => item.trim())
-					.filter(Boolean);
+				flags[flag.name] = flag.verbatim
+					? (value as string[])
+					: (value as string[])
+							.flatMap((item) => item.split(","))
+							.map((item) => item.trim())
+							.filter(Boolean);
 			} else flags[flag.name] = value as string | boolean;
 		}
 		if (
@@ -150,7 +153,12 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 		showHelp(command, path, flags.json === true);
 		return;
 	}
-	if (command.destructive && !flags.yes && !process.stdin.isTTY) {
+	if (
+		(command.destructive ||
+			command.flags?.some((flag) => flag.destructive && flags[flag.name])) &&
+		!flags.yes &&
+		!process.stdin.isTTY
+	) {
 		throw error(
 			"confirmation_required",
 			"Destructive commands require --yes when stdin is not a terminal.",

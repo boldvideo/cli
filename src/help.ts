@@ -22,7 +22,7 @@ export function rootCommand(commands: Command[]): Command {
 	};
 }
 
-export function commandTree(command: Command): object {
+export function commandTree(command: Command): Command {
 	const { run: _run, subcommands, ...data } = command;
 	return {
 		...data,
