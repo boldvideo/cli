@@ -1,5 +1,7 @@
 import type { Command } from "../spec";
+import { api } from "./api";
 import { ask } from "./ask";
+import { collections } from "./collections";
 import { help } from "./help";
 import { login } from "./login";
 import { logout, profiles } from "./profiles";
@@ -12,6 +14,8 @@ export const commands: Command[] = [
 	whoami,
 	profiles,
 	logout,
+	collections,
 	ask,
 	search,
+	api,
 ];

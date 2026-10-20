@@ -1,0 +1,67 @@
+{
+	"data": [
+		{
+			"id": "8c36b95c-7be2-4b7e-bf63-2ee639f7a246",
+			"name": "Customer workshops",
+			"slug": "customer-workshops",
+			"parent_id": null,
+			"position": 0,
+			"video_count": 2
+		},
+		{
+			"id": "b7acef65-0165-48f3-9555-845c343779ee",
+			"name": "Empty collection",
+			"slug": "empty-collection",
+			"video_count": 0
+		},
+		{
+			"id": "aa879c56-16eb-4852-81b9-a78aaf158b3f",
+			"name": "Draft lessons",
+			"slug": "draft-lessons"
+		}
+	],
+	"videos": [
+		{
+			"id": "aB12cD34",
+			"title": "Pricing masterclass",
+			"slug": "pricing-masterclass"
+		},
+		{
+			"id": "eF56gH78",
+			"title": "Onboarding basics",
+			"slug": "onboarding-basics"
+		}
+	],
+	"created": {
+		"data": {
+			"id": "34e71a76-365f-4aef-bfcb-ae6dc960fbf3",
+			"name": "Pricing lessons",
+			"slug": "pricing-lessons",
+			"parent_id": "8c36b95c-7be2-4b7e-bf63-2ee639f7a246",
+			"position": 0,
+			"video_count": 0
+		},
+		"existing": false
+	},
+	"added": {
+		"data": {
+			"id": "8c36b95c-7be2-4b7e-bf63-2ee639f7a246",
+			"name": "Customer workshops",
+			"slug": "customer-workshops",
+			"video_count": 3
+		},
+		"membership_count": 3,
+		"already_member_ids": ["fe117414-71d6-45cd-8138-24275b903e92"]
+	},
+	"removed": {
+		"data": {
+			"id": "8c36b95c-7be2-4b7e-bf63-2ee639f7a246",
+			"name": "Customer workshops",
+			"slug": "customer-workshops",
+			"video_count": 1
+		},
+		"membership_count": 1,
+		"already_member_ids": []
+	},
+	"unknown_video": { "error": "video_not_found" }
+}
