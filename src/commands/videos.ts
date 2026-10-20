@@ -4,6 +4,7 @@ import { type Credential, identity } from "../auth";
 import { apiError, type CliError, error, redact } from "../errors";
 import { hint, output, outputList, table } from "../output";
 import type { Command } from "../spec";
+import { videoWrites } from "./videos-write";
 
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 const filters = ["status", "privacy", "collection", "tag", "type", "since"];
@@ -349,5 +350,6 @@ export const videos: Command = {
 				}
 			},
 		},
+		...videoWrites,
 	],
 };
