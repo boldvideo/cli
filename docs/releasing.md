@@ -74,7 +74,9 @@ Publish only through GitHub Actions. Never run `npm publish` locally.
    (with `--wait`), ask, and search demo against the smoke account. Any failed
    command fails the workflow and blocks GitHub release creation. If credentials
    are absent, it emits a notice and allows release creation without live smoke.
-   Ordinary branch pushes never run this workflow.
+   Ordinary branch pushes never run this workflow. `release-binaries.yml` runs
+   on the same tag, builds standalone binaries, attaches them to the same GitHub
+   release and opens the Homebrew tap PR when `TAP_GITHUB_TOKEN` is set.
 6. Verify publication:
 
    ```sh

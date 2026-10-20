@@ -9,6 +9,7 @@ import { insights } from "./insights";
 import { login } from "./login";
 import { logout, profiles } from "./profiles";
 import { search } from "./search";
+import { upgrade } from "./upgrade";
 import { videos } from "./videos";
 import { viewers } from "./viewers";
 import { whoami } from "./whoami";
@@ -28,4 +29,5 @@ export const commands: Command[] = [
 	insights,
 	api,
 	docs,
+	upgrade,
 ];

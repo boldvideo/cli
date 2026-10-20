@@ -1757,6 +1757,40 @@ Read the quickstart without leaving the shell.
 boldvideo docs guides/quickstart
 ```
 
+## boldvideo upgrade
+
+Show how to upgrade this installation without changing it.
+
+Detect the install channel and print its upgrade command; never replace the running executable. Check npm for the latest version unless --no-check is passed. Check failures are ignored.
+
+```sh
+boldvideo upgrade [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help | boolean | false | Show command help. |
+| --json | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --no-check | boolean | false | Skip the optional npm version check (3 second timeout). |
+
+### Examples
+
+Find the upgrade command for this install.
+
+```sh
+boldvideo upgrade
+```
+
+Read upgrade instructions offline as JSON.
+
+```sh
+boldvideo upgrade --no-check --json
+```
+
 ## Recipes
 
 The five video workflows below depend on sibling command branches. They are

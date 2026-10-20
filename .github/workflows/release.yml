@@ -105,4 +105,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create "$GITHUB_REF_NAME" boldvideo-*.tgz --verify-tag --generate-notes
+        run: |
+          # release-binaries.yml runs on the same tag and may have created the release already.
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+          fi
+          gh release upload "$GITHUB_REF_NAME" boldvideo-*.tgz --clobber

@@ -2,15 +2,30 @@
 
 Run your [Bold](https://boldvideo.com) video library from a shell, or hand it to an agent.
 
-**Pre-release:** v0.1.0 has not shipped. The demo below is the intended v0.1
-surface; commands are landing on sibling branches. This checkout currently
-implements help and version only. Check `boldvideo --help` for what is available.
+**Pre-release:** v0.1.0 has not shipped. Check `boldvideo --help` for what the
+installed binary can do.
 
-Requires Node **22 or newer**. Install once (after launch), or use `npx boldvideo`:
+## Install
+
+After the first release, pick one:
 
 ```sh
+# npx: no global install, needs Node 22+
+npx --yes boldvideo@latest --help
+
+# npm: global install, needs Node 22+
 npm install -g boldvideo
+
+# Homebrew: standalone binary, no Node required
+brew install boldvideo/tap/boldvideo
+
+# Install script: no Node or Homebrew (URL not yet live)
+curl -fsSL https://boldvideo.com/install.sh | sh
 ```
+
+See [installation requirements and release status](docs/install.md).
+`boldvideo upgrade` prints the right upgrade command for how you installed; it
+never replaces files itself. Use `--no-check` to stay offline.
 
 Authenticate with your API key from **Settings → Developer** in Bold:
 
@@ -45,19 +60,23 @@ source of truth, then `<command> --help` for its flags.
 | `videos list` | List a bounded page of videos. |
 | `videos get` | Read one video's details. |
 | `videos transcript` | Read a video's transcript. |
+| `videos update` | Edit a video's metadata. |
 | `videos publish` | Publish a video. |
 | `videos unpublish` | Unpublish a video. |
 | `videos delete` | Delete a video with confirmation. |
+| `collections …` | List, create, rename, and add or remove videos. |
+| `viewers …` | List, get, sync, progress and memory. |
+| `insights questions` | What viewers asked, since a date or duration. |
 | `ask` | Ask the library a question with cited timestamps. |
 | `search` | Find relevant video content. |
 | `api` | Call an arbitrary API method and path. |
 | `docs` | Read documentation, including `docs cli`. |
 | `help` | Read command metadata and examples. |
 | `help exit-codes` | Look up stable process exit codes. |
+| `upgrade` | Print the upgrade command for this installation. |
 | `--version` | Print the installed version. |
 
-Not in the v0.1.0 cut unless merged before release: video edits (`videos update`),
-collections, folder import (`import dir`), viewers, and insights.
+Folder import (`import dir`) is not in the v0.1.0 cut.
 
 ## For agents
 
@@ -71,6 +90,7 @@ collections, folder import (`import dir`), viewers, and insights.
 
 [CLI reference](https://docs.boldvideo.com/cli) ·
 [Repository](https://github.com/boldvideo/cli) ·
-[Command contract](docs/contract.md) · [Releasing](docs/releasing.md)
+[Command contract](docs/contract.md) · [Releasing](docs/releasing.md) ·
+[Install paths](docs/install.md)
 
 MIT.
