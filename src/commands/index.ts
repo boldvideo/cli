@@ -4,6 +4,7 @@ import { ask } from "./ask";
 import { collections } from "./collections";
 import { docs } from "./docs";
 import { help } from "./help";
+import { imports } from "./import";
 import { insights } from "./insights";
 import { login } from "./login";
 import { logout, profiles } from "./profiles";
@@ -18,6 +19,7 @@ export const commands: Command[] = [
 	whoami,
 	profiles,
 	logout,
+	imports,
 	videos,
 	collections,
 	viewers,

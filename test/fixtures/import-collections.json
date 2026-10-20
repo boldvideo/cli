@@ -1,0 +1,24 @@
+{
+	"data": [
+		{
+			"id": "b1c5296d-caf9-4bf4-a037-dcf191650350",
+			"name": "Paid workshops",
+			"slug": "workshops"
+		},
+		{
+			"id": "3df0cf1c-b63d-4ab4-b9e1-e2767f2cd075",
+			"name": "Coaching",
+			"slug": "coaching"
+		},
+		{
+			"id": "9bf2b8e1-8c28-44f8-a40e-a3fbd339d850",
+			"name": "Archive",
+			"slug": "archive-2025"
+		},
+		{
+			"id": "f1ed4733-5f14-41a1-863e-58bbd2a9debb",
+			"name": "Archive",
+			"slug": "archive-2026"
+		}
+	]
+}
