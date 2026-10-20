@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","tools":["shell_command","shell_command_kill","shell_command_status"],"mcp_servers":[],"agent_mode":"medium"}
+{"type":"assistant","message":{"type":"message","role":"assistant","content":[{"type":"text","text":"I’ll check the installed version using the boldvideo CLI."},{"type":"tool_use","id":"tool_1","name":"shell_command","input":{"command":"boldvideo --version","workdir":"/tmp/eval/work"}}],"stop_reason":"tool_use","usage":{"input_tokens":0,"cache_creation_input_tokens":5147,"cache_read_input_tokens":0,"output_tokens":57}}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tool_1","content":"{\"output\":\"{\\\"version\\\":\\\"0.1.0\\\"}\\n\",\"exitCode\":0}","is_error":false}]}}
+{"type":"assistant","message":{"type":"message","role":"assistant","content":[{"type":"text","text":"The installed boldvideo version is **0.1.0**."}],"stop_reason":"end_turn","usage":{"input_tokens":0,"cache_creation_input_tokens":91,"cache_read_input_tokens":5144,"output_tokens":18}}}
+{"type":"result","subtype":"success","is_error":false,"num_turns":2,"result":"The installed boldvideo version is **0.1.0**."}

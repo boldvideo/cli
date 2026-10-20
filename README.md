@@ -1,55 +1,76 @@
 # boldvideo
 
-The command-line door to [Bold](https://boldvideo.com), for operators and their coding agents.
+Run your [Bold](https://boldvideo.com) video library from a shell, or hand it to an agent.
 
-```sh
-npx boldvideo import youtube https://www.youtube.com/@takimoore --wait
-npx boldvideo ask "What does Taki say about paid workshops versus free webinars?"
-```
+**Pre-release:** v0.1.0 has not shipped. The demo below is the intended v0.1
+surface; commands are landing on sibling branches. This checkout currently
+implements help and version only. Check `boldvideo --help` for what is available.
 
-Install once:
+Requires Node **22 or newer**. Install once (after launch), or use `npx boldvideo`:
 
 ```sh
 npm install -g boldvideo
-export BOLDVIDEO_API_KEY=...   # Settings → Developer in your Bold account
-boldvideo --help
 ```
 
-Everything the admin UI can do, from a shell. JSON when piped, tables when not. `--help` on every command, with examples that work.
-
-Status: pre-release. Commands land one at a time; see `boldvideo --help` for what exists today.
-
-## Requirements and current commands
-
-Node **22 or newer** is required. Version 0.1.0 implements only `--version`,
-`--help`, `help --json` and `help exit-codes`; the import and ask examples above
-describe the planned interface, not commands available in this release.
-
-Help and version are JSON when piped, like every other success response. In a
-terminal they print readable text. Read the [command contract](docs/contract.md)
-for streams, exit codes, pagination, write safety and the auth integration point.
-
-## Development
-
-Use Bun 1.3.10 and TypeScript 6. Terminal tests use the platform's `script`
-utility: util-linux on Linux or the built-in BSD version on macOS. CI runs the
-suite on both platforms.
+Authenticate with your API key from **Settings → Developer** in Bold:
 
 ```sh
-bun install --frozen-lockfile
-bun run build
-bun run typecheck
-bun test
-bun run check
-bun run ci:lint
-npm pack
-npx ./boldvideo-0.1.0.tgz --version
-npx ./boldvideo-0.1.0.tgz --help
+export BOLDVIDEO_API_KEY='your-bold-api-key'
 ```
 
-The Node-targeted build is one bundled executable; end users do not need Bun or
-TypeScript. CI smoke-tests the packed package on Node 22 and 24. No publish
-workflow is configured. Dependency declaration checking is skipped because Bun
-and Node ambient declarations overlap; all source and tests remain strict.
+## Three commands: import, ask, search
+
+Intended v0.1 surface: import a YouTube channel and wait for processing, ask a
+question with cited video timestamps, then find related material:
+
+```sh
+boldvideo import youtube https://www.youtube.com/@takimoore --wait
+boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+boldvideo search "paid workshops"
+```
+
+## v0.1 commands
+
+Intended cut, not a claim that sibling branches have shipped. Run
+[`boldvideo --help`](https://docs.boldvideo.com/cli) for the installed binary's
+source of truth, then `<command> --help` for its flags.
+
+| Command | Purpose |
+| --- | --- |
+| `login` | Store credentials for a Bold account. |
+| `whoami` | Show the active account. |
+| `profiles` | Manage stored account profiles. |
+| `import youtube` | Import a YouTube video or channel; `--wait` waits for ingest. |
+| `import url` | Import a video from its source URL. |
+| `videos list` | List a bounded page of videos. |
+| `videos get` | Read one video's details. |
+| `videos transcript` | Read a video's transcript. |
+| `videos publish` | Publish a video. |
+| `videos unpublish` | Unpublish a video. |
+| `videos delete` | Delete a video with confirmation. |
+| `ask` | Ask the library a question with cited timestamps. |
+| `search` | Find relevant video content. |
+| `api` | Call an arbitrary API method and path. |
+| `docs` | Read documentation, including `docs cli`. |
+| `help` | Read command metadata and examples. |
+| `help exit-codes` | Look up stable process exit codes. |
+| `--version` | Print the installed version. |
+
+Not in the v0.1.0 cut unless merged before release: video edits (`videos update`),
+collections, folder import (`import dir`), viewers, and insights.
+
+## For agents
+
+- JSON automatically when piped; readable tables in a terminal. Use `--json`
+  to request JSON explicitly. Errors go to stderr, never stdout.
+- `--help` works everywhere; `boldvideo help --json` exposes command metadata.
+- `boldvideo docs cli` opens the CLI reference (intended v0.1 surface).
+- Stable exit codes: **0** success, **1** general failure, **2** usage,
+  **3** auth/permissions, **4** not found, **5** timeout.
+  Run `boldvideo help exit-codes` for details.
+
+[CLI reference](https://docs.boldvideo.com/cli) ·
+[Repository](https://github.com/boldvideo/cli) ·
+[Command contract](docs/contract.md) · [Releasing](docs/releasing.md)
 
 MIT.

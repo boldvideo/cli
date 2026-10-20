@@ -15,6 +15,7 @@ import { commandTree, rootCommand } from "../src/help";
 import { type Command, commandFlags } from "../src/spec";
 import { fixture } from "./commands";
 import { run as execute } from "./run";
+import { words } from "./words";
 
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-test-"));
 const built = resolve("dist/boldvideo.js");
@@ -50,40 +51,6 @@ function run(
 			...options.env,
 		},
 	});
-}
-
-// A shell-word tokenizer, not a shell: examples are parsed, never executed.
-function words(example: string): string[] {
-	const result: string[] = [];
-	let word = "";
-	let quote = "";
-	let started = false;
-	for (let i = 0; i < example.length; i++) {
-		const char = example[i] ?? "";
-		if (char === "\\" && quote !== "'") {
-			const next = example[++i];
-			if (next === undefined) throw new Error("Trailing escape in example");
-			word += next;
-			started = true;
-		} else if (quote) {
-			if (char === quote) quote = "";
-			else word += char;
-		} else if (char === "'" || char === '"') {
-			quote = char;
-			started = true;
-		} else if (/\s/.test(char)) {
-			if (started) result.push(word);
-			word = "";
-			started = false;
-		} else {
-			word += char;
-			started = true;
-		}
-	}
-	if (quote) throw new Error("Unclosed quote in example");
-	if (started) result.push(word);
-	expect(result.shift()).toBe("boldvideo");
-	return result;
 }
 
 function contracts(command: Command, path: string[], testOnly = false) {
@@ -195,14 +162,16 @@ test("unknown commands suggest close matches and fall back to top-level help", a
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toMatchObject({
 			code: "unknown_command",
-			hint,
+			hint: `${hint}\nRead: boldvideo docs cli`,
 			docs: "https://docs.boldvideo.com/cli#unknown-command",
 		});
 		expect(result.stderr.trim().split("\n")).toHaveLength(1);
 	}
 	const result = await run(["fixture", "ech"], { fixture: true });
 	expect(result.status).toBe(2);
-	expect(JSON.parse(result.stderr).hint).toBe("boldvideo fixture echo --help");
+	expect(JSON.parse(result.stderr).hint).toBe(
+		"boldvideo fixture echo --help\nRead: boldvideo docs cli",
+	);
 });
 
 test("parseArgs failures use the usage error contract", async () => {
@@ -321,7 +290,10 @@ test("destructive calls require --yes before any effect, and dry-run makes no wr
 	expect(refusal.code).toBe("confirmation_required");
 	expect((await run(["--dry-run", "--yes", ...args], options)).status).toBe(0);
 	expect(existsSync(destination)).toBe(false);
-	expect((await run(words(refusal.hint), options)).status).toBe(0);
+	expect(refusal.hint).toEndWith("\nRead: boldvideo docs cli");
+	expect((await run(words(refusal.hint.split("\n")[0]), options)).status).toBe(
+		0,
+	);
 	expect(readFileSync(destination, "utf8")).toBe("paid-workshops");
 });
 
@@ -342,7 +314,7 @@ test("API errors preserve request IDs and map to stable exits", async () => {
 		expect(JSON.parse(result.stderr)).toEqual({
 			code,
 			message: "You cannot delete this video. Ask an administrator for access.",
-			hint: "boldvideo --help",
+			hint: "boldvideo --help\nRead: boldvideo docs cli",
 			docs: `https://docs.boldvideo.com/cli#${code.replaceAll("_", "-")}`,
 			request_id: "req_8d7b9e2a",
 		});
@@ -446,7 +418,7 @@ test("terminal tables keep full IDs; hints and meaningful colors respect NO_COLO
 	expect(failure).toContain("\u001b[31munknown_command");
 	expect(failure).toContain("\u001b[36mHint: boldvideo help --help");
 	expect((await run(["hlep"], { tty: true })).stdout).toBe(
-		"unknown_command: Unknown command 'hlep'.\nHint: boldvideo help --help\nDocs: https://docs.boldvideo.com/cli#unknown-command\n",
+		"unknown_command: Unknown command 'hlep'.\nHint: boldvideo help --help\nRead: boldvideo docs cli\nDocs: https://docs.boldvideo.com/cli#unknown-command\n",
 	);
 	const key = "bold_test_terminal_secret";
 	const debug = (

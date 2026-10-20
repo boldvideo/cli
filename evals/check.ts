@@ -265,6 +265,24 @@ async function check(task: Task, answer: string | undefined) {
 	};
 }
 
+// One line on stderr when a check fails, so runner summaries say why.
+function reason(report: object): string {
+	if ("error" in report) return String(report.error);
+	const evidence = (report as { evidence: Awaited<ReturnType<typeof check>> })
+		.evidence;
+	const missing =
+		evidence.answer?.contains
+			.filter((item) => !item.pass)
+			.map((item) => item.text) ?? [];
+	if (missing.length)
+		return `Answer missing expected text: ${missing.join(", ")}`;
+	if (evidence.answer?.regex && !evidence.answer.regex.pass)
+		return `Answer does not match ${evidence.answer.regex.pattern}`;
+	if ("api" in evidence)
+		return `API check ${evidence.api.jq} returned ${JSON.stringify(evidence.api.result)} (HTTP ${evidence.api.status})`;
+	return "Check failed.";
+}
+
 if (import.meta.main) {
 	let report: object;
 	let exit = 2;
@@ -301,6 +319,7 @@ if (import.meta.main) {
 			error: cause instanceof Error ? cause.message : "Checker error.",
 		};
 	}
+	if (exit !== 0) console.error(reason(report));
 	let output = JSON.stringify(report);
 	for (const key of [
 		process.env.BOLDVIDEO_API_KEY,

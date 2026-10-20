@@ -1,0 +1,8 @@
+{"type":"system","subtype":"init","tools":["Bash"]}
+{"type":"assistant","message":{"id":"msg_1","content":[{"type":"text","text":"I will inspect the CLI."},{"type":"tool_use","id":"tool_1","name":"Bash","input":{"command":"boldvideo --help"}}],"usage":{"input_tokens":19,"output_tokens":4}}}
+{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"input_json_delta","partial_json":"{}"}}}
+{"type":"assistant","message":{"id":"msg_1","content":[{"type":"tool_use","id":"tool_1","name":"Bash","input":{"command":"boldvideo --help"}}],"usage":{"input_tokens":19,"output_tokens":8}}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tool_1","content":"CLI help"}]}}
+{"type":"assistant","message":{"id":"msg_2","content":[{"type":"tool_use","id":"tool_2","name":"Bash","input":{"command":"boldvideo --version"}}],"usage":{"input_tokens":31,"output_tokens":6}}}
+{"type":"assistant","message":{"id":"msg_3","content":[{"type":"text","text":"Version 0.1.0"}],"usage":{"input_tokens":41,"output_tokens":5}}}
+{"type":"result","subtype":"success","is_error":false,"result":"Installed version: 0.1.0","usage":{"input_tokens":91,"cache_read_input_tokens":17,"cache_creation_input_tokens":3,"output_tokens":19}}

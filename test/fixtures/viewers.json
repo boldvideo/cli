@@ -1,0 +1,58 @@
+{
+	"list": {
+		"data": [
+			{
+				"id": "12345678-1234-1234-1234-123456789abc",
+				"external_id": "member_2048",
+				"email": "maria@acme.com",
+				"name": "Maria Garcia",
+				"display_name": "Maria",
+				"traits": { "plan": "pro", "cohort": "autumn" },
+				"created_at": "2026-10-01T09:00:00Z"
+			},
+			{
+				"id": "22345678-1234-1234-1234-123456789abc",
+				"external_id": "member_2049",
+				"email": "alex@acme.com",
+				"name": "Alex Kim",
+				"created_at": "2026-10-02T09:00:00Z"
+			}
+		],
+		"meta": { "page": 1, "page_size": 20, "total_entries": 2, "total_pages": 1 }
+	},
+	"progress": {
+		"data": [
+			{
+				"id": "98936fa0-6826-48cc-aac1-89f42235dc8e",
+				"viewer_id": "12345678-1234-1234-1234-123456789abc",
+				"video_id": "87654321-4321-4321-4321-987654321cba",
+				"title": "Agency onboarding",
+				"current_time": 300,
+				"duration": 1000,
+				"percentage": 30,
+				"completed": false,
+				"updated_at": "2026-10-18T12:05:00Z"
+			},
+			{
+				"id": "98936fa0-6826-48cc-aac1-89f42235dc8f",
+				"viewer_id": "12345678-1234-1234-1234-123456789abc",
+				"video_id": "87654321-4321-4321-4321-987654321cbb",
+				"title": "Growth workshop",
+				"current_time": 600,
+				"duration": 600,
+				"percentage": 100,
+				"completed": true,
+				"updated_at": "2026-10-19T12:05:00Z"
+			}
+		],
+		"meta": { "total": 2, "completed": 1, "in_progress": 1 }
+	},
+	"memory": {
+		"data": {
+			"content": "Situation & goals:\n- Runs a three-person agency.",
+			"enabled": true,
+			"conversations_count": 4,
+			"updated_at": "2026-10-18T12:00:00Z"
+		}
+	}
+}

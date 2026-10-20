@@ -1,0 +1,4 @@
+{
+	"default": { "input_per_million": 1, "output_per_million": 5 },
+	"claude-opus-5-5": { "input_per_million": 1, "output_per_million": 5 }
+}
