@@ -24,6 +24,8 @@ The rules below govern shipped commands and future additions.
   they are dim and suppressed if stderr is not a terminal. `--debug` enables
   command diagnostics, not a raw credential-bearing dump. It never changes the
   success or error format.
+  Viewer diagnostics must not include emails or traits; explicitly requested
+  viewer records on stdout remain unchanged by `--debug`.
 - Stdout and stderr detect terminals independently. `--json` controls success
   output; errors follow stderr's terminal status. A nonempty `NO_COLOR` disables
   color on both streams. Color conveys meaning: red error codes, cyan error
@@ -78,6 +80,18 @@ Terminal stderr prints the same fields on separate lines; the hint is visibly
 set apart. Failures do not produce success output. `--json` does not change error
 stream selection.
 
+Batch sync is the exception: it emits one ordered result array with a standard
+error object on each failed row, continues processing other rows, and exits 1 if
+any row failed. Terminal output includes the action table and summary. Dry-run
+reports planned actions without writing; it cannot predict server-side write
+validation failures.
+
+Sync never deletes by default. Explicit prune snapshots all viewer pages before
+writes and matches against the input's external IDs. If any input row fails,
+pruning is skipped. Deletion failures are reported individually and do not stop
+the remaining deletions. Confirmed empty input prunes all viewers; dry-run plans
+the same deletions without writing.
+
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
 adapter uses `body.request_id`. It reads `body.error.message` for nested errors
@@ -101,6 +115,9 @@ meanings from `src/exit-codes.ts`.
 
 - `write: true` or `destructive: true` automatically adds boolean `--dry-run` and
   `--yes`, both false by default. `destructive: true` implies a write for flags.
+- A boolean flag may declare `destructive: true` on a `write: true` command.
+  Confirmation is then required only when that flag is set (for example, sync
+  `--prune`), not for other invocations of the same command.
 - Before running a destructive handler, the dispatcher requires `--yes` when
   stdin is not a terminal. This also applies to previews: use `--dry-run --yes`.
   Help never requires confirmation. The refusal hint reproduces the original

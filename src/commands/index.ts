@@ -9,6 +9,7 @@ import { login } from "./login";
 import { logout, profiles } from "./profiles";
 import { search } from "./search";
 import { videos } from "./videos";
+import { viewers } from "./viewers";
 import { whoami } from "./whoami";
 
 export const commands: Command[] = [
@@ -19,6 +20,7 @@ export const commands: Command[] = [
 	logout,
 	videos,
 	collections,
+	viewers,
 	ask,
 	search,
 	insights,

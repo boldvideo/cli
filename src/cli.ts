@@ -153,7 +153,12 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 		showHelp(command, path, flags.json === true);
 		return;
 	}
-	if (command.destructive && !flags.yes && !process.stdin.isTTY) {
+	if (
+		(command.destructive ||
+			command.flags?.some((flag) => flag.destructive && flags[flag.name])) &&
+		!flags.yes &&
+		!process.stdin.isTTY
+	) {
 		throw error(
 			"confirmation_required",
 			"Destructive commands require --yes when stdin is not a terminal.",

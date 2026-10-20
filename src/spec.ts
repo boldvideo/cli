@@ -12,6 +12,7 @@ export interface Flag {
 	default?: FlagValue;
 	description: string;
 	required?: boolean;
+	destructive?: boolean;
 }
 
 export interface Context {

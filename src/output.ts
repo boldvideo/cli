@@ -50,6 +50,7 @@ export function outputList(
 	items: Record<string, unknown>[],
 	flags: Flags,
 	next?: string,
+	text?: string,
 ): void {
 	const fields = flags.fields as string[] | undefined;
 	const rows = fields?.length
@@ -59,7 +60,7 @@ export function outputList(
 		: items;
 	output(
 		{ items: rows, has_more: Boolean(next), ...(next ? { next } : {}) },
-		table(rows, fields?.length ? fields : undefined),
+		fields?.length ? table(rows, fields) : (text ?? table(rows)),
 		flags.json === true,
 	);
 	if (next) hint(`More results: ${next}`);
