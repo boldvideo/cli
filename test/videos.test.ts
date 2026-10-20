@@ -381,7 +381,7 @@ test("missing videos and pending transcripts exit 4 with actionable hints and re
 		expect(missing.stdout).toBe("");
 		expect(JSON.parse(missing.stderr)).toMatchObject({
 			code: "not_found",
-			hint: "boldvideo videos list",
+			hint: "boldvideo videos list\nRead: boldvideo docs cli",
 			request_id: "req_missing_2032",
 		});
 	}
