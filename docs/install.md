@@ -1,12 +1,9 @@
 # Install boldvideo
 
-**Preparation only:** standalone assets and the tap are not live until the first
-stable tagged release and formula PR are published/merged. The intended script
-URL, `https://boldvideo.com/install.sh`, is **not yet live**. No release or npm
-publication is performed by this change.
+Standalone binaries and the Homebrew formula are produced for every tagged
+release. The install script URL, `https://boldvideo.com/install.sh`, is **not yet live**.
 
-All paths install the same CLI. Version 0.1.0 includes help, version and upgrade commands;
-use `boldvideo --help` to see what is available. Piped help/version return JSON.
+All paths install the same CLI. Run `boldvideo --help` to see every command. Piped help/version return JSON.
 
 | Path | Best for | Requirements |
 | --- | --- | --- |
@@ -16,7 +13,7 @@ use `boldvideo --help` to see what is available. Piped help/version return JSON.
 
 ## npx / npm
 
-Once the npm package is published:
+With Node 22 or newer:
 
 ```sh
 npx --yes boldvideo@latest --help
@@ -28,7 +25,7 @@ boldvideo --help
 Only `dist/boldvideo.js` is shipped in the npm package, not the standalone
 executables. Node is required at runtime; Bun is not.
 
-## Homebrew (after the first release)
+## Homebrew
 
 ```sh
 brew tap boldvideo/tap
