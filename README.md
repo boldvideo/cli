@@ -2,12 +2,9 @@
 
 Run your [Bold](https://boldvideo.com) video library from a shell, or hand it to an agent.
 
-**Pre-release:** v0.1.0 has not shipped. Check `boldvideo --help` for what the
-installed binary can do.
-
 ## Install
 
-After the first release, pick one:
+Pick one:
 
 ```sh
 # npx: no global install, needs Node 22+
@@ -35,7 +32,7 @@ export BOLDVIDEO_API_KEY='your-bold-api-key'
 
 ## Three commands: import, ask, search
 
-Intended v0.1 surface: import a YouTube channel and wait for processing, ask a
+The v0.1 flow: import a YouTube channel and wait for processing, ask a
 question with cited video timestamps, then find related material:
 
 ```sh
@@ -46,8 +43,7 @@ boldvideo search "paid workshops"
 
 ## v0.1 commands
 
-Intended cut, not a claim that sibling branches have shipped. Run
-[`boldvideo --help`](https://docs.boldvideo.com/cli) for the installed binary's
+Run [`boldvideo --help`](https://docs.boldvideo.com/cli) for the installed binary's
 source of truth, then `<command> --help` for its flags.
 
 | Command | Purpose |
@@ -83,7 +79,7 @@ Folder import (`import dir`) is not in the v0.1.0 cut.
 - JSON automatically when piped; readable tables in a terminal. Use `--json`
   to request JSON explicitly. Errors go to stderr, never stdout.
 - `--help` works everywhere; `boldvideo help --json` exposes command metadata.
-- `boldvideo docs cli` opens the CLI reference (intended v0.1 surface).
+- `boldvideo docs cli` prints the CLI reference, offline.
 - Stable exit codes: **0** success, **1** general failure, **2** usage,
   **3** auth/permissions, **4** not found, **5** timeout.
   Run `boldvideo help exit-codes` for details.
