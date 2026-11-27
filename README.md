@@ -102,7 +102,7 @@ Imports skip anything already in the library, so running one twice is safe.
 
 | | |
 | --- | --- |
-| **Import** | `import youtube` for a video, playlist or channel. `import url` for a file or page. `--wait` holds until transcripts and search are ready; `import status` and `import cancel` follow a run. |
+| **Import** | `import youtube` for a video, playlist or channel. `import url` for a file or page. `import dir` uploads a folder of files, with a CSV map for titles, dates and collections, and picks up where it stopped when run again; `import file` uploads one. `--wait` holds until transcripts and search are ready; `import status` and `import cancel` follow a run. |
 | **Videos** | `videos list`, `get` and `transcript` (txt, srt, vtt, json). `videos update`, `publish`, `unpublish` and `delete`. |
 | **Collections** | `collections list`, `create`, `rename`, `add`, `remove` and `videos`. |
 | **Answers** | `ask` answers from your transcripts and cites the moments. `search` finds them. |

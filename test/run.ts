@@ -12,6 +12,8 @@ export interface RunOptions {
 	input?: string;
 	/** Send input only after this marker appears on terminal stdout. */
 	waitFor?: string;
+	/** Send SIGINT, as Ctrl-C does, once this settles. */
+	interruptWhen?: Promise<unknown>;
 }
 
 export interface RunResult {
@@ -96,6 +98,7 @@ export async function run(
 			child.stderr.setEncoding("utf8").on("data", (data) => {
 				stderr += data;
 			});
+			options.interruptWhen?.then(() => child.kill("SIGINT"));
 			child.once("error", reject);
 			child.stdin.once("error", reject);
 			child.once("close", (status) =>

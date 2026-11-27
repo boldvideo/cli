@@ -108,6 +108,21 @@ per-item failure, not a reason to abandon the rest. Positional single-URL import
 retain their record output and specific failure exit codes. Input/authentication
 and collection-resolution errors before processing remain command-wide failures.
 
+Folder uploads (`import dir`) follow the same partial-success rule with one
+object on stdout: `items`, one entry per file in map order and then path order,
+and `results`, the result CSV's path when one is written. Each item has `file`
+(the path inside the folder), `ok` and `status`: `uploaded`, `already_uploaded`,
+`failed`, `missing` (in the map, not in the folder) or `skipped` (in the map
+and on disk, but not selected). Successes carry `video`, failures `error` with
+the standard fields. Dry-run prints `dry_run: true` and items with `action`
+(`upload`, `missing` or `skipped`), `size` and the start request as `body`. Any
+failed or missing file produces one `bulk_failed` error on stderr and exit 1
+after every file was attempted; its hint is the command to run again. A map
+that cannot be used (unknown column, invalid value) is a `usage_error` before
+anything is sent. `import file` keeps the single-record output and specific
+exit codes of a positional import. Ctrl-C exits 130 with `interrupted`; parts
+already sent stay, and the same command continues from them.
+
 `apiError(status, body, requestId?, hint?)` translates an HTTP response into this
 value. Pass the response header's request ID when available; otherwise the
 adapter uses `body.request_id`. It reads `body.error.message` for nested errors

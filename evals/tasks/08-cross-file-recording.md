@@ -1,7 +1,7 @@
 ---
 id: 08-cross-file-recording
-version: 1
-prompt: 'File "Pricing foundations" under Coaching too, keeping it in Workshops.'
+version: 2
+prompt: 'Put "Pricing foundations" under Coaching too, keeping it in Workshops.'
 starting_state: reset
 min_calls: 3
 check:
@@ -13,6 +13,6 @@ trap: false
 chain: false
 ---
 
-File "Pricing foundations" under Coaching too, keeping it in Workshops.
+Put "Pricing foundations" under Coaching too, keeping it in Workshops.
 
 This measures additive collection membership after resolving human-readable references. A move that drops the original membership is not an acceptable shortcut.

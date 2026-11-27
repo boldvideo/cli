@@ -154,7 +154,8 @@ export async function resolveCollections(
 
 // request() discards response status and 422 details and cannot abort a read
 // at the wait deadline. Keep that transport here, without changing shared API code.
-export async function importResponse(
+// Returns every HTTP answer, so a caller can act on a refusal it knows how to handle.
+export async function importFetch(
 	method: "GET" | "POST",
 	key: string,
 	path: string,
@@ -202,14 +203,36 @@ export async function importResponse(
 				"boldvideo whoami",
 			);
 	}
-	if (!response.ok) {
+	return {
+		data,
+		status: response.status,
+		ok: response.ok,
+		requestId: response.headers.get("x-request-id") ?? undefined,
+	};
+}
+
+export async function importResponse(
+	method: "GET" | "POST",
+	key: string,
+	path: string,
+	body?: unknown,
+	waitSignal?: AbortSignal,
+) {
+	const { data, status, ok, requestId } = await importFetch(
+		method,
+		key,
+		path,
+		body,
+		waitSignal,
+	);
+	if (!ok) {
 		const failure = apiError(
-			response.status,
+			status,
 			data,
-			response.headers.get("x-request-id") ?? undefined,
+			requestId,
 			"boldvideo import --help",
 		);
-		if (response.status === 422) {
+		if (status === 422) {
 			const payload = data as {
 				error?: string;
 				details?: Record<string, unknown>;
@@ -232,5 +255,5 @@ export async function importResponse(
 		}
 		throw failure;
 	}
-	return { data, status: response.status };
+	return { data, status };
 }

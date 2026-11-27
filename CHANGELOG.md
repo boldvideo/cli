@@ -14,6 +14,14 @@
 - Short flags: `-h`, `-j` (`--json`), `-n` (`--limit`), `-y` (`--yes`),
   `-p` (`--profile`), `-v` (`--version`).
 - `help --json` lists known values for a flag or argument as `choices`.
+- Folder upload: `import dir <path>` uploads every video file in a folder
+  (`--recursive`, `--include`, `--exclude`), and `import file <path>` uploads one.
+  `--map meta.csv` sets title, date, type, tags, collection, privacy and
+  external ID per file, over the same metadata flags as `import url`. A result
+  CSV (`<map name>.results.csv`, or `--results`) records `status`, `bold_id`
+  and `error_msg` per file. Running the same command again continues an
+  interrupted run and uploads nothing twice. `--concurrency` sets the files in
+  flight (default 3); `--wait` and `--dry-run` work as elsewhere.
 
 ## 0.1.0 — 2026-11-27
 
