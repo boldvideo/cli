@@ -64,10 +64,10 @@ jobs:
             exit 1
           fi
       - name: Stage boldvideo
-        run: npm stage publish --access public
+        run: npm stage publish --access public --loglevel verbose
       - name: Stage @boldvideo/cli
         working-directory: packages/cli-alias
-        run: npm stage publish --access public
+        run: npm stage publish --access public --loglevel verbose
       - name: Say what happens next
         run: |
           {
