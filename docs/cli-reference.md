@@ -16,27 +16,31 @@ With Node.js 22 or newer, run `npm install -g boldvideo`; Bun is not required.
 
 ## Authenticate
 
-Create a key in Bold under **Settings → Developer**, then run `boldvideo login` and enter it at the hidden prompt; for automation, inject `BOLDVIDEO_API_KEY` from a secret store (it overrides `--profile` and the active saved profile), never from a committed script or logged argument.
+Bold has two kinds of API key. The CLI accepts either, and `boldvideo whoami`
+shows which kind is active (`key_kind`).
+
+| Key | Where it comes from | What it covers |
+| --- | --- | --- |
+| API key | Create it in Bold under **Settings → Developer**. | `whoami`, `ask`, `search`, `api`, `viewers`, and reading published videos, transcripts and collections. |
+| Admin key | Bold issues it on request. It cannot be created in Settings. | Everything above, plus `import`, `videos update`, `publish`, `unpublish` and `delete`, `collections create`, `rename`, `add` and `remove`, `insights`, and listing private or unpublished videos. |
+
+Run `boldvideo login` and enter the key at the hidden prompt. For automation, inject `BOLDVIDEO_API_KEY` from a secret store (it overrides `--profile` and the active saved profile), never from a committed script or logged argument.
 
 ## Quick start
 
-Planned workflow: `import` and `ask` are not registered in this base version.
-These three invocations show the intended import, wait, ask sequence, not
-commands you can execute yet. The second invocation repeats the same source
-with `--wait`; imports deduplicate by source URL. There is no separate `wait`
-command. Confirm support with `boldvideo help --json` after the sibling commands
-merge, then parser-check this block before treating it as runnable shell.
+Import a YouTube channel and wait for processing, ask a question with cited
+video timestamps, then find related material. `import` needs an admin key;
+`ask` and `search` work with any key.
 
-```text
-boldvideo import youtube https://www.youtube.com/@takimoore
+```sh
 boldvideo import youtube https://www.youtube.com/@takimoore --wait
-boldvideo ask "What does Taki say about paid workshops versus free webinars?"
+boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+boldvideo search "paid workshops"
 ```
 
-The command sections below document only the registered surface. Each uses a
-plain heading with a predictable anchor: for example,
-[`boldvideo profiles list`](#boldvideo-profiles-list). An eventual heading
-`boldvideo videos list` will have the anchor `#boldvideo-videos-list`.
+Imports deduplicate by source URL, so running the first command again is safe.
+Each command below has a plain heading with a predictable anchor, for example
+[`boldvideo videos list`](#boldvideo-videos-list).
 
 ## boldvideo
 
