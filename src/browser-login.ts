@@ -80,7 +80,10 @@ function openBrowser(url: string): void {
 export async function browserLogin(options: {
 	openBrowser: boolean;
 }): Promise<SignIn> {
-	const start = await post("/cli/logins", { client_name: hostname() });
+	// "marcels-mbp.home" reads better as "marcels-mbp" on the approval page.
+	const start = await post("/cli/logins", {
+		client_name: hostname().split(".")[0],
+	});
 	if (start.status === 404)
 		throw error(
 			"api_error",

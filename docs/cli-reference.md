@@ -24,7 +24,7 @@ boldvideo login
 
 It shows a short code and opens Bold. Check the code matches, pick the workspaces to allow, and approve. The CLI can then do what you can do in the admin. Each workspace is saved as a profile named after its slug: `boldvideo profiles use <slug>` switches the default, and `-t <slug>` runs one command in another workspace. `boldvideo logout` ends the sign-in.
 
-For servers and CI, where nobody can open a browser, use a key instead: set `BOLDVIDEO_API_KEY`, or pipe it to `boldvideo login`. Inject it from a secret store, never from a committed script or logged argument.
+For servers and CI, where nobody can open a browser, use a key instead: set `BOLDVIDEO_API_KEY`, or pipe it to `boldvideo login --token -`. Inject it from a secret store, never from a committed script or logged argument.
 
 | Key | Where it comes from | What it covers |
 | --- | --- | --- |
@@ -464,7 +464,7 @@ boldvideo help exit-codes --json
 
 Sign in with your browser, or verify and save an API key.
 
-Opens Bold in your browser to approve this terminal; each workspace you approve is saved as a profile named after its slug. No browser on this machine? The link and code are printed: open them anywhere. For servers and CI, pass a key with --token or on stdin, or set BOLDVIDEO_API_KEY, which overrides saved profiles. --profile names the saved profile.
+Opens Bold in your browser to approve this terminal; each workspace you approve is saved as a profile named after its slug. No browser on this machine? The link and code are printed: open them anywhere. For servers and CI, pass a key with --token (--token - reads it from stdin), or set BOLDVIDEO_API_KEY, which overrides saved profiles. --profile names the saved profile.
 
 ```sh
 boldvideo login [flags]
@@ -481,7 +481,7 @@ boldvideo login [flags]
 | --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
 | --yes | boolean | false | Confirm a destructive operation. |
-| --token | string | — | API key to verify and store instead of signing in with the browser. |
+| --token | string | — | API key to verify and store instead of signing in with the browser; use - to read it from stdin. |
 | --no-browser | boolean | false | Print the sign-in link without opening a browser. |
 
 ### Examples

@@ -201,7 +201,7 @@ test("login verifies and activates profiles; env wins over explicit and active s
 	});
 	expect(
 		(
-			await run(["login", "--profile", "customer-demo"], {
+			await run(["login", "--token", "-", "--profile", "customer-demo"], {
 				input: `${admin}\n`,
 			})
 		).status,
@@ -258,7 +258,9 @@ test("missing keys exit 3 with actionable setup instructions; help needs no key"
 	for (const text of ["boldvideo login", "BOLDVIDEO_API_KEY"])
 		expect(failure.hint).toContain(text);
 	expect((await run(["help"])).status).toBe(0);
-	expect((await run(["login"], { input: "\n" })).status).toBe(3);
+	expect((await run(["login", "--token", "-"], { input: "\n" })).status).toBe(
+		3,
+	);
 });
 
 test("admin authorization prevents writes with tenant keys, including stored keys", async () => {
@@ -511,6 +513,20 @@ test("login prints JSON on stdout and the link on stderr when asked for JSON", a
 			server.port +
 			"/cli/KTRM-4XQ9 and approve code KTRM-4XQ9.",
 	);
+});
+
+test("without a terminal, login still starts the browser sign-in and hands over the link", async () => {
+	polls = [pending, approved(workspaces.slice(0, 1))];
+	const result = await run(["login"]);
+	expect(result.status).toBe(0);
+	expect(result.stderr).toBe(
+		`Open http://127.0.0.1:${server.port}/cli/KTRM-4XQ9 and approve code KTRM-4XQ9.\n`,
+	);
+	expect(JSON.parse(result.stdout).profile).toBe("hrtu");
+	expect(result.stdout + result.stderr).not.toContain(
+		workspaces[0]?.key as string,
+	);
+	expect(stored().active).toBe("hrtu");
 });
 
 test("a refused, expired or cancelled sign-in saves nothing", async () => {

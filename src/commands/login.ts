@@ -95,12 +95,15 @@ function welcome(
 		);
 	} else {
 		const width = Math.max(...[...names.values()].map((name) => name.length));
+		const nameWidth = Math.max(
+			...signIn.workspaces.map((workspace) => workspace.name.length),
+		);
 		lines.push(`  ${colors.dim("Workspaces")}`);
 		for (const workspace of signIn.workspaces) {
 			const profile = names.get(workspace.slug) as string;
 			const current = profile === active;
 			lines.push(
-				`  ${current ? mint("●", color) : " "} ${profile.padEnd(width)}   ${workspace.name}${current ? `   ${colors.dim("active")}` : ""}`,
+				`  ${current ? mint("●", color) : " "} ${profile.padEnd(width)}   ${current ? `${workspace.name.padEnd(nameWidth)}   ${colors.dim("active")}` : workspace.name}`,
 			);
 		}
 		const other = signIn.workspaces
@@ -190,7 +193,7 @@ export const login: Command = {
 	name: "login",
 	summary: "Sign in with your browser, or verify and save an API key.",
 	description:
-		"Opens Bold in your browser to approve this terminal; each workspace you approve is saved as a profile named after its slug. No browser on this machine? The link and code are printed: open them anywhere. For servers and CI, pass a key with --token or on stdin, or set BOLDVIDEO_API_KEY, which overrides saved profiles. --profile names the saved profile.",
+		"Opens Bold in your browser to approve this terminal; each workspace you approve is saved as a profile named after its slug. No browser on this machine? The link and code are printed: open them anywhere. For servers and CI, pass a key with --token (--token - reads it from stdin), or set BOLDVIDEO_API_KEY, which overrides saved profiles. --profile names the saved profile.",
 	auth: "none",
 	write: true,
 	flags: [
@@ -198,7 +201,7 @@ export const login: Command = {
 			name: "token",
 			type: "string",
 			description:
-				"API key to verify and store instead of signing in with the browser.",
+				"API key to verify and store instead of signing in with the browser; use - to read it from stdin.",
 		},
 		{
 			name: "no-browser",
@@ -220,9 +223,10 @@ export const login: Command = {
 	seeAlso: ["boldvideo whoami", "boldvideo profiles list"],
 	async run(ctx, _args, flags) {
 		const token = flags.token as string | undefined;
+		// `--token -` reads the key from stdin, so it never appears in a process list.
+		if (token === "-") return tokenLogin(ctx, flags, await readStdin());
 		if (token !== undefined) return tokenLogin(ctx, flags, token.trim());
-		// A key piped in is still a key: `echo $KEY | boldvideo login`.
-		if (!process.stdin.isTTY) return tokenLogin(ctx, flags, await readStdin());
+		// Terminal or not: an agent without a terminal still gets the link to hand on.
 		return signIn(ctx, flags);
 	},
 };

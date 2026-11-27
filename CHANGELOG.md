@@ -8,7 +8,7 @@ First release. Every command below is in the stability baseline
 - Authentication: `login` signs in with your browser and saves one profile per
   workspace you approve; `-t`/`--tenant` runs one command in another workspace.
   `whoami`, `profiles list|use|remove`, `logout` (also ends the sign-in on the server).
-  For servers and CI: `login --token`, a key on stdin, or `BOLDVIDEO_API_KEY`.
+  For servers and CI: `login --token` (`--token -` reads stdin) or `BOLDVIDEO_API_KEY`.
 - Import: `import youtube` and `import url` with metadata flags and `--wait`,
   `import status`, `import cancel` (cancel stops new dispatch; the current batch drains).
 - Videos: `videos list|get|transcript|update|publish|unpublish|delete`.
