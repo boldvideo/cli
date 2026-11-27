@@ -42,18 +42,27 @@ jobs:
       id-token: write # npm trusted publishing (OIDC); no token is stored anywhere
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # setup-node v4 exports a placeholder NODE_AUTH_TOKEN whenever registry-url is
+      # set, and any token shadows trusted publishing: npm then answers E401.
+      # Same setup as the bold-js release, which publishes this way.
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.x
           registry-url: https://registry.npmjs.org
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.10
       - name: Use an npm that can stage
         run: |
-          npm install --global npm@latest
+          npm install --global npm@11.18.0
           node -e 'const [major, minor] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && minor < 15)) { console.error("npm stage needs npm 11.15 or newer, found " + process.argv[1]); process.exit(1); }' "$(npm --version)"
       - run: bun install --frozen-lockfile
+      - name: Refuse to run with an npm token present
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::NODE_AUTH_TOKEN is set. Trusted publishing needs no token, and a token overrides it."
+            exit 1
+          fi
       - name: Stage boldvideo
         run: npm stage publish --access public
       - name: Stage @boldvideo/cli
