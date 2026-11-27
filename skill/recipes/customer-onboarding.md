@@ -3,7 +3,7 @@
 Requires Bash, jq, collections, import, viewers and ask commands. Inject the
 customer's admin `BOLDVIDEO_API_KEY` privately. Run blocks in order, inspecting
 each preview before applying. Use a channel you have permission to import;
-this example uses Taki Moore's channel and a bounded first 25 videos.
+this example uses a placeholder channel and a bounded first 25 videos.
 
 ```bash
 set -euo pipefail
@@ -20,7 +20,7 @@ boldvideo collections create "Coach Growth training" > training-collection.json
 boldvideo collections create "Coach Growth welcome" > welcome-collection.json
 training=$(jq -er '.data.id' training-collection.json)
 welcome=$(jq -er '.data.id' welcome-collection.json)
-boldvideo import youtube https://www.youtube.com/@takimoore --collection "$training" --collection "$welcome" --max 25 --wait --dry-run
+boldvideo import youtube https://www.youtube.com/@yourchannel --collection "$training" --collection "$welcome" --max 25 --wait --dry-run
 ```
 
 Both collections will contain the selected channel videos; for a larger channel,
@@ -29,7 +29,7 @@ Channel runs do not accept per-video titles. Apply, wait for readiness, then
 inspect membership (follow every `next` command).
 
 ```bash
-boldvideo import youtube https://www.youtube.com/@takimoore --collection "$training" --collection "$welcome" --max 25 --wait
+boldvideo import youtube https://www.youtube.com/@yourchannel --collection "$training" --collection "$welcome" --max 25 --wait
 boldvideo collections videos "$training" --limit 100
 boldvideo collections videos "$welcome" --limit 100
 ```
@@ -55,7 +55,7 @@ boldvideo viewers sync coach-growth-members.csv --dry-run
 ```bash
 boldvideo viewers sync coach-growth-members.csv
 boldvideo viewers get member-1042
-boldvideo ask "What does Taki say about paid workshops versus free webinars?" --collection "$training" --as member-1042 --json > onboarding-answer.json
+boldvideo ask "What do we say about paid workshops versus free webinars?" --collection "$training" --as member-1042 --json > onboarding-answer.json
 jq '{content, sources}' onboarding-answer.json
 ```
 

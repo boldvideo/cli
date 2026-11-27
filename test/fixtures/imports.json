@@ -42,9 +42,9 @@
 	},
 	"queued": {
 		"data": {
-			"run_id": "run_taki_20261019",
-			"source_url": "https://www.youtube.com/@takimoore",
-			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"run_id": "run_demo_20261019",
+			"source_url": "https://www.youtube.com/@yourchannel",
+			"status_url": "/api/v1/admin/imports/run_demo_20261019",
 			"status": "queued",
 			"counts": {
 				"total": null,
@@ -68,9 +68,9 @@
 	},
 	"running": {
 		"data": {
-			"run_id": "run_taki_20261019",
-			"source_url": "https://www.youtube.com/@takimoore",
-			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"run_id": "run_demo_20261019",
+			"source_url": "https://www.youtube.com/@yourchannel",
+			"status_url": "/api/v1/admin/imports/run_demo_20261019",
 			"status": "running",
 			"counts": {
 				"total": 2,
@@ -100,9 +100,9 @@
 	},
 	"completed": {
 		"data": {
-			"run_id": "run_taki_20261019",
-			"source_url": "https://www.youtube.com/@takimoore",
-			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"run_id": "run_demo_20261019",
+			"source_url": "https://www.youtube.com/@yourchannel",
+			"status_url": "/api/v1/admin/imports/run_demo_20261019",
 			"status": "completed",
 			"counts": {
 				"total": 2,
@@ -132,9 +132,9 @@
 	},
 	"second_page": {
 		"data": {
-			"run_id": "run_taki_20261019",
-			"source_url": "https://www.youtube.com/@takimoore",
-			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"run_id": "run_demo_20261019",
+			"source_url": "https://www.youtube.com/@yourchannel",
+			"status_url": "/api/v1/admin/imports/run_demo_20261019",
 			"status": "completed",
 			"counts": {
 				"total": 2,
@@ -164,9 +164,9 @@
 	},
 	"mixed_run": {
 		"data": {
-			"run_id": "run_taki_20261019",
-			"source_url": "https://www.youtube.com/@takimoore",
-			"status_url": "/api/v1/admin/imports/run_taki_20261019",
+			"run_id": "run_demo_20261019",
+			"source_url": "https://www.youtube.com/@yourchannel",
+			"status_url": "/api/v1/admin/imports/run_demo_20261019",
 			"status": "completed",
 			"counts": {
 				"total": 3,
@@ -210,7 +210,7 @@
 	"preflight": {
 		"error": "managed_youtube_preflight_required",
 		"details": {
-			"channel": "takimoore",
+			"channel": "yourchannel",
 			"reason": "Connect channel in Mission Control"
 		}
 	}

@@ -34,13 +34,13 @@ print, commit, or put keys in arguments. Admin writes require an admin key.
 Import a channel into an existing collection and wait:
 
 ```sh
-boldvideo import youtube https://www.youtube.com/@takimoore --collection paid-workshops --wait
+boldvideo import youtube https://www.youtube.com/@yourchannel --collection paid-workshops --wait
 ```
 
 Ask with cited moments:
 
 ```sh
-boldvideo ask "What does Taki say about paid workshops versus free webinars?" --collection paid-workshops
+boldvideo ask "What do we say about paid workshops versus free webinars?" --collection paid-workshops
 ```
 
 Find relevant content:

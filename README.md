@@ -1,98 +1,138 @@
 # boldvideo
 
-Run your [Bold](https://boldvideo.com) video library from a shell, or hand it to an agent.
+Run your [Bold](https://boldvideo.com) video library from a terminal, or hand it to your coding agent.
+
+```text
+$ boldvideo login
+
+  ████████▄▄▄     ▄██████▄▄   █████████    ▄███████▄▄
+  ███████████▄  ████████████  █████████    ███████████▄
+  ███████████▀ ██████████████ █████████    █████████████
+  ███████████  ████████████████████████    █████████████
+  ████████████▄██████████████▀█████████    █████████████
+  ███████████████████████████ ████████████ ████████████▀
+  ████████████  ▀███████████  ▀███████████ ███████████▀
+
+  Sign in to Bold
+  Run your video library from this terminal.
+
+  Code   KTRM-4XQ9
+  Open   https://app.boldvideo.io/cli/KTRM-4XQ9
+
+  ⠹ Waiting for approval
+```
+
+Everything you do in the Bold admin, as commands: import a channel, fix a title, build a collection, pull a transcript, ask the library a question. Each command prints a table in a terminal and JSON in a pipe, so the same tool works for you and for an agent.
 
 ## Install
 
-Pick one:
+Needs Node 22 or newer.
 
 ```sh
-# npx: no global install, needs Node 22+
-npx --yes boldvideo@latest --help
-
-# npm: global install, needs Node 22+
 npm install -g boldvideo
-
-# Homebrew: standalone binary, no Node required
-brew install boldvideo/tap/boldvideo
-
-# Install script: no Node or Homebrew (URL not yet live)
-curl -fsSL https://boldvideo.com/install.sh | sh
 ```
 
-See [installation requirements and release status](docs/install.md).
-`boldvideo upgrade` prints the right upgrade command for how you installed; it
-never replaces files itself. Use `--no-check` to stay offline.
+Or run it without installing:
 
-Sign in with your browser:
+```sh
+npx boldvideo@latest --help
+```
+
+## Sign in
 
 ```sh
 boldvideo login
 ```
 
-It shows a short code and opens Bold; approve it and the CLI can do what you can
-do in the admin. With several workspaces, `-t <slug>` runs a command in another
-one. For servers and CI, set `BOLDVIDEO_API_KEY` to an admin key from
-**Settings → Developer** instead.
-
-## Four commands: sign in, import, ask, search
-
-Import a YouTube channel and wait for processing, ask a question with cited
-video timestamps, then find related material:
+It shows a short code and opens Bold in your browser. Check the code matches, approve, and you are in. The CLI can then do what you can do in the admin. There is no key to create or copy.
 
 ```sh
-boldvideo login
-boldvideo import youtube https://www.youtube.com/@takimoore --wait
-boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+boldvideo whoami     # who is signed in, and to which workspace
+boldvideo logout     # ends the sign-in, here and on the server
+```
+
+## The first five minutes
+
+```sh
+# Bring in a whole YouTube channel and wait until it is searchable
+boldvideo import youtube https://www.youtube.com/@yourchannel --wait
+
+# Ask the library, with timestamps you can click
+boldvideo ask "What do we say about paid workshops versus free webinars?"
+
+# Find the moments
 boldvideo search "paid workshops"
+
+# See what members are asking
+boldvideo insights questions --since 7d
 ```
 
-## v0.1 commands
+Imports skip anything already in the library, so running one twice is safe.
 
-Run [`boldvideo --help`](https://docs.boldvideo.com/cli) for the installed binary's
-source of truth, then `<command> --help` for its flags.
+## What it does
 
-| Command | Purpose |
+| | |
 | --- | --- |
-| `login` | Sign in with your browser, or store a key. |
-| `whoami` | Show the active account. |
-| `profiles` | Manage stored account profiles. |
-| `import youtube` | Import a YouTube video or channel; `--wait` waits for ingest. |
-| `import url` | Import a video from its source URL. |
-| `videos list` | List a bounded page of videos. |
-| `videos get` | Read one video's details. |
-| `videos transcript` | Read a video's transcript. |
-| `videos update` | Edit a video's metadata. |
-| `videos publish` | Publish a video. |
-| `videos unpublish` | Unpublish a video. |
-| `videos delete` | Delete a video with confirmation. |
-| `collections …` | List, create, rename, and add or remove videos. |
-| `viewers …` | List, get, sync, progress and memory. |
-| `insights questions` | What viewers asked, since a date or duration. |
-| `ask` | Ask the library a question with cited timestamps. |
-| `search` | Find relevant video content. |
-| `api` | Call an arbitrary API method and path. |
-| `docs` | Read documentation, including `docs cli`. |
-| `help` | Read command metadata and examples. |
-| `help exit-codes` | Look up stable process exit codes. |
-| `upgrade` | Print the upgrade command for this installation. |
-| `--version` | Print the installed version. |
+| **Import** | `import youtube` for a video, playlist or channel. `import url` for a file or page. `--wait` holds until transcripts and search are ready; `import status` and `import cancel` follow a run. |
+| **Videos** | `videos list`, `get` and `transcript` (txt, srt, vtt, json). `videos update`, `publish`, `unpublish` and `delete`. |
+| **Collections** | `collections list`, `create`, `rename`, `add`, `remove` and `videos`. |
+| **Answers** | `ask` answers from your transcripts and cites the moments. `search` finds them. |
+| **Members** | `viewers list`, `get`, `sync` and `progress`; `viewers memory` to read or clear what the assistant remembers. |
+| **Insights** | `insights questions`: what members asked, since any date. |
+| **Everything else** | `api` calls any endpoint with your sign-in. `docs` prints any docs page as markdown. |
 
-Folder import (`import dir`) is not in the v0.1.0 cut.
+Run `boldvideo --help` for the full tree and `boldvideo <command> --help` for flags and examples. The same reference is online at [docs.boldvideo.com/cli](https://docs.boldvideo.com/cli).
+
+## Several workspaces
+
+If you belong to more than one workspace, tick the ones you want when you approve the sign-in. Each is saved under its slug.
+
+```sh
+boldvideo profiles list              # the workspaces this terminal is signed in to
+boldvideo profiles use acme          # switch the default
+boldvideo videos list -t acme        # or run one command somewhere else
+```
+
+Run `boldvideo login` again to add more.
+
+## Careful by default
+
+- Every command that changes something takes `--dry-run` and shows what it would do.
+- Deleting asks first. In a script, pass `--yes`.
+- Lists are short unless you ask: `--limit`, `--fields`, and a ready-to-run command for the next page.
 
 ## For agents
 
-- JSON automatically when piped; readable tables in a terminal. Use `--json`
-  to request JSON explicitly. Errors go to stderr, never stdout.
-- `--help` works everywhere; `boldvideo help --json` exposes command metadata.
-- `boldvideo docs cli` prints the CLI reference, offline.
-- Stable exit codes: **0** success, **1** general failure, **2** usage,
-  **3** auth/permissions, **4** not found, **5** timeout.
-  Run `boldvideo help exit-codes` for details.
+The CLI is built so an agent with a shell and nothing else can run a library.
+
+- **JSON when piped.** Tables in a terminal, JSON everywhere else, `--json` to force it. Errors go to stderr with a stable `code`, a `hint` naming the next command, and a docs link.
+- **`--help` is the manual.** Every command carries examples. `boldvideo help --json` returns the whole command tree, and `boldvideo docs cli` prints the reference offline.
+- **Exit codes mean something.** `0` success, `1` failure, `2` usage, `3` sign-in or permission, `4` not found, `5` timeout.
+- **Sign-in works without a terminal.** `boldvideo login` prints the link and code to stderr and waits, so an agent can hand the link to a person.
+- **A skill file ships with it.** [`skill/SKILL.md`](skill/SKILL.md) and three recipes: a Kajabi migration, a weekly questions digest, and onboarding a customer.
+
+## Servers and CI
+
+Where nobody can open a browser, use an admin key. Create one in Bold under **Settings → Developer → Admin keys**.
+
+```sh
+export BOLDVIDEO_API_KEY='bold_admin_…'
+```
+
+Or save it as a profile without it touching your shell history:
+
+```sh
+echo "$KEY" | boldvideo login --token -
+```
+
+An admin key has full control of the workspace. Keep it in a secret store, never in a website or app.
+
+## More
 
 [CLI reference](https://docs.boldvideo.com/cli) ·
-[Repository](https://github.com/boldvideo/cli) ·
-[Command contract](docs/contract.md) · [Releasing](docs/releasing.md) ·
-[Install paths](docs/install.md)
+[Command contract](docs/contract.md) ·
+[Install details](docs/install.md) ·
+[Releasing](docs/releasing.md) ·
+[Changelog](CHANGELOG.md)
 
 MIT.

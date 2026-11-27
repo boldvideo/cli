@@ -1,0 +1,49 @@
+name: Smoke
+
+# Run after a staged release has been approved on npmjs.com: installs that
+# version from npm and runs the README flow against a non-customer account.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to test, for example 0.1.0
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BOLDVIDEO_API_KEY: ${{ secrets.BOLDVIDEO_SMOKE_API_KEY }}
+      BOLDVIDEO_API_URL: ${{ secrets.BOLDVIDEO_SMOKE_API_URL }}
+      BOLDVIDEO_SMOKE_YOUTUBE_URL: ${{ secrets.BOLDVIDEO_SMOKE_YOUTUBE_URL }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the published version
+        run: |
+          npm install --global "boldvideo@${VERSION}"
+          test "$(boldvideo --version | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).version')" = "$VERSION"
+      - name: Check non-customer smoke credentials
+        id: credentials
+        run: |
+          if [ -z "$BOLDVIDEO_API_KEY" ] || [ -z "$BOLDVIDEO_API_URL" ] || [ -z "$BOLDVIDEO_SMOKE_YOUTUBE_URL" ]; then
+            echo "::notice::Install checked. Skipping the live flow: configure BOLDVIDEO_SMOKE_API_KEY, BOLDVIDEO_SMOKE_API_URL and BOLDVIDEO_SMOKE_YOUTUBE_URL for a non-customer account."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Import the smoke YouTube source and wait
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo import youtube "$BOLDVIDEO_SMOKE_YOUTUBE_URL" --wait
+      - name: Ask with cited timestamps
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo ask "What do we say about paid workshops versus free webinars? Cite video timestamps."
+      - name: Search the smoke library
+        if: steps.credentials.outputs.enabled == 'true'
+        run: boldvideo search "paid workshops"

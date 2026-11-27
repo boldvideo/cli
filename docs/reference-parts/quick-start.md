@@ -5,8 +5,8 @@ cited video timestamps, then find related material:
 
 ```sh
 boldvideo login
-boldvideo import youtube https://www.youtube.com/@takimoore --wait
-boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+boldvideo import youtube https://www.youtube.com/@yourchannel --wait
+boldvideo ask "What do we say about paid workshops versus free webinars? Cite video timestamps."
 boldvideo search "paid workshops"
 ```
 

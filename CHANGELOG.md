@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — 2026-10-24
+## 0.1.0 — 2026-11-27
 
 First release. Every command below is in the stability baseline
 (`docs/baseline-0.1.0.md`): from here on, commands and flags are only added.

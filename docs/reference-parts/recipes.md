@@ -35,8 +35,8 @@ command line or digest.
 ### Import a channel and ask
 
 Pending `import youtube` and `ask`. Import the channel
-`https://www.youtube.com/@takimoore` into a collection and wait for ingest to
-finish with `--wait`. Then ask “What does Taki say about paid workshops versus
+`https://www.youtube.com/@yourchannel` into a collection and wait for ingest to
+finish with `--wait`. Then ask “What do we say about paid workshops versus
 free webinars?” scoped to that collection. Reruns deduplicate by source URL;
 waiting avoids asking before content is ready.
 

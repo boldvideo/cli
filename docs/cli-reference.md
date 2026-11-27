@@ -38,8 +38,8 @@ cited video timestamps, then find related material:
 
 ```sh
 boldvideo login
-boldvideo import youtube https://www.youtube.com/@takimoore --wait
-boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
+boldvideo import youtube https://www.youtube.com/@yourchannel --wait
+boldvideo ask "What do we say about paid workshops versus free webinars? Cite video timestamps."
 boldvideo search "paid workshops"
 ```
 
@@ -105,7 +105,7 @@ boldvideo import <command> [flags]
 Import a YouTube channel and wait for readiness.
 
 ```sh
-boldvideo import youtube https://www.youtube.com/@takimoore --wait
+boldvideo import youtube https://www.youtube.com/@yourchannel --wait
 ```
 
 Submit one direct video URL.
@@ -166,7 +166,7 @@ boldvideo import youtube https://www.youtube.com/watch?v=aqz-KE-bpKQ --wait
 Import a channel into a named collection.
 
 ```sh
-boldvideo import youtube https://www.youtube.com/@takimoore --collection "Coaching"
+boldvideo import youtube https://www.youtube.com/@yourchannel --collection "Coaching"
 ```
 
 ## boldvideo import url
@@ -257,13 +257,13 @@ boldvideo import status <id-or-run> [flags]
 Inspect a channel import.
 
 ```sh
-boldvideo import status run_taki_20261019
+boldvideo import status run_demo_20261019
 ```
 
 Resume waiting for up to two hours.
 
 ```sh
-boldvideo import status run_taki_20261019 --wait --timeout 7200
+boldvideo import status run_demo_20261019 --wait --timeout 7200
 ```
 
 ## boldvideo import cancel
@@ -297,13 +297,13 @@ boldvideo import cancel <run_id> [flags]
 Cancel further submission; the current batch drains.
 
 ```sh
-boldvideo import cancel run_taki_20261019 --yes
+boldvideo import cancel run_demo_20261019 --yes
 ```
 
 Preview cancellation without changing the run.
 
 ```sh
-boldvideo import cancel run_taki_20261019 --dry-run --yes
+boldvideo import cancel run_demo_20261019 --dry-run --yes
 ```
 
 ## boldvideo ask
@@ -1883,8 +1883,8 @@ command line or digest.
 ### Import a channel and ask
 
 Pending `import youtube` and `ask`. Import the channel
-`https://www.youtube.com/@takimoore` into a collection and wait for ingest to
-finish with `--wait`. Then ask “What does Taki say about paid workshops versus
+`https://www.youtube.com/@yourchannel` into a collection and wait for ingest to
+finish with `--wait`. Then ask “What do we say about paid workshops versus
 free webinars?” scoped to that collection. Reruns deduplicate by source URL;
 waiting avoids asking before content is ready.
 
