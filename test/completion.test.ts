@@ -201,6 +201,12 @@ describe("completion engine", () => {
 			files: false,
 		});
 		expect(values(["v", "ls", "--", "--pri"])).toEqual([]);
+		// A value-taking short flag ends its cluster, wherever it sits in it.
+		expect(values(["i", "yt", "-jn", "5", "--order", ""])).toEqual([
+			"latest",
+			"oldest",
+		]);
+		expect(values(["v", "-n5", "--privacy", "u"])).toEqual(["unlisted"]);
 	});
 
 	test("hands file arguments to the shell", () => {
@@ -209,6 +215,9 @@ describe("completion engine", () => {
 			["videos", "transcript", "abc", "--out", ""],
 			["import", "url", "--from", ""],
 			["api", "POST", "/videos", "--input", ""],
+			["import", "url", "--from=mem"],
+			// After -- the word is still the file argument.
+			["viewers", "sync", "--", "mem"],
 		])
 			expect(complete(words, commands), words.join(" ")).toEqual({
 				candidates: [],
@@ -246,6 +255,7 @@ describe("the built CLI", () => {
 			for (const words of [
 				["-t", ""],
 				["v", "--profile", ""],
+				["v", "-jp", ""],
 				["profiles", "use", ""],
 				["p", "rm", ""],
 			]) {
@@ -379,13 +389,17 @@ describe("in a real shell", () => {
 			t boldvideo v --privacy=pu
 			t bold -t ""
 			t bold vw sync ""
-			t bold v --tag ""`,
+			t bold v --tag ""
+			PREFIX=--from=mem; compset() { print "compset $*"; }
+			t bold import url --from=mem`,
 			);
 			expect(result.stderr).toBe("");
 			expect(result.stdout.trim().split("\n")).toEqual([
 				"get:Read memory or toggle future memory distillation.|clear:Delete a viewer's memory content.",
 				"--privacy=public",
 				"hrtu:HRT University|viva",
+				"files",
+				"compset -P *=",
 				"files",
 			]);
 		},

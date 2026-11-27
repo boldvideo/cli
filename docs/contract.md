@@ -17,6 +17,8 @@ The rules below govern shipped commands and future additions.
 - Exception: `docs <topic>` prints raw markdown even when piped; `--json` wraps
   it as `{url, title, markdown}`. Its first line identifies the canonical page URL.
   `docs cli` renders the installed tree offline via `commandTreeToMarkdown(tree)` in `src/docs-markdown.ts`; known `docs` URLs append their `boldvideo docs <topic>` command to error hints.
+- Exception: `completion` prints the shell script even when piped, because it is
+  meant for `eval` or a file; `--json` wraps it as `{shell, script}`.
 - Terminal output is plain text or a space-padded table with bold headers,
   two spaces between columns and no box drawing. Values and IDs are never
   truncated. Empty results without known columns say `No results.`.

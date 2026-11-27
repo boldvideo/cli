@@ -76,21 +76,25 @@ export function complete(words: string[], registry: Command[]): Completions {
 	for (const word of words.slice(0, -1)) {
 		if (pending) {
 			pending = undefined;
-		} else if (literal) {
-			positionals++;
-		} else if (word === "--") {
+		} else if (!literal && word === "--") {
 			literal = true;
-		} else if (word.startsWith("--")) {
+		} else if (!literal && word.startsWith("--")) {
 			const [name, value] = word.slice(2).split("=", 2);
 			const flag = flagsHere().find((flag) => flag.name === name);
 			if (flag) used.add(flag.name);
 			if (flag && flag.type !== "boolean" && value === undefined)
 				pending = flag;
-		} else if (word.startsWith("-") && word.length > 1) {
-			// In a cluster such as -yn, only the last short flag can take the next word.
-			const flag = flagsHere().find((flag) => flag.short === word.at(-1));
-			if (flag) used.add(flag.name);
-			if (flag && flag.type !== "boolean" && word.length === 2) pending = flag;
+		} else if (!literal && word.startsWith("-") && word.length > 1) {
+			// In a cluster such as -jp, the first flag that takes a value ends it:
+			// what follows in the word is its value, or else the next word is.
+			for (const [index, short] of [...word.slice(1)].entries()) {
+				const flag = flagsHere().find((flag) => flag.short === short);
+				if (flag) used.add(flag.name);
+				if (flag && flag.type !== "boolean") {
+					if (index === word.length - 2) pending = flag;
+					break;
+				}
+			}
 		} else if (command.subcommands) {
 			const child = findSubcommand(command, word);
 			if (!child) return { candidates: [], files: false };
@@ -111,8 +115,8 @@ export function complete(words: string[], registry: Command[]): Completions {
 		const result = values(pending);
 		return { ...result, candidates: matching(result.candidates) };
 	}
-	if (literal) return { candidates: [], files: false };
-	const assignment = /^--([^=]+)=/.exec(current);
+	// After --, every word is an argument, so only the branches below it apply.
+	const assignment = literal ? null : /^--([^=]+)=/.exec(current);
 	if (assignment) {
 		const flag = flagsHere().find((flag) => flag.name === assignment[1]);
 		if (!flag || flag.type === "boolean")
@@ -123,7 +127,7 @@ export function complete(words: string[], registry: Command[]): Completions {
 			candidates: matching(result.candidates, assignment[0]),
 		};
 	}
-	if (current.startsWith("-"))
+	if (!literal && current.startsWith("-"))
 		return {
 			candidates: matching(
 				flagsHere()
@@ -235,6 +239,7 @@ _boldvideo() {
 		fi
 	done
 	if (( files )); then
+		[[ $PREFIX == --*=* ]] && compset -P '*='
 		_files
 	elif (( \${#described} )); then
 		_describe 'boldvideo' described
@@ -252,7 +257,10 @@ function __boldvideo_complete
 	set -l current (commandline -ct)
 	for line in ($prior[1] __complete fish -- $prior[2..-1] "$current" 2>/dev/null)
 		if test "$line" = ":files"
-			__fish_complete_path "$current"
+			set -l flag (string match -r -- '^--[^=]+=' "$current")
+			for path in (__fish_complete_path (string replace -r -- '^--[^=]+=' '' "$current"))
+				echo "$flag$path"
+			end
 		else
 			echo $line
 		end
