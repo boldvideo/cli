@@ -72,6 +72,13 @@ export function commandFlags(command: Command): Flag[] {
 			description:
 				"Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence.",
 		},
+		{
+			name: "tenant",
+			short: "t",
+			type: "string",
+			description:
+				"Run this call in another signed-in workspace, by slug. Same as --profile.",
+		},
 		...(command.list
 			? [
 					{

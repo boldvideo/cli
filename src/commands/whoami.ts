@@ -5,7 +5,7 @@ import type { Command } from "../spec";
 
 export const whoami: Command = {
 	name: "whoami",
-	summary: "Show the authenticated account, key kind and profile.",
+	summary: "Show who is signed in, the account, key kind and profile.",
 	description:
 		"A null profile means BOLDVIDEO_API_KEY supplied the key. The API base URL comes from BOLDVIDEO_API_URL or the Bold production default.",
 	examples: [
@@ -25,6 +25,7 @@ export const whoami: Command = {
 			key_kind: me.key.kind,
 			profile: credential.profile,
 			api_url: apiUrl(),
+			...(me.user ? { user: me.user.email } : {}),
 		};
 		output(result, table([result]), ctx.json);
 	},

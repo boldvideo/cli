@@ -1,12 +1,33 @@
+import { apiUrl } from "../api";
 import { loadProfiles, saveProfiles } from "../auth";
 import { error } from "../errors";
 import { output, outputList } from "../output";
 import type { Command, Context, Flags } from "../spec";
 
-function remove(ctx: Context, args: string[], flags: Flags): void {
+// Ends a browser sign-in on the server too. Other keys answer 403 and stay valid;
+// offline or not, the local profile is removed either way.
+async function endSession(key: string): Promise<void> {
+	try {
+		await fetch(`${apiUrl()}/cli/session`, {
+			method: "DELETE",
+			headers: { Authorization: `Bearer ${key}` },
+			signal: AbortSignal.timeout(10_000),
+		});
+	} catch {
+		// Best effort.
+	}
+}
+
+async function remove(
+	ctx: Context,
+	args: string[],
+	flags: Flags,
+): Promise<void> {
 	const stored = loadProfiles();
 	const name =
-		args[0] ?? (flags.profile as string | undefined) ?? stored.active;
+		args[0] ??
+		((flags.tenant ?? flags.profile) as string | undefined) ??
+		stored.active;
 	if (name === null || !Object.hasOwn(stored.profiles, name))
 		throw error(
 			"not_found",
@@ -15,6 +36,8 @@ function remove(ctx: Context, args: string[], flags: Flags): void {
 			4,
 		);
 	if (!flags["dry-run"]) {
+		const key = stored.profiles[name]?.key;
+		if (key) await endSession(key);
 		delete stored.profiles[name];
 		if (stored.active === name) stored.active = null;
 		saveProfiles(stored);
@@ -30,9 +53,9 @@ function remove(ctx: Context, args: string[], flags: Flags): void {
 
 export const logout: Command = {
 	name: "logout",
-	summary: "Remove the active stored profile and its key.",
+	summary: "Sign out: remove the active stored profile and end its sign-in.",
 	description:
-		"--profile removes that profile instead. Environment variables are unchanged; unset BOLDVIDEO_API_KEY separately. Removing the active profile leaves no active profile.",
+		"A browser sign-in is also ended on the server. --profile removes that profile instead. Environment variables are unchanged; unset BOLDVIDEO_API_KEY separately. Removing the active profile leaves no active profile.",
 	auth: "none",
 	destructive: true,
 	examples: [

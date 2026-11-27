@@ -272,7 +272,7 @@ const questions: Command = {
 			)
 				throw {
 					...failure,
-					hint: "An admin key is required. Set BOLDVIDEO_API_KEY to an admin key or run boldvideo login --token <admin-key>.",
+					hint: "This needs full access. Run boldvideo login to sign in, or use an admin key.",
 				};
 			throw cause;
 		}

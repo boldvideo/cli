@@ -380,7 +380,9 @@ test("tenant keys and endpoint 401/403 errors exit 3 with an admin-key hint", as
 		env: { BOLDVIDEO_API_KEY: "test-tenant" },
 	});
 	expect(tenant.status).toBe(3);
-	expect(JSON.parse(tenant.stderr).hint).toContain("admin key is required");
+	expect(JSON.parse(tenant.stderr).hint).toContain(
+		"Run boldvideo login to sign in",
+	);
 	expect(queries).toHaveLength(0);
 	for (const status of [401, 403]) {
 		override = Response.json(
@@ -393,7 +395,7 @@ test("tenant keys and endpoint 401/403 errors exit 3 with an admin-key hint", as
 		expect(JSON.parse(result.stderr)).toMatchObject({
 			code: status === 401 ? "not_authenticated" : "not_permitted",
 			request_id: "req_insights",
-			hint: expect.stringContaining("boldvideo login --token <admin-key>"),
+			hint: expect.stringContaining("Run boldvideo login to sign in"),
 		});
 	}
 });

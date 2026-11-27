@@ -5,8 +5,10 @@
 First release. Every command below is in the stability baseline
 (`docs/baseline-0.1.0.md`): from here on, commands and flags are only added.
 
-- Authentication: `login --token`, `whoami`, `profiles list|use|remove`, `logout`.
-  Keys come from `BOLDVIDEO_API_KEY` or a saved profile.
+- Authentication: `login` signs in with your browser and saves one profile per
+  workspace you approve; `-t`/`--tenant` runs one command in another workspace.
+  `whoami`, `profiles list|use|remove`, `logout` (also ends the sign-in on the server).
+  For servers and CI: `login --token`, a key on stdin, or `BOLDVIDEO_API_KEY`.
 - Import: `import youtube` and `import url` with metadata flags and `--wait`,
   `import status`, `import cancel` (cancel stops new dispatch; the current batch drains).
 - Videos: `videos list|get|transcript|update|publish|unpublish|delete`.
@@ -24,4 +26,4 @@ First release. Every command below is in the stability baseline
 
 ### Not in 0.1.0
 
-Folder upload (`import dir`) and browser login (device flow).
+Folder upload (`import dir`).

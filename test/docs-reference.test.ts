@@ -71,15 +71,17 @@ test("reference follows the single-page layout with visible version and five rec
 	expect(install?.split("\n")).toHaveLength(1);
 	const authenticate =
 		body.split("## Authenticate\n")[1]?.split("\n## ")[0] ?? "";
-	expect(authenticate).toContain("| API key |");
-	expect(authenticate).toContain("| Admin key |");
+	expect(authenticate).toContain("boldvideo login");
+	expect(authenticate).toContain("| Admin key (`bold_admin_…`) |");
+	expect(authenticate).toContain("| API key (`bold_live_…`) |");
 	const quickStart = body.split("## Quick start\n")[1]?.split("\n## ")[0] ?? "";
 	const demo = quickStart.match(/```sh\n([\s\S]*?)\n```/)?.[1]?.split("\n");
-	expect(demo).toHaveLength(3);
-	expect(demo?.[0]).toStartWith("boldvideo import ");
-	expect(demo?.[0]).toEndWith(" --wait");
-	expect(demo?.[1]).toStartWith("boldvideo ask ");
-	expect(demo?.[2]).toStartWith("boldvideo search ");
+	expect(demo).toHaveLength(4);
+	expect(demo?.[0]).toBe("boldvideo login");
+	expect(demo?.[1]).toStartWith("boldvideo import ");
+	expect(demo?.[1]).toEndWith(" --wait");
+	expect(demo?.[2]).toStartWith("boldvideo ask ");
+	expect(demo?.[3]).toStartWith("boldvideo search ");
 	expect(quickStart).not.toContain("not registered");
 	const recipes = body.split("## Recipes\n")[1]?.split("\n## ")[0] ?? "";
 	expect(

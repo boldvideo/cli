@@ -4,7 +4,7 @@ import { identity, loadProfiles, resolveKey } from "./auth";
 import { commands } from "./commands";
 import { error, registerSecret } from "./errors";
 import { rootCommand, showHelp } from "./help";
-import { output } from "./output";
+import { hint, output } from "./output";
 import { type Command, commandFlags, type Flags } from "./spec";
 
 function options(command: Command): ParseArgsOptionsConfig {
@@ -169,7 +169,15 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 	const credential =
 		command.auth === "none"
 			? undefined
-			: resolveKey(flags.profile as string | undefined);
+			: resolveKey((flags.tenant ?? flags.profile) as string | undefined);
+	if (flags.tenant && credential?.profile) {
+		const workspace = loadProfiles().profiles[credential.profile];
+		hint(
+			workspace?.name
+				? `${credential.profile} · ${workspace.name}`
+				: credential.profile,
+		);
+	}
 	if (
 		command.auth === "admin" &&
 		credential &&
@@ -178,7 +186,7 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 		throw error(
 			"not_permitted",
 			"This command requires an admin key.",
-			"An admin key is required. Set BOLDVIDEO_API_KEY to an admin key or run boldvideo login --token <admin-key>.",
+			"This needs full access. Run boldvideo login to sign in, or use an admin key.",
 			3,
 		);
 	await command.run(

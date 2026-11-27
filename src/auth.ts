@@ -12,9 +12,16 @@ import { join } from "node:path";
 import { request } from "./api";
 import { error, registerSecret } from "./errors";
 
+export interface Profile {
+	key: string;
+	/** Set by a browser sign-in: the workspace's name and who signed in. */
+	name?: string;
+	user?: string;
+}
+
 export interface Profiles {
 	active: string | null;
-	profiles: Record<string, { key: string }>;
+	profiles: Record<string, Profile>;
 }
 
 export interface Credential {
@@ -26,6 +33,8 @@ export interface Identity {
 	account: { slug: string; name: string };
 	key: { kind: "tenant" | "admin"; short_id: string };
 	features: { viewers: boolean; viewer_memory: boolean; mcp: boolean };
+	/** Present when the key belongs to a person, such as a browser sign-in. */
+	user?: { email: string };
 }
 
 function configDirectory(): string {
@@ -106,7 +115,7 @@ export function resolveKey(profile?: string): Credential {
 		profile === undefined
 			? "No API key is configured."
 			: `No key is stored for profile '${profile}'.`,
-		"Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.",
+		"Run boldvideo login to sign in, or set BOLDVIDEO_API_KEY.",
 		3,
 	);
 }
@@ -138,6 +147,9 @@ function parseIdentity(data: unknown): Identity {
 			viewer_memory: value.features.viewer_memory,
 			mcp: value.features.mcp,
 		},
+		...(typeof value.user?.email === "string"
+			? { user: { email: value.user.email } }
+			: {}),
 	};
 }
 

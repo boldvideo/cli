@@ -24,24 +24,24 @@ See [installation requirements and release status](docs/install.md).
 `boldvideo upgrade` prints the right upgrade command for how you installed; it
 never replaces files itself. Use `--no-check` to stay offline.
 
-Authenticate with a Bold API key:
+Sign in with your browser:
 
 ```sh
-export BOLDVIDEO_API_KEY='your-bold-api-key'
+boldvideo login
 ```
 
-Bold has two kinds of key. An API key from **Settings → Developer** covers
-`whoami`, `ask`, `search`, `api`, `viewers`, and reading published videos,
-transcripts and collections. `import`, changes to videos and collections, and
-`insights` need an admin key, which Bold issues on request.
-`boldvideo whoami` shows which kind is active.
+It shows a short code and opens Bold; approve it and the CLI can do what you can
+do in the admin. With several workspaces, `-t <slug>` runs a command in another
+one. For servers and CI, set `BOLDVIDEO_API_KEY` to an admin key from
+**Settings → Developer** instead.
 
-## Three commands: import, ask, search
+## Four commands: sign in, import, ask, search
 
-The v0.1 flow: import a YouTube channel and wait for processing (admin key),
-ask a question with cited video timestamps, then find related material:
+Import a YouTube channel and wait for processing, ask a question with cited
+video timestamps, then find related material:
 
 ```sh
+boldvideo login
 boldvideo import youtube https://www.youtube.com/@takimoore --wait
 boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
 boldvideo search "paid workshops"
@@ -54,7 +54,7 @@ source of truth, then `<command> --help` for its flags.
 
 | Command | Purpose |
 | --- | --- |
-| `login` | Store credentials for a Bold account. |
+| `login` | Sign in with your browser, or store a key. |
 | `whoami` | Show the active account. |
 | `profiles` | Manage stored account profiles. |
 | `import youtube` | Import a YouTube video or channel; `--wait` waits for ingest. |
