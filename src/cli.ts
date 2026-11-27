@@ -110,6 +110,9 @@ export function parse(argv: string[], registry = commands) {
 							.filter(Boolean);
 			} else flags[flag.name] = value as string | boolean;
 		}
+		// --tenant is --profile under another name. Fold it in once, so every command,
+		// and every follow-up command it prints, carries the selection.
+		if (flags.tenant !== undefined) flags.profile = flags.tenant;
 		if (
 			command.list &&
 			(!Number.isSafeInteger(flags.limit) || Number(flags.limit) < 1)
@@ -166,11 +169,12 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 			2,
 		);
 	}
+	const viaTenant = flags.tenant !== undefined;
 	const credential =
 		command.auth === "none"
 			? undefined
-			: resolveKey((flags.tenant ?? flags.profile) as string | undefined);
-	if (flags.tenant && credential?.profile) {
+			: resolveKey(flags.profile as string | undefined);
+	if (viaTenant && credential?.profile) {
 		const workspace = loadProfiles().profiles[credential.profile];
 		hint(
 			workspace?.name

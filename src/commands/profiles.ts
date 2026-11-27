@@ -25,9 +25,7 @@ async function remove(
 ): Promise<void> {
 	const stored = loadProfiles();
 	const name =
-		args[0] ??
-		((flags.tenant ?? flags.profile) as string | undefined) ??
-		stored.active;
+		args[0] ?? (flags.profile as string | undefined) ?? stored.active;
 	if (name === null || !Object.hasOwn(stored.profiles, name))
 		throw error(
 			"not_found",

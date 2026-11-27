@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { parse } from "../src/cli";
 import me from "./fixtures/me.json";
 import { run as execute } from "./run";
 
@@ -31,6 +32,7 @@ const workspaces = [
 ];
 const deviceCode = "device_secret_2039";
 let polls: { status: number; body: unknown }[] = [];
+let pollDelay = 0;
 let expiresIn = 600;
 const started: unknown[] = [];
 const ended: (string | undefined)[] = [];
@@ -55,6 +57,7 @@ const server = Bun.serve({
 		}
 		if (url.pathname === "/api/v1/cli/logins/token") {
 			const next = polls.length > 1 ? polls.shift() : polls[0];
+			if (pollDelay) await new Promise((done) => setTimeout(done, pollDelay));
 			return Response.json(next?.body ?? {}, { status: next?.status ?? 500 });
 		}
 		if (url.pathname === "/api/v1/cli/session" && request.method === "DELETE") {
@@ -125,6 +128,7 @@ beforeEach(() => {
 	override = undefined;
 	writes.length = 0;
 	polls = [];
+	pollDelay = 0;
 	expiresIn = 600;
 	started.length = 0;
 	ended.length = 0;
@@ -478,6 +482,9 @@ test("several workspaces become profiles, and -t runs one call in another", asyn
 	expect(JSON.parse((await run(["whoami"])).stdout).account_slug).toBe("hrtu");
 	const named = await run(["whoami", "-t", "viva"], { tty: true });
 	expect(named.stdout).toContain("viva · VIVA Financial Tuition");
+	// Follow-up commands the CLI prints must keep the workspace: -t becomes --profile.
+	expect(parse(["videos", "list", "-t", "viva"]).flags.profile).toBe("viva");
+	expect(parse(["videos", "list", "--tenant=viva"]).flags.profile).toBe("viva");
 });
 
 test("signing in again keeps the active workspace and existing profiles", async () => {
@@ -549,6 +556,20 @@ test("a refused, expired or cancelled sign-in saves nothing", async () => {
 	expect(cancelled.stdout).toContain("Login cancelled.");
 	expect(existsSync(profileFile())).toBe(false);
 	expect((await run(["login", "--dry-run"], { tty: true })).status).toBe(2);
+});
+
+test("Ctrl+C wins over an approval that arrives while a poll is in flight", async () => {
+	polls = [approved()];
+	pollDelay = 1500;
+	const cancelled = await run(["login"], {
+		tty: true,
+		input: "\x03",
+		waitFor: "Waiting for approval",
+	});
+	expect(cancelled.status).toBe(2);
+	expect(cancelled.stdout).toContain("Login cancelled.");
+	expect(cancelled.stdout).not.toContain("Signed in");
+	expect(existsSync(profileFile())).toBe(false);
 });
 
 test("logout ends a browser sign-in on the server and leaves other keys alone", async () => {

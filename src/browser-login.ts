@@ -35,8 +35,10 @@ const unreachable = () =>
 async function post(
 	path: string,
 	body: unknown,
+	interrupted?: AbortSignal,
 ): Promise<{ status: number; data: Record<string, unknown> }> {
 	try {
+		const timeout = AbortSignal.timeout(30_000);
 		const response = await fetch(`${apiUrl()}${path}`, {
 			method: "POST",
 			headers: {
@@ -45,7 +47,7 @@ async function post(
 			},
 			body: JSON.stringify(body),
 			redirect: "error",
-			signal: AbortSignal.timeout(30_000),
+			signal: interrupted ? AbortSignal.any([timeout, interrupted]) : timeout,
 		});
 		const text = await response.text();
 		return { status: response.status, data: text ? JSON.parse(text) : {} };
@@ -150,8 +152,13 @@ export async function browserLogin(options: {
 	const cancelled = new Promise<never>((_resolve, reject) => {
 		cancel = reject;
 	});
-	const onInterrupt = () =>
+	// Never rejects into the void if the wait ends before anyone races it.
+	cancelled.catch(() => {});
+	const interrupted = new AbortController();
+	const onInterrupt = () => {
+		interrupted.abort();
 		cancel(error("usage_error", "Login cancelled.", "boldvideo login", 2));
+	};
 	const onInput = (chunk: Buffer) => {
 		// Raw mode is off, so Ctrl+C arrives as SIGINT and Enter as a newline.
 		if (opening && chunk.includes(10)) openBrowser(started.verification_url);
@@ -176,9 +183,16 @@ export async function browserLogin(options: {
 					"boldvideo login",
 					5,
 				);
-			const poll = await post("/cli/logins/token", {
-				device_code: started.device_code,
-			});
+			// Raced, so Ctrl+C wins even while a poll is in flight and an approval
+			// that lands after it is never saved.
+			const poll = await Promise.race([
+				post(
+					"/cli/logins/token",
+					{ device_code: started.device_code },
+					interrupted.signal,
+				),
+				cancelled,
+			]);
 			if (poll.status === 200 && poll.data.status === "pending") continue;
 			if (poll.status === 429) continue;
 			if (poll.status === 200 && poll.data.status === "approved") {
