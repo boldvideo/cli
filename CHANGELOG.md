@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Tab completion: `completion bash|zsh|fish` prints a script that completes
+  commands, flags, flag values, saved workspaces and file names, for `boldvideo`
+  and `bold`. It reads local files only and never calls the API.
+- Shorthands: `v` (videos), `c` (collections), `vw` (viewers), `i` (import),
+  `ins` (insights), `s` (search), `a` (ask), `p` (profiles), `me` (whoami), and
+  `ls`, `show`, `rm`, `edit`, `new`, `mv`, `yt`, `st`, `q`, `switch` for the
+  commands under them. `--help` lists them; `help --json` carries them as `aliases`.
+- A group run without a command lists: `boldvideo videos` is `boldvideo videos list`,
+  and list flags work there (`bold v --privacy private`). `--help` still shows help.
+- Short flags: `-h`, `-j` (`--json`), `-n` (`--limit`), `-y` (`--yes`),
+  `-p` (`--profile`), `-v` (`--version`).
+- `help --json` lists known values for a flag or argument as `choices`.
+
 ## 0.1.0 — 2026-11-27
 
 First release. Every command below is in the stability baseline

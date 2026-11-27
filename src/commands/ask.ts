@@ -6,6 +6,7 @@ import { type AiResult, outputAi } from "./ai-results";
 
 export const ask: Command = {
 	name: "ask",
+	aliases: ["a"],
 	summary: "Ask your library a question and show cited moments.",
 	description:
 		"Sources keep their original citation numbers. --limit bounds displayed sources, not retrieval; increasing it regenerates the answer.",

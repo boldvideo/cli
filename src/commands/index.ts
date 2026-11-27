@@ -2,6 +2,7 @@ import type { Command } from "../spec";
 import { api } from "./api";
 import { ask } from "./ask";
 import { collections } from "./collections";
+import { completion } from "./completion";
 import { docs } from "./docs";
 import { help } from "./help";
 import { imports } from "./import";
@@ -29,5 +30,6 @@ export const commands: Command[] = [
 	insights,
 	api,
 	docs,
+	completion,
 	upgrade,
 ];

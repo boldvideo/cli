@@ -157,6 +157,7 @@ function groupQuestions(items: Question[], groupBy: string) {
 
 const questions: Command = {
 	name: "questions",
+	aliases: ["q"],
 	summary: "Read member questions and identify content gaps.",
 	description:
 		"Requires an admin key. Windows are half-open [since, until); dates, ISO 8601 timestamps and Nd/Nh durations are passed through verbatim. Until defaults to the server's now. Results are newest first as served. Grouping counts only the fetched page: video counts each question once per distinct source video (none/unobserved are separate); day uses the date in asked_at. Terminal sources '?' means unobserved, 0 means none; only question text is shortened.",
@@ -209,10 +210,12 @@ const questions: Command = {
 			name: "group-by",
 			type: "string",
 			description: "Count by video, outcome or day over the fetched page only.",
+			choices: ["video", "outcome", "day"],
 		},
 		{
 			name: "format",
 			type: "string",
+			choices: ["md"],
 			description:
 				"Use md for a compact Markdown question list, even when piped. --json wins; otherwise md cannot combine with --group-by or --fields.",
 		},
@@ -309,6 +312,7 @@ const questions: Command = {
 
 export const insights: Command = {
 	name: "insights",
+	aliases: ["ins"],
 	summary: "Explore member questions and content gaps.",
 	auth: "admin",
 	examples: questions.examples,

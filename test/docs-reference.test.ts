@@ -34,7 +34,9 @@ test("reference generation is deterministic and covers every registered command 
 		expect(section).toContain("\n### Flags\n");
 		expect(section).toContain("\n### Examples\n");
 		for (const flag of command.flags ?? [])
-			expect(section).toContain(`| --${flag.name} | ${flag.type} |`);
+			expect(section).toContain(
+				`| --${flag.name}${flag.short ? `, -${flag.short}` : ""} | ${flag.type} |`,
+			);
 		for (const example of command.examples)
 			expect(section).toContain(`\n${example.cmd}\n`);
 		for (const child of command.subcommands ?? []) check(child, invocation);

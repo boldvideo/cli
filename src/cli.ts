@@ -2,10 +2,17 @@ import { type ParseArgsOptionsConfig, parseArgs } from "node:util";
 import { version } from "../package.json";
 import { identity, loadProfiles, resolveKey } from "./auth";
 import { commands } from "./commands";
+import { completionLines, type Shell, shells } from "./completion";
 import { error, registerSecret } from "./errors";
 import { rootCommand, showHelp } from "./help";
 import { hint, output } from "./output";
-import { type Command, commandFlags, type Flags } from "./spec";
+import {
+	type Command,
+	commandFlags,
+	defaultSubcommand,
+	type Flags,
+	findSubcommand,
+} from "./spec";
 
 function options(command: Command): ParseArgsOptionsConfig {
 	return Object.fromEntries(
@@ -50,18 +57,27 @@ export function parse(argv: string[], registry = commands) {
 		);
 	try {
 		while (command.subcommands) {
+			// A bare group runs its list, so list flags may come before any subcommand
+			// and their values must not be mistaken for one.
+			const fallback = defaultSubcommand(command);
 			const scan = parseArgs({
 				args: remaining,
-				options: options(command),
+				options: {
+					...(fallback ? options(fallback) : {}),
+					...options(command),
+				},
 				strict: false,
 				allowPositionals: true,
 				tokens: true,
 			});
 			const token = scan.tokens.find((token) => token.kind === "positional");
-			if (token?.kind !== "positional") break;
-			const child = command.subcommands.find(
-				(child) => child.name === token.value,
-			);
+			if (token?.kind !== "positional") {
+				if (!fallback || scan.values.help) break;
+				path.push(fallback.name);
+				command = fallback;
+				continue;
+			}
+			const child = findSubcommand(command, token.value);
 			if (!child) {
 				const nearest = [...command.subcommands].sort(
 					(a, b) =>
@@ -135,6 +151,20 @@ export function parse(argv: string[], registry = commands) {
 }
 
 export async function cli(argv: string[], registry = commands): Promise<void> {
+	// The shell scripts from `boldvideo completion` call this on every Tab. It is
+	// not a documented command, and it stays silent whatever happens.
+	if (argv[0] === "__complete") {
+		try {
+			const shell = argv[1] as Shell;
+			if (shells.includes(shell) && argv[2] === "--" && argv.length > 3) {
+				const lines = completionLines(shell, argv.slice(3), registry);
+				if (lines.length) process.stdout.write(`${lines.join("\n")}\n`);
+			}
+		} catch {
+			// No candidates is the only safe answer while someone is typing.
+		}
+		return;
+	}
 	// Redact credentials even when parsing fails or help echoes an example.
 	for (const [index, arg] of argv.entries()) {
 		if (arg === "--") break;

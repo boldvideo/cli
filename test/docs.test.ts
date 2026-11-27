@@ -298,7 +298,7 @@ test("cli renders every installed command from the help tree without any network
 	expect(result.stdout).toContain("boldvideo profiles use <name> [flags]");
 	expect(result.stdout).toContain("boldvideo docs [topic] [flags]");
 	expect(result.stdout).toContain("boldvideo profiles <command> [flags]");
-	expect(result.stdout).toContain("| --limit | number | 20 |");
+	expect(result.stdout).toContain("| --limit, -n | number | 20 |");
 	expect(result.stdout).toContain("## Exit codes");
 	expect(result.stdout).toContain("| 3 | Not authenticated or not permitted |");
 	expect(result.stdout).toContain("| 5 | Timed out while waiting |");
@@ -307,7 +307,9 @@ test("cli renders every installed command from the help tree without any network
 		expect(result.stdout).toContain(`### ${invocation.join(" ")}\n`);
 		expect(result.stdout).toContain(command.summary);
 		for (const flag of command.flags ?? [])
-			expect(result.stdout).toContain(`| --${flag.name} | ${flag.type} |`);
+			expect(result.stdout).toContain(
+				`| --${flag.name}${flag.short ? `, -${flag.short}` : ""} | ${flag.type} |`,
+			);
 		for (const example of command.examples) {
 			expect(result.stdout).toContain(`\n${example.cmd}\n`);
 			expect(result.stdout).toContain(example.note);
