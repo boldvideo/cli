@@ -93,7 +93,7 @@ const server = Bun.serve({
 				});
 		}
 		if (path.startsWith("/admin/imports/")) {
-			if (!path.endsWith("/run_taki_20261019"))
+			if (!path.endsWith("/run_demo_20261019"))
 				return Response.json({ message: "Run not found." }, { status: 404 });
 			if (slow) {
 				await Bun.sleep(2000);
@@ -169,7 +169,7 @@ const single = [
 	"--title",
 	"Paid workshops",
 ];
-const channel = ["youtube", "https://www.youtube.com/@takimoore"];
+const channel = ["youtube", "https://www.youtube.com/@yourchannel"];
 const waiting = ["--wait", "--poll-interval", "0.01", "--timeout", "2"];
 
 test("direct URL metadata preserves API names and returns the full admin record", async () => {
@@ -242,10 +242,10 @@ test("YouTube forms route to runs or single-video imports without a mode flag; V
 	for (const source of [
 		"https://youtube.com/watch?v=aqz-KE-bpKQ&list=PLcoaching2026",
 		"https://youtube.com/playlist?list=PLcoaching2026",
-		"https://youtube.com/@takimoore/videos",
+		"https://youtube.com/@yourchannel/videos",
 		"https://youtube.com/channel/UCcoach2026",
-		"https://youtube.com/c/takimoore",
-		"https://youtube.com/user/takimoore",
+		"https://youtube.com/c/yourchannel",
+		"https://youtube.com/user/yourchannel",
 	]) {
 		const result = await run([
 			"youtube",
@@ -335,7 +335,7 @@ test("single wait distinguishes processing from ready and propagates failure_rea
 });
 
 test("run wait checks readiness after terminal status, follows every video page and resumes with status", async () => {
-	for (const args of [channel, ["status", "run_taki_20261019"]]) {
+	for (const args of [channel, ["status", "run_demo_20261019"]]) {
 		runPolls = 0;
 		videoPolls.clear();
 		const result = await run([...args, ...waiting]);
@@ -366,7 +366,7 @@ test("mixed run finishes observing healthy videos but exits 1 for failed readine
 
 test("completed run with mixed submission results still waits for readiness and reports ingestion failure", async () => {
 	mixed = true;
-	const result = await run(["status", "run_taki_20261019", ...waiting]);
+	const result = await run(["status", "run_demo_20261019", ...waiting]);
 	expect(result.status).toBe(1);
 	expect(result.stdout).toBe("");
 	expect(JSON.parse(result.stderr)).toMatchObject({
@@ -379,7 +379,7 @@ test("failed and canceled runs cannot report success even when submitted videos 
 	for (const status of ["failed", "canceled"]) {
 		terminalStatus = status;
 		runPolls = 0;
-		const result = await run(["status", "run_taki_20261019", ...waiting]);
+		const result = await run(["status", "run_demo_20261019", ...waiting]);
 		expect(result.status).toBe(1);
 		expect(JSON.parse(result.stderr).message).toContain(`Import ${status}`);
 	}
@@ -403,7 +403,7 @@ test("wait deadline interrupts sleeps and in-flight reads with exit 5 and a stat
 		expect(result.stdout).toBe("");
 		expect(JSON.parse(result.stderr)).toMatchObject({
 			code: "timed_out",
-			hint: "boldvideo import status 'run_taki_20261019' --profile 'customer-demo'\nRead: boldvideo docs cli",
+			hint: "boldvideo import status 'run_demo_20261019' --profile 'customer-demo'\nRead: boldvideo docs cli",
 		});
 	}
 });
@@ -417,25 +417,25 @@ test("Ctrl-C stops waiting with exit 130 and does not cancel the remote import",
 	});
 	expect(result.status).toBe(130);
 	expect(result.stdout).toContain(
-		"boldvideo import status 'run_taki_20261019'",
+		"boldvideo import status 'run_demo_20261019'",
 	);
 	expect(result.stdout).toContain("without cancellation");
 	expect(calls.filter((call) => call.path.endsWith("/cancel"))).toHaveLength(0);
 });
 
 test("status stays paginated and cancel requires confirmation and reports draining", async () => {
-	const status = await run(["status", "run_taki_20261019"]);
+	const status = await run(["status", "run_demo_20261019"]);
 	expect(status.status).toBe(0);
 	expect(JSON.parse(status.stdout)).toMatchObject({
 		...fixtures.running.data,
-		next: "boldvideo import status 'run_taki_20261019' --page 2",
+		next: "boldvideo import status 'run_demo_20261019' --page 2",
 	});
-	const last = await run(["status", "run_taki_20261019", "--page", "2"]);
+	const last = await run(["status", "run_demo_20261019", "--page", "2"]);
 	expect(JSON.parse(last.stdout)).toEqual(fixtures.second_page.data);
-	const refused = await run(["cancel", "run_taki_20261019"]);
+	const refused = await run(["cancel", "run_demo_20261019"]);
 	expect(refused.status).toBe(2);
 	expect(JSON.parse(refused.stderr).code).toBe("confirmation_required");
-	const canceled = await run(["cancel", "run_taki_20261019", "--yes"]);
+	const canceled = await run(["cancel", "run_demo_20261019", "--yes"]);
 	expect(canceled.status).toBe(0);
 	expect(JSON.parse(canceled.stdout).message).toContain(
 		"already-submitted batch drains",
@@ -443,7 +443,7 @@ test("status stays paginated and cancel requires confirmation and reports draini
 	expect(calls.filter((call) => call.method === "POST")).toEqual([
 		{
 			method: "POST",
-			path: "/admin/imports/run_taki_20261019/cancel",
+			path: "/admin/imports/run_demo_20261019/cancel",
 			body: undefined,
 		},
 	]);
@@ -472,14 +472,14 @@ test("dry-run describes the exact request without writes; date-only uses UTC", a
 	expect(JSON.parse(batch.stdout).body.published_at_strategy).toBe("source");
 	const cancel = await run([
 		"cancel",
-		"run_taki_20261019",
+		"run_demo_20261019",
 		"--dry-run",
 		"--yes",
 	]);
 	expect(JSON.parse(cancel.stdout)).toEqual({
 		dry_run: true,
 		method: "POST",
-		path: "/admin/imports/run_taki_20261019/cancel",
+		path: "/admin/imports/run_demo_20261019/cancel",
 	});
 	expect(calls.every((call) => call.path === "/me")).toBe(true);
 });

@@ -345,7 +345,7 @@ test("401 envelopes, generic 403 and AI entitlement use stable errors and specif
 			fixtures.unauthorized,
 			401,
 			"not_authenticated",
-			"Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.",
+			"Run boldvideo login to sign in, or set BOLDVIDEO_API_KEY.",
 		],
 		[fixtures.forbidden, 403, "not_permitted", "boldvideo login --help"],
 		[

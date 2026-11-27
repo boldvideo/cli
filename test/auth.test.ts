@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { parse } from "../src/cli";
 import me from "./fixtures/me.json";
 import { run as execute } from "./run";
 
@@ -20,12 +21,60 @@ const admin = "bold_test_admin_2028";
 let home: string;
 let override: Response | undefined;
 const writes: unknown[] = [];
+// Browser sign-in: what the mock answers to each poll, and what it saw.
+const workspaces = [
+	{ slug: "hrtu", name: "HRT University", key: "bold_admin_cli_hrtu_2039" },
+	{
+		slug: "viva",
+		name: "VIVA Financial Tuition",
+		key: "bold_admin_cli_viva_2039",
+	},
+];
+const deviceCode = "device_secret_2039";
+let polls: { status: number; body: unknown }[] = [];
+let pollDelay = 0;
+let expiresIn = 600;
+const started: unknown[] = [];
+const ended: (string | undefined)[] = [];
 const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 0,
 	async fetch(request) {
 		const url = new URL(request.url);
 		const key = request.headers.get("authorization")?.replace(/^Bearer /, "");
+		if (url.pathname === "/api/v1/cli/logins" && request.method === "POST") {
+			started.push(await request.json());
+			return Response.json(
+				{
+					device_code: deviceCode,
+					user_code: "KTRM-4XQ9",
+					verification_url: `${url.origin}/cli/KTRM-4XQ9`,
+					expires_in: expiresIn,
+					interval: 0.05,
+				},
+				{ status: 201 },
+			);
+		}
+		if (url.pathname === "/api/v1/cli/logins/token") {
+			const next = polls.length > 1 ? polls.shift() : polls[0];
+			if (pollDelay) await new Promise((done) => setTimeout(done, pollDelay));
+			return Response.json(next?.body ?? {}, { status: next?.status ?? 500 });
+		}
+		if (url.pathname === "/api/v1/cli/session" && request.method === "DELETE") {
+			ended.push(key);
+			const personal = workspaces.some((workspace) => workspace.key === key);
+			return new Response(null, { status: personal ? 204 : 403 });
+		}
+		const signedIn = workspaces.find((workspace) => workspace.key === key);
+		if (url.pathname === "/api/v1/me" && signedIn)
+			return Response.json({
+				data: {
+					...me.data,
+					account: { slug: signedIn.slug, name: signedIn.name },
+					key: { kind: "admin", short_id: "key_cli" },
+					user: { email: "dana@example.com" },
+				},
+			});
 		if (url.pathname === "/api/v1/me") {
 			if (override) return override.clone();
 			if (key !== tenant && key !== admin)
@@ -78,6 +127,11 @@ beforeEach(() => {
 	home = mkdtempSync(join(temporary, "config-"));
 	override = undefined;
 	writes.length = 0;
+	polls = [];
+	pollDelay = 0;
+	expiresIn = 600;
+	started.length = 0;
+	ended.length = 0;
 });
 afterAll(() => {
 	server.stop(true);
@@ -92,6 +146,8 @@ function run(
 		input?: string;
 		fixture?: boolean;
 		env?: Record<string, string>;
+		waitFor?: string;
+		stderr?: "tty" | "pipe";
 	} = {},
 ): Promise<{ status: number | null; stdout: string; stderr: string }> {
 	const argv = [
@@ -102,11 +158,11 @@ function run(
 	return execute(argv, {
 		tty: options.tty,
 		input: options.input,
-		waitFor:
-			options.tty && options.input !== undefined
-				? "API key (input hidden):"
-				: undefined,
+		waitFor: options.waitFor,
+		stderr: options.stderr,
 		env: {
+			// A test must never open a real browser tab.
+			BOLDVIDEO_NO_BROWSER: "1",
 			BOLDVIDEO_API_KEY: options.key ?? "",
 			BOLDVIDEO_API_URL: `${base}/`,
 			XDG_CONFIG_HOME: home,
@@ -149,7 +205,7 @@ test("login verifies and activates profiles; env wins over explicit and active s
 	});
 	expect(
 		(
-			await run(["login", "--profile", "customer-demo"], {
+			await run(["login", "--token", "-", "--profile", "customer-demo"], {
 				input: `${admin}\n`,
 			})
 		).status,
@@ -203,14 +259,12 @@ test("missing keys exit 3 with actionable setup instructions; help needs no key"
 	expect(result.stdout).toBe("");
 	const failure = JSON.parse(result.stderr);
 	expect(failure.code).toBe("not_authenticated");
-	for (const text of [
-		"BOLDVIDEO_API_KEY",
-		"boldvideo login --token",
-		"Settings → Developer",
-	])
+	for (const text of ["boldvideo login", "BOLDVIDEO_API_KEY"])
 		expect(failure.hint).toContain(text);
 	expect((await run(["help"])).status).toBe(0);
-	expect((await run(["login"], { input: "\n" })).status).toBe(3);
+	expect((await run(["login", "--token", "-"], { input: "\n" })).status).toBe(
+		3,
+	);
 });
 
 test("admin authorization prevents writes with tenant keys, including stored keys", async () => {
@@ -223,7 +277,7 @@ test("admin authorization prevents writes with tenant keys, including stored key
 		expect(denied.status).toBe(3);
 		expect(JSON.parse(denied.stderr)).toMatchObject({
 			code: "not_permitted",
-			hint: expect.stringContaining("admin key is required"),
+			hint: expect.stringContaining("Run boldvideo login to sign in"),
 		});
 	}
 	expect(writes).toHaveLength(0);
@@ -312,7 +366,7 @@ test("flat and nested 401 errors keep the auth hint and prevent admin writes", a
 			expect(JSON.parse(result.stderr)).toEqual({
 				code: "not_authenticated",
 				message: "Unauthorized",
-				hint: "Set BOLDVIDEO_API_KEY or run boldvideo login --token <key>. Create a key in Bold: Settings → Developer.\nRead: boldvideo docs cli",
+				hint: "Run boldvideo login to sign in, or set BOLDVIDEO_API_KEY.\nRead: boldvideo docs cli",
 				docs: "https://docs.boldvideo.com/cli#not-authenticated",
 				request_id: "req_auth",
 			});
@@ -367,17 +421,170 @@ test("profile pagination, dry-run, removal and logout preserve unrelated keys", 
 	expect((await run(["whoami"])).status).toBe(3);
 });
 
-test("terminal login hides input and cancellation does not save a key", async () => {
-	const result = await run(["login"], { tty: true, input: `${tenant}\n` });
+const approved = (list = workspaces) => ({
+	status: 200,
+	body: {
+		status: "approved",
+		user: { email: "dana@example.com" },
+		workspaces: list,
+	},
+});
+const pending = { status: 200, body: { status: "pending" } };
+
+test("terminal login signs in through the browser and never prints a key", async () => {
+	polls = [pending, pending, approved(workspaces.slice(0, 1))];
+	const result = await run(["login"], { tty: true });
 	expect(result).toMatchObject({ status: 0 });
-	expect(result.stdout).toContain("API key (input hidden):");
-	expect(result.stdout).toContain("Active profile: acme.");
-	expect(result.stdout + result.stderr).not.toContain(tenant);
-	expect(stored().profiles.acme.key).toBe(tenant);
-	const cancelled = await run(["login"], { tty: true, input: "\x03" });
+	expect(result.stdout).toContain("████████▄▄▄");
+	expect(result.stdout).toContain("Sign in to Bold");
+	expect(result.stdout).toContain("KTRM-4XQ9");
+	expect(result.stdout).toContain("/cli/KTRM-4XQ9");
+	expect(result.stdout).toContain("Open the link in a browser.");
+	expect(result.stdout).toContain("Signed in as dana@example.com");
+	expect(result.stdout).toContain("HRT University · hrtu");
+	expect(result.stdout).toContain("boldvideo videos list");
+	expect(result.stdout).not.toContain(workspaces[0]?.key as string);
+	expect(result.stdout).not.toContain(deviceCode);
+	expect(started).toHaveLength(1);
+	expect(stored()).toEqual({
+		active: "hrtu",
+		profiles: {
+			hrtu: {
+				key: workspaces[0]?.key,
+				name: "HRT University",
+				user: "dana@example.com",
+			},
+		},
+	});
+	expect(JSON.parse((await run(["whoami"])).stdout)).toMatchObject({
+		account_slug: "hrtu",
+		key_kind: "admin",
+		profile: "hrtu",
+		user: "dana@example.com",
+	});
+});
+
+test("several workspaces become profiles, and -t runs one call in another", async () => {
+	polls = [approved()];
+	const result = await run(["login"], { tty: true });
+	expect(result).toMatchObject({ status: 0 });
+	expect(result.stdout).toContain("Workspaces");
+	expect(result.stdout).toMatch(/● hrtu\s+HRT University\s+active/);
+	expect(result.stdout).toMatch(/viva\s+VIVA Financial Tuition/);
+	expect(result.stdout).toContain("boldvideo profiles use viva");
+	expect(result.stdout).toContain("boldvideo videos list -t viva");
+	expect(stored().active).toBe("hrtu");
+	expect(Object.keys(stored().profiles)).toEqual(["hrtu", "viva"]);
+	for (const flag of ["-t", "--tenant", "--profile"])
+		expect(
+			JSON.parse((await run(["whoami", flag, "viva"])).stdout).account_slug,
+		).toBe("viva");
+	expect(JSON.parse((await run(["whoami"])).stdout).account_slug).toBe("hrtu");
+	const named = await run(["whoami", "-t", "viva"], { tty: true });
+	expect(named.stdout).toContain("viva · VIVA Financial Tuition");
+	// Follow-up commands the CLI prints must keep the workspace: -t becomes --profile.
+	expect(parse(["videos", "list", "-t", "viva"]).flags.profile).toBe("viva");
+	expect(parse(["videos", "list", "--tenant=viva"]).flags.profile).toBe("viva");
+});
+
+test("signing in again keeps the active workspace and existing profiles", async () => {
+	await run(["login", "--token", tenant]);
+	polls = [approved()];
+	expect((await run(["login"], { tty: true })).status).toBe(0);
+	expect(stored().active).toBe("hrtu");
+	expect(Object.keys(stored().profiles).sort()).toEqual([
+		"acme",
+		"hrtu",
+		"viva",
+	]);
+	await run(["profiles", "use", "viva"]);
+	polls = [approved()];
+	expect((await run(["login"], { tty: true })).status).toBe(0);
+	expect(stored().active).toBe("viva");
+});
+
+test("login prints JSON on stdout and the link on stderr when asked for JSON", async () => {
+	polls = [approved(workspaces.slice(0, 1))];
+	const result = await run(["login", "--json"], { tty: true, stderr: "pipe" });
+	expect(result.status).toBe(0);
+	expect(JSON.parse(result.stdout.trim())).toEqual({
+		profile: "hrtu",
+		account: { slug: "hrtu", name: "HRT University" },
+		key_kind: "admin",
+		user: { email: "dana@example.com" },
+		workspaces: [{ profile: "hrtu", slug: "hrtu", name: "HRT University" }],
+		dry_run: false,
+	});
+	expect(result.stderr).toContain(
+		"Open http://127.0.0.1:" +
+			server.port +
+			"/cli/KTRM-4XQ9 and approve code KTRM-4XQ9.",
+	);
+});
+
+test("without a terminal, login still starts the browser sign-in and hands over the link", async () => {
+	polls = [pending, approved(workspaces.slice(0, 1))];
+	const result = await run(["login"]);
+	expect(result.status).toBe(0);
+	expect(result.stderr).toBe(
+		`Open http://127.0.0.1:${server.port}/cli/KTRM-4XQ9 and approve code KTRM-4XQ9.\n`,
+	);
+	expect(JSON.parse(result.stdout).profile).toBe("hrtu");
+	expect(result.stdout + result.stderr).not.toContain(
+		workspaces[0]?.key as string,
+	);
+	expect(stored().active).toBe("hrtu");
+});
+
+test("a refused, expired or cancelled sign-in saves nothing", async () => {
+	polls = [pending, { status: 410, body: { code: "denied" } }];
+	const refused = await run(["login"], { tty: true });
+	expect(refused.status).toBe(3);
+	expect(refused.stdout).toContain("cancelled in the browser");
+	polls = [{ status: 410, body: { code: "expired" } }];
+	expect((await run(["login"], { tty: true })).status).toBe(5);
+	polls = [pending];
+	expiresIn = 0.2;
+	expect((await run(["login"], { tty: true })).status).toBe(5);
+	expiresIn = 600;
+	const cancelled = await run(["login"], {
+		tty: true,
+		input: "\x03",
+		waitFor: "Waiting for approval",
+	});
 	expect(cancelled.status).toBe(2);
 	expect(cancelled.stdout).toContain("Login cancelled.");
-	expect(stored().active).toBe("acme");
+	expect(existsSync(profileFile())).toBe(false);
+	expect((await run(["login", "--dry-run"], { tty: true })).status).toBe(2);
+});
+
+test("Ctrl+C wins over an approval that arrives while a poll is in flight", async () => {
+	polls = [approved()];
+	pollDelay = 1500;
+	const cancelled = await run(["login"], {
+		tty: true,
+		input: "\x03",
+		waitFor: "Waiting for approval",
+	});
+	expect(cancelled.status).toBe(2);
+	expect(cancelled.stdout).toContain("Login cancelled.");
+	expect(cancelled.stdout).not.toContain("Signed in");
+	expect(existsSync(profileFile())).toBe(false);
+});
+
+test("logout ends a browser sign-in on the server and leaves other keys alone", async () => {
+	polls = [approved()];
+	await run(["login"], { tty: true });
+	expect((await run(["logout", "--yes"])).status).toBe(0);
+	expect(ended).toEqual([workspaces[0]?.key]);
+	expect(stored().active).toBeNull();
+	expect(Object.keys(stored().profiles)).toEqual(["viva"]);
+	expect((await run(["profiles", "remove", "viva", "--yes"])).status).toBe(0);
+	expect(ended).toEqual([workspaces[0]?.key, workspaces[1]?.key]);
+	await run(["login", "--token", tenant]);
+	expect((await run(["logout", "--yes"])).status).toBe(0);
+	expect(ended.at(-1)).toBe(tenant);
+	expect(stored()).toEqual({ active: null, profiles: {} });
 });
 
 test("corrupt storage is not overwritten but does not block env keys or help", async () => {

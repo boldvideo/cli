@@ -32,68 +32,43 @@ jobs:
     needs: version
     uses: ./.github/workflows/ci.yml
 
-  publish:
+  # CI can only stage a release. A maintainer approves it on npmjs.com with 2FA
+  # (Staged Packages), so a compromised workflow cannot ship to users by itself.
+  stage:
     needs: check
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      id-token: write # npm trusted publishing (OIDC); no token is stored anywhere
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: package
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
-      - name: Publish to npm with provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::Missing repository secret NPM_TOKEN. Add an npm publish token before releasing."
-            exit 1
-          fi
-          npm publish boldvideo-[0-9]*.tgz --provenance --access public
-          npm publish boldvideo-cli-*.tgz --provenance --access public
-
-  smoke:
-    needs: publish
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      BOLDVIDEO_API_KEY: ${{ secrets.BOLDVIDEO_SMOKE_API_KEY }}
-      BOLDVIDEO_API_URL: ${{ secrets.BOLDVIDEO_SMOKE_API_URL }}
-      BOLDVIDEO_SMOKE_YOUTUBE_URL: ${{ secrets.BOLDVIDEO_SMOKE_YOUTUBE_URL }}
-    steps:
-      - name: Check non-customer smoke credentials
-        id: credentials
-        run: |
-          if [ -z "$BOLDVIDEO_API_KEY" ] || [ -z "$BOLDVIDEO_API_URL" ] || [ -z "$BOLDVIDEO_SMOKE_YOUTUBE_URL" ]; then
-            echo "::notice::Skipping live smoke: configure BOLDVIDEO_SMOKE_API_KEY, BOLDVIDEO_SMOKE_API_URL and BOLDVIDEO_SMOKE_YOUTUBE_URL for a non-customer account."
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          fi
-      - uses: actions/setup-node@v4
-        if: steps.credentials.outputs.enabled == 'true'
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-      - name: Install the published version
-        if: steps.credentials.outputs.enabled == 'true'
-        run: npm install --global "boldvideo@${GITHUB_REF_NAME#v}"
-      - name: Import the smoke YouTube source and wait
-        if: steps.credentials.outputs.enabled == 'true'
-        run: boldvideo import youtube "$BOLDVIDEO_SMOKE_YOUTUBE_URL" --wait
-      - name: Ask with cited timestamps
-        if: steps.credentials.outputs.enabled == 'true'
-        run: boldvideo ask "What does Taki say about paid workshops versus free webinars? Cite video timestamps."
-      - name: Search the smoke library
-        if: steps.credentials.outputs.enabled == 'true'
-        run: boldvideo search "paid workshops"
+          bun-version: 1.3.10
+      - name: Use an npm that can stage
+        run: |
+          npm install --global npm@latest
+          node -e 'const [major, minor] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && minor < 15)) { console.error("npm stage needs npm 11.15 or newer, found " + process.argv[1]); process.exit(1); }' "$(npm --version)"
+      - run: bun install --frozen-lockfile
+      - name: Stage boldvideo
+        run: npm stage publish --access public
+      - name: Stage @boldvideo/cli
+        working-directory: packages/cli-alias
+        run: npm stage publish --access public
+      - name: Say what happens next
+        run: |
+          {
+            echo "### Staged ${GITHUB_REF_NAME}"
+            echo "Nothing is public yet. Approve \`boldvideo\` first, then \`@boldvideo/cli\`, on npmjs.com under Staged Packages, or with \`npm stage list\` and \`npm stage approve <stage-id>\`."
+            echo "Then run the Smoke workflow for this version."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   release:
-    needs: [publish, smoke]
+    needs: stage
     runs-on: ubuntu-latest
     permissions:
       contents: write

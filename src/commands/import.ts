@@ -474,7 +474,7 @@ function sourceCommand(name: "youtube" | "url"): Command {
 							note: "Import one video and wait for a searchable transcript.",
 						},
 						{
-							cmd: 'boldvideo import youtube https://www.youtube.com/@takimoore --collection "Coaching"',
+							cmd: 'boldvideo import youtube https://www.youtube.com/@yourchannel --collection "Coaching"',
 							note: "Import a channel into a named collection.",
 						},
 					]
@@ -586,7 +586,7 @@ export const imports: Command = {
 	write: true,
 	examples: [
 		{
-			cmd: "boldvideo import youtube https://www.youtube.com/@takimoore --wait",
+			cmd: "boldvideo import youtube https://www.youtube.com/@yourchannel --wait",
 			note: "Import a YouTube channel and wait for readiness.",
 		},
 		{
@@ -620,11 +620,11 @@ export const imports: Command = {
 			],
 			examples: [
 				{
-					cmd: "boldvideo import status run_taki_20261019",
+					cmd: "boldvideo import status run_demo_20261019",
 					note: "Inspect a channel import.",
 				},
 				{
-					cmd: "boldvideo import status run_taki_20261019 --wait --timeout 7200",
+					cmd: "boldvideo import status run_demo_20261019 --wait --timeout 7200",
 					note: "Resume waiting for up to two hours.",
 				},
 			],
@@ -661,11 +661,11 @@ export const imports: Command = {
 			args: [{ name: "run_id", description: "Import run identifier." }],
 			examples: [
 				{
-					cmd: "boldvideo import cancel run_taki_20261019 --yes",
+					cmd: "boldvideo import cancel run_demo_20261019 --yes",
 					note: "Cancel further submission; the current batch drains.",
 				},
 				{
-					cmd: "boldvideo import cancel run_taki_20261019 --dry-run --yes",
+					cmd: "boldvideo import cancel run_demo_20261019 --dry-run --yes",
 					note: "Preview cancellation without changing the run.",
 				},
 			],

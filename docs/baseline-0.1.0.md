@@ -5,48 +5,48 @@ After release, existing commands and flags are permanent; additions only.
 
 | Command | Flags |
 | --- | --- |
-| `boldvideo` | `--help`, `--json`, `--debug`, `--profile`, `--version` |
-| `boldvideo import` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo import youtube` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--from`, `--title`, `--description`, `--tags`, `--collection`, `--type`, `--privacy`, `--published-at`, `--external-id`, `--language`, `--max`, `--order`, `--wait`, `--poll-interval`, `--timeout` |
-| `boldvideo import url` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--from`, `--title`, `--description`, `--tags`, `--collection`, `--type`, `--privacy`, `--published-at`, `--external-id`, `--language`, `--max`, `--order`, `--wait`, `--poll-interval`, `--timeout` |
-| `boldvideo import status` | `--help`, `--json`, `--debug`, `--profile`, `--wait`, `--poll-interval`, `--timeout`, `--page` |
-| `boldvideo import cancel` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo ask` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--collection`, `--as`, `--conversation`, `--no-sources` |
-| `boldvideo search` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--keyword`, `--page` |
-| `boldvideo help` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo help exit-codes` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo login` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--token` |
-| `boldvideo whoami` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo profiles` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo profiles list` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--offset` |
-| `boldvideo profiles use` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo profiles remove` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo logout` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo videos` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo videos list` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--status`, `--privacy`, `--collection`, `--tag`, `--type`, `--since`, `--page` |
-| `boldvideo videos get` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo videos transcript` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--format`, `--out` |
-| `boldvideo videos update` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--title`, `--description`, `--published-at`, `--type`, `--privacy`, `--tags`, `--add-tags`, `--remove-tags`, `--collections`, `--add-collection`, `--remove-collection` |
-| `boldvideo videos publish` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--published-at` |
-| `boldvideo videos unpublish` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo videos delete` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo collections` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo collections list` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--offset` |
-| `boldvideo collections create` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--parent` |
-| `boldvideo collections rename` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo collections add` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo collections remove` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo collections videos` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--offset` |
-| `boldvideo viewers` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo viewers list` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--page` |
-| `boldvideo viewers get` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo viewers sync` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--prune` |
-| `boldvideo viewers progress` | `--help`, `--json`, `--debug`, `--profile`, `--video` |
-| `boldvideo viewers memory` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo viewers memory get` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes`, `--enable`, `--disable` |
-| `boldvideo viewers memory clear` | `--help`, `--json`, `--debug`, `--profile`, `--dry-run`, `--yes` |
-| `boldvideo insights` | `--help`, `--json`, `--debug`, `--profile` |
-| `boldvideo insights questions` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--since`, `--until`, `--collection`, `--video`, `--kind`, `--channel`, `--outcome`, `--status`, `--reason`, `--needs-a-look`, `--include-team`, `--include-noise`, `--include-pending`, `--page`, `--group-by`, `--format` |
-| `boldvideo api` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--dry-run`, `--yes`, `--field`, `--typed-field`, `--query`, `--input`, `--paginate`, `--list`, `--offset` |
-| `boldvideo docs` | `--help`, `--json`, `--debug`, `--profile`, `--limit`, `--fields`, `--search`, `--offset` |
-| `boldvideo upgrade` | `--help`, `--json`, `--debug`, `--profile`, `--no-check` |
+| `boldvideo` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--version` |
+| `boldvideo import` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo import youtube` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--from`, `--title`, `--description`, `--tags`, `--collection`, `--type`, `--privacy`, `--published-at`, `--external-id`, `--language`, `--max`, `--order`, `--wait`, `--poll-interval`, `--timeout` |
+| `boldvideo import url` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--from`, `--title`, `--description`, `--tags`, `--collection`, `--type`, `--privacy`, `--published-at`, `--external-id`, `--language`, `--max`, `--order`, `--wait`, `--poll-interval`, `--timeout` |
+| `boldvideo import status` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--wait`, `--poll-interval`, `--timeout`, `--page` |
+| `boldvideo import cancel` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo ask` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--collection`, `--as`, `--conversation`, `--no-sources` |
+| `boldvideo search` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--keyword`, `--page` |
+| `boldvideo help` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo help exit-codes` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo login` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--token`, `--no-browser` |
+| `boldvideo whoami` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo profiles` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo profiles list` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--offset` |
+| `boldvideo profiles use` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo profiles remove` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo logout` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo videos` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo videos list` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--status`, `--privacy`, `--collection`, `--tag`, `--type`, `--since`, `--page` |
+| `boldvideo videos get` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo videos transcript` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--format`, `--out` |
+| `boldvideo videos update` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--title`, `--description`, `--published-at`, `--type`, `--privacy`, `--tags`, `--add-tags`, `--remove-tags`, `--collections`, `--add-collection`, `--remove-collection` |
+| `boldvideo videos publish` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--published-at` |
+| `boldvideo videos unpublish` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo videos delete` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo collections` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo collections list` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--offset` |
+| `boldvideo collections create` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--parent` |
+| `boldvideo collections rename` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo collections add` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo collections remove` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo collections videos` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--offset` |
+| `boldvideo viewers` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo viewers list` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--page` |
+| `boldvideo viewers get` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo viewers sync` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--prune` |
+| `boldvideo viewers progress` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--video` |
+| `boldvideo viewers memory` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo viewers memory get` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes`, `--enable`, `--disable` |
+| `boldvideo viewers memory clear` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--dry-run`, `--yes` |
+| `boldvideo insights` | `--help`, `--json`, `--debug`, `--profile`, `--tenant` |
+| `boldvideo insights questions` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--since`, `--until`, `--collection`, `--video`, `--kind`, `--channel`, `--outcome`, `--status`, `--reason`, `--needs-a-look`, `--include-team`, `--include-noise`, `--include-pending`, `--page`, `--group-by`, `--format` |
+| `boldvideo api` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--dry-run`, `--yes`, `--field`, `--typed-field`, `--query`, `--input`, `--paginate`, `--list`, `--offset` |
+| `boldvideo docs` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--limit`, `--fields`, `--search`, `--offset` |
+| `boldvideo upgrade` | `--help`, `--json`, `--debug`, `--profile`, `--tenant`, `--no-check` |

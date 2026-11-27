@@ -4,7 +4,7 @@ import { identity, loadProfiles, resolveKey } from "./auth";
 import { commands } from "./commands";
 import { error, registerSecret } from "./errors";
 import { rootCommand, showHelp } from "./help";
-import { output } from "./output";
+import { hint, output } from "./output";
 import { type Command, commandFlags, type Flags } from "./spec";
 
 function options(command: Command): ParseArgsOptionsConfig {
@@ -110,6 +110,9 @@ export function parse(argv: string[], registry = commands) {
 							.filter(Boolean);
 			} else flags[flag.name] = value as string | boolean;
 		}
+		// --tenant is --profile under another name. Fold it in once, so every command,
+		// and every follow-up command it prints, carries the selection.
+		if (flags.tenant !== undefined) flags.profile = flags.tenant;
 		if (
 			command.list &&
 			(!Number.isSafeInteger(flags.limit) || Number(flags.limit) < 1)
@@ -166,10 +169,19 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 			2,
 		);
 	}
+	const viaTenant = flags.tenant !== undefined;
 	const credential =
 		command.auth === "none"
 			? undefined
 			: resolveKey(flags.profile as string | undefined);
+	if (viaTenant && credential?.profile) {
+		const workspace = loadProfiles().profiles[credential.profile];
+		hint(
+			workspace?.name
+				? `${credential.profile} · ${workspace.name}`
+				: credential.profile,
+		);
+	}
 	if (
 		command.auth === "admin" &&
 		credential &&
@@ -178,7 +190,7 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 		throw error(
 			"not_permitted",
 			"This command requires an admin key.",
-			"An admin key is required. Set BOLDVIDEO_API_KEY to an admin key or run boldvideo login --token <admin-key>.",
+			"This needs full access. Run boldvideo login to sign in, or use an admin key.",
 			3,
 		);
 	await command.run(

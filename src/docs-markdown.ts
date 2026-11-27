@@ -8,7 +8,7 @@ export function commandTreeToMarkdown(tree: Command): string {
 		"## Install",
 		"Requires Node.js 22 or newer.\n\n```sh\nnpm install -g boldvideo\n```",
 		"## Authentication",
-		"Set BOLDVIDEO_API_KEY or run `boldvideo login` to save a profile. Create an API key in Bold under Settings → Developer. BOLDVIDEO_API_KEY takes precedence over `--profile` and the active stored profile. Admin commands require an admin key. Help, version, local profile management and `boldvideo docs` need no API key.",
+		"Run `boldvideo login` to sign in with your browser; each workspace you approve is saved as a profile, and `-t <slug>` runs one call in another. For servers and CI, set BOLDVIDEO_API_KEY to an admin key from Settings → Developer; it takes precedence over `--profile` and the active stored profile. Help, version, local profile management and `boldvideo docs` need no sign-in.",
 		"BOLDVIDEO_API_URL overrides the API base URL (https://app.boldvideo.io/api/v1). `boldvideo docs cli` renders this installed reference offline without making network requests. Other documentation topics require access to BOLDVIDEO_DOCS_URL (https://docs.boldvideo.com by default).",
 		"## Commands",
 	];
