@@ -21,6 +21,7 @@ First release. Every command below is in the stability baseline
 - Reference: `docs` (the `cli` topic works offline), `help`, `help --json`,
   `help exit-codes`, `--version`, `upgrade`.
 - JSON when piped or with `--json`, structured errors on stderr, stable exit codes.
+- The command is installed as `boldvideo` and as `bold`.
 - Distribution: npm `boldvideo` with provenance, compatibility package
   `@boldvideo/cli`, standalone binaries with checksums, Homebrew tap, install script.
 

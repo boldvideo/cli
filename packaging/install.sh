@@ -62,6 +62,10 @@ staged=$(mktemp "$install_dir/.boldvideo.XXXXXX")
 cp "$temporary/$asset" "$staged"
 chmod 755 "$staged"
 mv -f "$staged" "$install_dir/boldvideo"
+# The short name, unless something else called bold already lives here.
+if [ ! -e "$install_dir/bold" ] || [ -L "$install_dir/bold" ]; then
+  ln -sf boldvideo "$install_dir/bold"
+fi
 staged=
 printf 'Installed boldvideo %s to %s/boldvideo\n' "$tag" "$install_dir"
 case ":$PATH:" in

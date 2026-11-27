@@ -10,7 +10,8 @@
 	},
 	"type": "module",
 	"bin": {
-		"boldvideo": "bin/boldvideo.js"
+		"boldvideo": "bin/boldvideo.js",
+		"bold": "bin/boldvideo.js"
 	},
 	"files": [
 		"bin"

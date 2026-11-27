@@ -9,7 +9,8 @@
 	},
 	"type": "module",
 	"bin": {
-		"boldvideo": "dist/boldvideo.js"
+		"boldvideo": "dist/boldvideo.js",
+		"bold": "dist/boldvideo.js"
 	},
 	"files": [
 		"dist/boldvideo.js"
