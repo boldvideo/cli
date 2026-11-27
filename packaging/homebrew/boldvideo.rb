@@ -28,9 +28,12 @@ class Boldvideo < Formula
 
   def install
     bin.install Dir["boldvideo-*"].first => "boldvideo"
+    # The short name for typing; boldvideo stays the name in docs and help.
+    bin.install_symlink "boldvideo" => "bold"
   end
 
   test do
     assert_match version.to_s, shell_output("#{bin}/boldvideo --version")
+    assert_match version.to_s, shell_output("#{bin}/bold --version")
   end
 end

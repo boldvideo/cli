@@ -168,8 +168,23 @@ esac
 			}
 			expect(await readFile(installed, "utf8")).toBe("c\n");
 			expect((await stat(installed)).mode & 0o777).toBe(0o755);
+			// The short name points at the same file.
+			expect(await readFile(join(directory, ".local/bin/bold"), "utf8")).toBe(
+				"c\n",
+			);
 		}
 	} finally {
 		await rm(directory, { recursive: true, force: true });
 	}
+});
+
+test("the short name bold is the same command in every package and installer", async () => {
+	for (const path of ["package.json", "packages/cli-alias/package.json"]) {
+		const { bin } = JSON.parse(await readFile(path, "utf8"));
+		expect(Object.keys(bin)).toEqual(["boldvideo", "bold"]);
+		expect(bin.bold).toBe(bin.boldvideo);
+	}
+	expect(await readFile("packaging/homebrew/boldvideo.rb", "utf8")).toContain(
+		'bin.install_symlink "boldvideo" => "bold"',
+	);
 });

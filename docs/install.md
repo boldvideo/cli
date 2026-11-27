@@ -3,7 +3,7 @@
 Standalone binaries and the Homebrew formula are produced for every tagged
 release. The install script URL, `https://boldvideo.com/install.sh`, is **not yet live**.
 
-All paths install the same CLI. Run `boldvideo --help` to see every command. Piped help/version return JSON.
+All paths install the same CLI, as `boldvideo` and under the shorter name `bold`. Run `boldvideo --help` to see every command. Piped help/version return JSON.
 
 | Path | Best for | Requirements |
 | --- | --- | --- |

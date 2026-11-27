@@ -38,6 +38,9 @@ Or run it without installing:
 npx boldvideo@latest --help
 ```
 
+Installing also gives you `bold`, the same command under a shorter name:
+`bold login`, `bold videos list`. Docs and help say `boldvideo` throughout.
+
 ## Sign in
 
 ```sh
