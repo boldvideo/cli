@@ -1,6 +1,6 @@
 {
 	"name": "@boldvideo/cli",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Compatibility package for the boldvideo CLI.",
 	"license": "MIT",
 	"repository": {
@@ -20,7 +20,7 @@
 		"node": ">=22"
 	},
 	"dependencies": {
-		"boldvideo": "0.2.0"
+		"boldvideo": "0.2.1"
 	},
 	"publishConfig": {
 		"provenance": true,

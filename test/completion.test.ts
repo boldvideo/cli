@@ -118,6 +118,27 @@ describe("shorthands", () => {
 		);
 	});
 
+	test("a verb before its group is answered with the command the right way round", () => {
+		for (const [words, hint] of [
+			[["list", "videos"], "boldvideo videos list"],
+			[["ls", "v"], "boldvideo videos list"],
+			[["get", "viewers", "ada@example.com"], "boldvideo viewers get"],
+			[["create", "collections", "Workshops"], "boldvideo collections create"],
+		] as const)
+			expect(() => parse([...words])).toThrow(
+				expect.objectContaining({
+					code: "unknown_command",
+					hint: expect.stringContaining(hint),
+				}),
+			);
+		// A verb no group has keeps the usual hint.
+		expect(() => parse(["frobnicate", "videos"])).toThrow(
+			expect.objectContaining({
+				hint: expect.stringContaining("boldvideo --help"),
+			}),
+		);
+	});
+
 	test("short flags match their long forms", () => {
 		expect(parse(["v", "ls", "-n", "3", "-j", "-p", "hrtu"]).flags).toEqual(
 			parse(["videos", "list", "--limit", "3", "--json", "--profile", "hrtu"])

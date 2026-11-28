@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 — 2026-11-28
+
+- Fixed: every `import` command (`youtube`, `url`, `dir`, `file`, `status`,
+  `cancel`) was refused with `not_authenticated: Unauthorized`. They sent the key
+  only as a Bearer token; the admin API reads it from `X-Bold-Admin-Api-Key`.
+  0.2.0 cannot import; upgrade.
+- A verb typed before its group (`boldvideo list videos`) now answers with the
+  command the right way round (`boldvideo videos list`).
+
 ## 0.2.0 — 2026-11-28
 
 The first version on npm.
