@@ -1,7 +1,7 @@
 ---
 id: 19-coaching-chain
-version: 1
-prompt: 'Bring https://eval-media.bold.video/coaching-intro.mp4 into the library as "Coaching introduction" with reference eval-coaching-chain, then file it under Coaching, then explain the first exercise from that material with its supporting title and timestamp. In your final reply say where you filed it too.'
+version: 2
+prompt: 'Bring https://eval-media.bold.video/coaching-intro.mp4 into the library as "Coaching introduction" with reference eval-coaching-chain, then put it under Coaching, then explain the first exercise from that material with its supporting title and timestamp. In your final reply say where you filed it too.'
 starting_state: reset
 min_calls: 3
 check:
@@ -15,6 +15,6 @@ trap: false
 chain: true
 ---
 
-Bring https://eval-media.bold.video/coaching-intro.mp4 into the library as "Coaching introduction" with reference eval-coaching-chain, then file it under Coaching, then explain the first exercise from that material with its supporting title and timestamp. In your final reply say where you filed it too.
+Bring https://eval-media.bold.video/coaching-intro.mp4 into the library as "Coaching introduction" with reference eval-coaching-chain, then put it under Coaching, then explain the first exercise from that material with its supporting title and timestamp. In your final reply say where you filed it too.
 
 This measures the same three-stage workflow with a different collection and answer fixture. The asymmetric content catches an agent that reuses the pricing answer instead of querying the newly available material.

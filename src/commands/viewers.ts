@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
 import { apiUrl, request } from "../api";
 import { type Credential, identity } from "../auth";
+import { csvRows } from "../csv";
 import { apiError, type CliError, error } from "../errors";
 import { hint, output, outputList, table } from "../output";
 import type { Command, Context, Flags } from "../spec";
@@ -92,39 +93,8 @@ async function resolveViewer(key: string, value: string): Promise<RecordData> {
 	);
 }
 
-// CSV quoting follows RFC 4180, including escaped quotes and embedded newlines.
 function csv(text: string): RecordData[] {
-	const rows: string[][] = [];
-	let row: string[] = [];
-	let cell = "";
-	let quoted = false;
-	let closed = false;
-	for (let i = 0; i < text.length; i++) {
-		const char = text[i];
-		if (quoted) {
-			if (char === '"' && text[i + 1] === '"') {
-				cell += '"';
-				i++;
-			} else if (char === '"') {
-				quoted = false;
-				closed = true;
-			} else cell += char;
-		} else if (char === "," || char === "\n" || char === "\r") {
-			row.push(cell);
-			cell = "";
-			closed = false;
-			if (char !== ",") {
-				if (char === "\r" && text[i + 1] === "\n") i++;
-				if (row.some((value) => value !== "")) rows.push(row);
-				row = [];
-			}
-		} else if (char === '"' && !cell && !closed) quoted = true;
-		else if (closed || char === '"') throw new Error("Invalid CSV quoting.");
-		else cell += char;
-	}
-	if (quoted) throw new Error("Unclosed CSV quote.");
-	row.push(cell);
-	if (row.some((value) => value !== "")) rows.push(row);
+	const rows = csvRows(text);
 	const headers = rows.shift() ?? [];
 	if (
 		!headers.includes("external_id") ||

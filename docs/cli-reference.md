@@ -228,6 +228,121 @@ Preview a Vimeo import published at midnight UTC.
 boldvideo import url https://vimeo.com/76979871 --published-at 2026-10-18 --dry-run
 ```
 
+## boldvideo import dir
+
+Upload every video file in a folder.
+
+Takes mp4, m4v, mov, webm, mkv, avi, wmv, mpeg, mpg, ogv, 3gp and 3g2 files; --include names others. A --map CSV sets metadata per file, with the metadata flags as defaults for whatever it leaves out; a file in the map but not in the folder is an error. With --map, a result CSV is written next to it as &lt;map name&gt;.results.csv and rewritten as each file finishes. Running the same command again continues an interrupted run: files already in are left alone, and a file stopped halfway sends only its missing parts. The server finds a file again by its external_id; without one from the map the CLI derives it from the path inside the folder and the file's size, so a renamed, moved or changed file uploads as a new video. One file failing does not stop the rest; the exit code is 1 if any failed.
+
+```sh
+boldvideo import dir <path> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| path | Yes | Folder with the video files. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
+| --recursive, -r | boolean | false | Include files in subfolders. |
+| --include | list | — | Only files matching these globs (* ? **), comma-separated or repeated; replaces the video-extension filter. |
+| --exclude | list | — | Skip files matching these globs, comma-separated or repeated. |
+| --description | string | — | Description for every uploaded video. |
+| --tags | list | — | Tag names, comma-separated or repeated. |
+| --collection | list | — | Collection IDs or exact names, comma-separated or repeated. |
+| --type | string | — | Video type UUID or slug. |
+| --privacy | string | "unlisted" | Visibility: public, unlisted or private. |
+| --published-at | string | — | ISO date or datetime with timezone. |
+| --language | string | — | Language code. |
+| --map | string | — | CSV with metadata per file. Columns: file, title, published_at, type, tags, collection, privacy, external_id. |
+| --results | string | — | Write the result CSV here: the map's columns plus status, bold_id, error_msg. |
+| --concurrency | number | 3 | Files uploaded at the same time (1 to 16). |
+| --wait | boolean | false | Wait until imported videos are transcribed and indexed. |
+| --poll-interval | number | 5 | Seconds between polls (positive number). |
+| --timeout | number | 3600 | Maximum seconds to wait (positive number; default 60 minutes). |
+
+### Examples
+
+Upload a folder and wait until every video is searchable.
+
+```sh
+boldvideo import dir ./recordings --wait
+```
+
+Check a metadata map against the folder before uploading.
+
+```sh
+boldvideo import dir ./recordings --map ./recordings/meta.csv --dry-run
+```
+
+## boldvideo import file
+
+Upload one video file.
+
+Any file type is sent as given. With --map, the row whose file is this file's name applies. Running the same command again continues an interrupted run: files already in are left alone, and a file stopped halfway sends only its missing parts. The server finds a file again by its external_id; without one from the map the CLI derives it from the path inside the folder and the file's size, so a renamed, moved or changed file uploads as a new video.
+
+```sh
+boldvideo import file <path> [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| path | Yes | The video file. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --dry-run | boolean | false | Preview the write without making changes. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
+| --title | string | — | Title; defaults to the file name without its extension. |
+| --description | string | — | Description for every uploaded video. |
+| --tags | list | — | Tag names, comma-separated or repeated. |
+| --collection | list | — | Collection IDs or exact names, comma-separated or repeated. |
+| --type | string | — | Video type UUID or slug. |
+| --privacy | string | "unlisted" | Visibility: public, unlisted or private. |
+| --published-at | string | — | ISO date or datetime with timezone. |
+| --external-id | string | — | Your own ID for the file; the upload resumes by it. |
+| --language | string | — | Language code. |
+| --map | string | — | CSV with metadata per file. Columns: file, title, published_at, type, tags, collection, privacy, external_id. |
+| --results | string | — | Write the result CSV here: the map's columns plus status, bold_id, error_msg. |
+| --concurrency | number | 3 | Files uploaded at the same time (1 to 16). |
+| --wait | boolean | false | Wait until imported videos are transcribed and indexed. |
+| --poll-interval | number | 5 | Seconds between polls (positive number). |
+| --timeout | number | 3600 | Maximum seconds to wait (positive number; default 60 minutes). |
+
+### Examples
+
+Upload one recording and wait until it is searchable.
+
+```sh
+boldvideo import file ./recordings/group-call-12.mp4 --title "Group call 12: pricing" --wait
+```
+
+Preview the upload of a members-only recording.
+
+```sh
+boldvideo import file ./recordings/group-call-12.mp4 --privacy private --published-at 2026-11-20 --dry-run
+```
+
 ## boldvideo import status
 
 Show a video or import run, or resume waiting for readiness.
@@ -1999,8 +2114,7 @@ each source into the destination course collection and wait for ingest with
 `--wait`. Use stable source URLs so reruns can deduplicate, and resolve expiring
 or inaccessible links before retrying. Keep a migration log and reconcile its
 successful imports with the exported lesson count before switching learners.
-Do not assume `import dir` reads URL lists; its input contract must be checked
-when that command lands.
+`import dir` uploads files from a local folder; it does not read URL lists.
 
 ### Customer onboarding: create collections, import, sync viewers
 

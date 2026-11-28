@@ -49,8 +49,7 @@ each source into the destination course collection and wait for ingest with
 `--wait`. Use stable source URLs so reruns can deduplicate, and resolve expiring
 or inaccessible links before retrying. Keep a migration log and reconcile its
 successful imports with the exported lesson count before switching learners.
-Do not assume `import dir` reads URL lists; its input contract must be checked
-when that command lands.
+`import dir` uploads files from a local folder; it does not read URL lists.
 
 ### Customer onboarding: create collections, import, sync viewers
 

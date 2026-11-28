@@ -34,7 +34,7 @@ Grammar is `boldvideo <noun> <verb>`. Three verbs sit at the top level because t
 ```
 boldvideo login | whoami | profiles
 boldvideo import youtube|url <src> [--collection] [--title --published-at --type --tags --privacy] [--wait]
-boldvideo import dir <path> [--map meta.csv]
+boldvideo import dir|file <path> [--map meta.csv] [--wait]
 boldvideo videos list|get|transcript|update|publish|unpublish|delete
 boldvideo collections list|create|add|remove
 boldvideo viewers list|get|sync|progress|memory
