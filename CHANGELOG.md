@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.2 — 2026-11-28
+
+- Fixed: `videos update`, `publish`, `unpublish` and `delete` reported
+  `api_error` although the change had been made. The admin API answers with the
+  video inside a `data` envelope, and the CLI only read a bare record. A change
+  that 0.2.1 reported as failed was applied; check with `videos get`.
+- Fixed: `videos get` with an admin key printed that envelope (`{"data": …}`)
+  where it documents the record itself.
+- `import file` and `import dir` now report the real `ready` state for a file
+  that was already uploaded.
+
 ## 0.2.1 — 2026-11-28
 
 - Fixed: every `import` command (`youtube`, `url`, `dir`, `file`, `status`,

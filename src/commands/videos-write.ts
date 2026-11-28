@@ -109,8 +109,11 @@ function changes(
 	return body;
 }
 
-// PR #721 returns the same unwrapped admin single-video record as videos get.
-function parseVideo(data: unknown): Record<string, unknown> {
+// The admin API answers a write with the video inside a data envelope, as
+// videos get does. A bare record, from before it had one, is still read.
+function parseVideo(body: unknown): Record<string, unknown> {
+	const inner = (body as { data?: unknown } | null)?.data;
+	const data = inner && typeof inner === "object" ? inner : body;
 	if (
 		!data ||
 		typeof data !== "object" ||

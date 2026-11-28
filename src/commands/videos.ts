@@ -29,8 +29,11 @@ function parsePage(data: unknown, admin: boolean) {
 	return page;
 }
 
-function parseVideo(data: unknown, admin: boolean): Record<string, unknown> {
-	return (admin ? data : (data as { data: unknown }).data) as Record<
+// Both key kinds get the record inside a data envelope. A bare record, which
+// the admin API returned before it had one, is still read.
+function parseVideo(data: unknown): Record<string, unknown> {
+	const inner = (data as { data?: unknown } | null)?.data;
+	return (inner && typeof inner === "object" ? inner : data) as Record<
 		string,
 		unknown
 	>;
@@ -200,7 +203,6 @@ export const videos: Command = {
 							`${admin ? "/admin" : ""}/videos/${encodeURIComponent(args[0] as string)}`,
 							{ key },
 						),
-						admin,
 					);
 					output(video, videoText(video), ctx.json);
 				} catch (cause) {
