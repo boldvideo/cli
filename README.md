@@ -54,6 +54,9 @@ echo 'boldvideo completion fish | source' >> ~/.config/fish/config.fish
 Everyday commands have shorthands, and a group on its own lists:
 
 ```sh
+bold i ./recordings              # a folder: import dir
+bold i ./call-12.mp4             # a file: import file
+bold i https://youtu.be/abc      # a URL: import url
 bold v                           # boldvideo videos list
 bold v --privacy private -n 5    # list flags work without "list"
 bold v show paid-workshops       # videos get
@@ -97,6 +100,18 @@ boldvideo insights questions --since 7d
 ```
 
 Imports skip anything already in the library, so running one twice is safe.
+
+Local files work the same way, and can carry their own dates:
+
+```sh
+# Upload a folder; publish each video on the day it was recorded
+boldvideo import dir ./recordings --published-at source --wait
+
+# Or set titles, dates and collections per file from a spreadsheet
+boldvideo import dir ./recordings --map ./recordings/meta.csv --dry-run
+```
+
+`--published-at` takes a date (`2026-11-20`), `source` (the recording time stored inside mp4 and mov files, otherwise the file's last-modified time), `now`, or `none`. Without it a video stays unpublished. `--dry-run` shows each file's date and where it came from.
 
 ## What it does
 

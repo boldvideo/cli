@@ -13,6 +13,7 @@ import type { Credential } from "../auth";
 import { csvRows, csvText } from "../csv";
 import { type CliError, error, writeError } from "../errors";
 import { getVideo, resolveCollections } from "../import-api";
+import { recordedAt } from "../media-date";
 import { hint, output, table } from "../output";
 import type { Command, Context, Flag, Flags } from "../spec";
 import { limiter, uploadFile } from "../upload";
@@ -30,7 +31,7 @@ import { videoText } from "./videos";
 // Bold's own uploader accepts video/*. These are the extensions its MIME table
 // and browsers file under video, without .ts: in a folder that is far more often
 // TypeScript than an MPEG transport stream.
-const VIDEO = /\.(mp4|m4v|mov|webm|mkv|avi|wmv|mpeg|mpg|ogv|3gp|3g2)$/i;
+export const VIDEO = /\.(mp4|m4v|mov|webm|mkv|avi|wmv|mpeg|mpg|ogv|3gp|3g2)$/i;
 const MAP_COLUMNS = [
 	"file",
 	"title",
@@ -66,6 +67,14 @@ interface Item {
 	error?: CliError;
 	/** Why a map row was left out without being an error. */
 	note?: string;
+	/** Where a publication date taken from the file came from. */
+	dated?: "recorded" | "modified";
+}
+
+/** A publication date worked out for one file: a value, or none on purpose. */
+interface Dated {
+	value?: string;
+	from?: "recorded" | "modified";
 }
 
 const flag = (name: string, description?: string): Flag => {
@@ -103,7 +112,13 @@ const fileFlags = (single: boolean): Flag[] => [
 	flag("collection"),
 	flag("type"),
 	flag("privacy"),
-	flag("published-at", "ISO date or datetime with timezone."),
+	{
+		...flag(
+			"published-at",
+			"Publication date: an ISO date or datetime with timezone; source for the file's own date (the recording time inside mp4/mov files, otherwise its last-modified time); now; or none. Without it the video stays unpublished.",
+		),
+		choices: ["source", "now", "none"],
+	},
 	...(single
 		? [
 				flag(
@@ -168,7 +183,12 @@ const matches = (patterns: string[], file: string) =>
 async function scan(root: string, flags: Flags) {
 	const include = flags.include as string[] | undefined;
 	const exclude = (flags.exclude as string[] | undefined) ?? [];
-	const files: { file: string; path: string; size: number }[] = [];
+	const files: {
+		file: string;
+		path: string;
+		size: number;
+		modified: Date;
+	}[] = [];
 	const walk = async (folder: string) => {
 		const entries = await readdir(folder, { withFileTypes: true });
 		for (const entry of entries) {
@@ -184,7 +204,7 @@ async function scan(root: string, flags: Flags) {
 			const file = relative(root, path).split("\\").join("/");
 			if (include ? !matches(include, file) : !VIDEO.test(file)) continue;
 			if (matches(exclude, file)) continue;
-			files.push({ file, path, size: info.size });
+			files.push({ file, path, size: info.size, modified: info.mtime });
 		}
 	};
 	await walk(root);
@@ -246,10 +266,13 @@ function startBody(
 	row: Record<string, string> | undefined,
 	flags: Flags,
 	collections: Map<string, string>,
+	dated?: Dated,
 ) {
 	const own: Flags = { ...flags };
 	if (row?.title) own.title = row.title;
 	if (row?.published_at) own["published-at"] = row.published_at;
+	// source, now and none were worked out for this file before it got here.
+	if (dated) own["published-at"] = dated.value;
 	if (row?.type) own.type = row.type;
 	if (row?.tags) own.tags = list(row.tags);
 	if (row?.privacy) own.privacy = row.privacy;
@@ -357,6 +380,7 @@ async function run(
 		usage("--concurrency must be a whole number from 1 to 16.");
 	const target = resolve(args[0] as string);
 	const info = statSync(target, { throwIfNoEntry: false });
+	if (!info) usage(`Nothing at '${args[0]}'. Check the path.`);
 	if (single ? !info?.isFile() : !info?.isDirectory())
 		usage(
 			single
@@ -365,7 +389,14 @@ async function run(
 		);
 	const root = single ? dirname(target) : target;
 	const found = single
-		? [{ file: basename(target), path: target, size: info?.size ?? 0 }]
+		? [
+				{
+					file: basename(target),
+					path: target,
+					size: info?.size ?? 0,
+					modified: info?.mtime ?? new Date(),
+				},
+			]
 		: await scan(root, flags);
 	const map =
 		flags.map === undefined ? undefined : readMap(String(flags.map), root);
@@ -380,6 +411,23 @@ async function run(
 	const ids = names.length ? await resolveCollections(key, names) : [];
 	const collections = new Map(names.map((name, i) => [name, ids[i] as string]));
 
+	// A date word in the map or on the command line becomes a date per file.
+	const started = new Date().toISOString();
+	const rows = new Map(map?.records.map(({ file, row }) => [file, row]));
+	const dates = new Map<string, Dated>();
+	for (const entry of found) {
+		const wanted = rows.get(entry.file)?.published_at || flags["published-at"];
+		if (wanted === "now") dates.set(entry.file, { value: started });
+		else if (wanted === "none") dates.set(entry.file, {});
+		else if (wanted === "source") {
+			const recorded = await recordedAt(entry.path);
+			dates.set(entry.file, {
+				value: (recorded ?? entry.modified).toISOString(),
+				from: recorded ? "recorded" : "modified",
+			});
+		}
+	}
+
 	// Map rows come first and in their order, then the files the map does not name.
 	const onDisk = new Map(found.map((entry) => [entry.file, entry]));
 	const items: Item[] = [];
@@ -390,7 +438,8 @@ async function run(
 			items.push({
 				...entry,
 				row,
-				body: startBody(entry, row, flags, collections),
+				body: startBody(entry, row, flags, collections, dates.get(file)),
+				dated: dates.get(file)?.from,
 				status: "pending",
 			});
 		} else if (single) {
@@ -421,7 +470,14 @@ async function run(
 	for (const entry of onDisk.values())
 		items.push({
 			...entry,
-			body: startBody(entry, undefined, flags, collections),
+			body: startBody(
+				entry,
+				undefined,
+				flags,
+				collections,
+				dates.get(entry.file),
+			),
+			dated: dates.get(entry.file)?.from,
 			status: "pending",
 		});
 	for (const item of items)
@@ -461,6 +517,7 @@ async function run(
 			action: item.status === "pending" ? ("upload" as const) : item.status,
 			...(item.size === undefined ? {} : { size: item.size }),
 			...(item.status === "pending" ? { body: item.body } : {}),
+			...(item.dated ? { published_at_from: item.dated } : {}),
 			...(item.note ? { note: item.note } : {}),
 			...(item.error ? { error: view(item).error } : {}),
 		}));
@@ -472,6 +529,9 @@ async function run(
 						method: "POST",
 						path: "/admin/uploads",
 						body: only?.body,
+						...(only?.published_at_from
+							? { published_at_from: only.published_at_from }
+							: {}),
 					}
 				: { dry_run: true, items: plan },
 			single
@@ -482,6 +542,9 @@ async function run(
 							action: entry.action,
 							size: entry.size === undefined ? "" : size(entry.size),
 							title: entry.body?.title ?? "",
+							published: entry.body?.published_at
+								? `${entry.body.published_at}${entry.published_at_from ? ` (${entry.published_at_from})` : ""}`
+								: "",
 							external_id: entry.body?.external_id ?? "",
 						})),
 					),
@@ -618,7 +681,7 @@ export const fileCommands: Command[] = [
 	{
 		name: "dir",
 		summary: "Upload every video file in a folder.",
-		description: `Takes mp4, m4v, mov, webm, mkv, avi, wmv, mpeg, mpg, ogv, 3gp and 3g2 files; --include names others. A --map CSV sets metadata per file, with the metadata flags as defaults for whatever it leaves out; a file in the map but not in the folder is an error. With --map, a result CSV is written next to it as <map name>.results.csv and rewritten as each file finishes. ${resume} One file failing does not stop the rest; the exit code is 1 if any failed.`,
+		description: `Takes mp4, m4v, mov, webm, mkv, avi, wmv, mpeg, mpg, ogv, 3gp and 3g2 files; --include names others. A --map CSV sets metadata per file, with the metadata flags as defaults for whatever it leaves out (its published_at column takes the same values as --published-at, including source); a file in the map but not in the folder is an error. With --map, a result CSV is written next to it as <map name>.results.csv and rewritten as each file finishes. ${resume} One file failing does not stop the rest; the exit code is 1 if any failed.`,
 		auth: "admin",
 		write: true,
 		args: [

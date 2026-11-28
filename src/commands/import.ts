@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import type { Credential } from "../auth";
 import { type CliError, error } from "../errors";
@@ -12,7 +13,7 @@ import {
 } from "../import-api";
 import { hint, output, table } from "../output";
 import type { Command, Flags } from "../spec";
-import { fileCommands } from "./import-files";
+import { fileCommands, VIDEO } from "./import-files";
 import {
 	failed,
 	metadataFlags,
@@ -413,8 +414,20 @@ export const imports: Command = {
 	name: "import",
 	aliases: ["i"],
 	summary: "Import videos and wait until their content is searchable.",
+	description:
+		"Name the source and import picks the command: a folder runs import dir, a file runs import file, and an http(s) URL runs import url, each with that command's flags. Naming the command yourself does the same thing and is the form to use in scripts, where the output shape should not depend on what a path turns out to be. A path that is also a command name (status, dir) needs ./ in front.",
 	auth: "admin",
 	write: true,
+	route(word) {
+		if (/^https?:\/\//i.test(word)) return "url";
+		const found = statSync(word, { throwIfNoEntry: false });
+		if (found?.isDirectory()) return "dir";
+		if (found?.isFile()) return "file";
+		// Nothing is there, but it is written like a path: the file commands say
+		// so, which helps more than calling a path an unknown command.
+		if (/[\\/]/.test(word) || /^[.~]/.test(word) || VIDEO.test(word))
+			return /[\\/]$/.test(word) ? "dir" : "file";
+	},
 	examples: [
 		{
 			cmd: "boldvideo import youtube https://www.youtube.com/@yourchannel --wait",

@@ -14,6 +14,13 @@
 - Short flags: `-h`, `-j` (`--json`), `-n` (`--limit`), `-y` (`--yes`),
   `-p` (`--profile`), `-v` (`--version`).
 - `help --json` lists known values for a flag or argument as `choices`.
+- `import <path or URL>` picks the command from what it is given: a folder runs
+  `import dir`, a file `import file`, an http(s) URL `import url`. Naming the
+  command still works and is the form for scripts.
+- `import dir` and `import file`: `--published-at source` publishes each video
+  on its file's own date: the recording time inside mp4/mov files, otherwise the
+  last-modified time. `now` and `none` work too, also in a map's `published_at`
+  column. `--dry-run` shows the date and whether it was `recorded` or `modified`.
 - Folder upload: `import dir <path>` uploads every video file in a folder
   (`--recursive`, `--include`, `--exclude`), and `import file <path>` uploads one.
   `--map meta.csv` sets title, date, type, tags, collection, privacy and
