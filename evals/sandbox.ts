@@ -57,7 +57,7 @@ export async function sandbox(
 	];
 	if (mode === "one-search") shellTools.push("web_search");
 	if (mode === "skill") {
-		await cp(join(import.meta.dir, "../skill"), join(cwd, "skill"), {
+		await cp(join(import.meta.dir, "../skills/boldvideo"), join(cwd, "skill"), {
 			recursive: true,
 		});
 	}

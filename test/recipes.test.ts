@@ -16,7 +16,7 @@ const siblings = [
 ];
 let checked = 0;
 let skipped = 0;
-const directory = join(import.meta.dir, "../skill/recipes");
+const directory = join(import.meta.dir, "../skills/boldvideo/recipes");
 
 describe("recipe commands use the real CLI parser without executing writes", () => {
 	for (const file of readdirSync(directory).filter((file) =>
