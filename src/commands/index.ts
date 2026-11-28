@@ -1,4 +1,5 @@
 import type { Command } from "../spec";
+import { agent } from "./agent";
 import { api } from "./api";
 import { ask } from "./ask";
 import { collections } from "./collections";
@@ -31,5 +32,6 @@ export const commands: Command[] = [
 	api,
 	docs,
 	completion,
+	agent,
 	upgrade,
 ];

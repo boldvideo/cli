@@ -14,6 +14,10 @@
 - Short flags: `-h`, `-j` (`--json`), `-n` (`--limit`), `-y` (`--yes`),
   `-p` (`--profile`), `-v` (`--version`).
 - `help --json` lists known values for a flag or argument as `choices`.
+- `agent setup` installs the boldvideo skill for coding agents
+  (`~/.claude/skills`, `~/.agents/skills`, or the project with `--project`) and
+  adds a short, marker-fenced section to the project's `AGENTS.md` / `CLAUDE.md`.
+  The skill ships inside the CLI, so it matches the installed version.
 - `import <path or URL>` picks the command from what it is given: a folder runs
   `import dir`, a file `import file`, an http(s) URL `import url`. Naming the
   command still works and is the form for scripts.

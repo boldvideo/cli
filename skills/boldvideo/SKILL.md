@@ -1,83 +1,90 @@
 ---
 name: boldvideo
-description: Runs a Bold video library from a shell with the boldvideo CLI (also installed as bold). Imports recordings from YouTube, URLs or local folders, answers questions from transcripts with cited timestamps, organizes collections, syncs viewers and reads what members ask. Use when the user mentions Bold, boldvideo or a video library, wants to import, upload or migrate recordings or a course (Kajabi, Vimeo, Zoom exports), or asks what their members are asking.
+description: Runs a Bold video library with the boldvideo CLI. Use when the user wants to import, upload or migrate recordings into Bold, ask what their videos say, see what members are asking, or manage Bold videos, collections and viewers.
 ---
 
 # boldvideo
 
-One CLI for the Bold admin UI: ingest videos, organize collections, manage
-viewers, ask questions, search, and inspect audience insights.
+`boldvideo` (also installed as `bold`) runs a Bold video library from a shell.
 
-## Four habits
+Its help is the manual. `boldvideo <command> --help` has the flags and two
+examples for that command; `boldvideo help --json` returns every command at
+once. Installed versions differ, so take flags from the installed help.
 
-1. Run `boldvideo --help` first, then `<command> --help` for exact arguments.
-   Installed versions differ; never invent flags. `boldvideo help --json`
-   exposes the installed command tree.
-2. Pipe for JSON (or use `--json`). Lists return `{items, has_more, next}`;
-   follow the exact `next` command until done, not just the first 20 records.
-   Progress goes to stderr. Explicit Markdown formats and docs are exceptions.
-3. Check `boldvideo whoami`, then use `--dry-run` before writes. Review the
-   preview before applying. Destructive calls need `--yes` with nonterminal
-   stdin, even for previews; confirm only after reviewing the action.
-4. Use `--wait` on imports: wait for transcription/indexing, not just upload.
-   Imports deduplicate by source URL; reuse stable URLs on retries. Folder
-   uploads continue where they stopped when the same command runs again.
+## Before the first command
 
-## Check install and auth
+1. Run `boldvideo whoami`. It names the workspace and the key kind; writes need
+   an admin key.
+2. Signed out? Run `boldvideo login`, give the user the link and code it prints,
+   and wait for it to return. Where nobody can open a browser, the user supplies
+   `BOLDVIDEO_API_KEY` from a secret store. A key belongs in the environment,
+   never in an argument, a file you commit, or your answer.
 
-Run `boldvideo --version` to check installation, then `boldvideo whoami` to
-check the account and key kind. Inject `BOLDVIDEO_API_KEY` from a secret store
-(overrides profiles), or run `boldvideo login` and enter it privately. Never
-print, commit, or put keys in arguments. Admin writes require an admin key.
+Done when `whoami` shows the workspace the user meant.
 
-## Main path
+## Every write
 
-Import a channel into an existing collection and wait:
+1. Run the command with `--dry-run` and read what it would do.
+2. Run it for real.
+
+A delete in a pipe needs `--yes`, its dry run included.
+
+## Reading output
+
+Piped output is JSON.
+
+- A list is `{items, has_more, next}`. `next` is the exact command for the
+  following page: run it until `has_more` is false, or you have only the first 20.
+- An error is one object on stderr: `code`, `message`, `hint`, sometimes
+  `request_id`. Branch on `code`, run the `hint`, and quote the `request_id`
+  when you report a failure.
+- A bulk command can exit 1 and still list every item on stdout. Read the items.
+
+`boldvideo help exit-codes` explains the exit codes.
+
+## Import
+
+`--wait` holds the command until the videos are transcribed and searchable.
+Without it the command returns while they are still processing, and `ask` finds
+nothing in them yet.
 
 ```sh
 boldvideo import youtube https://www.youtube.com/@yourchannel --collection paid-workshops --wait
 ```
 
-Upload a folder of recordings, each published on the day it was recorded:
+A folder of recordings, each published on the day it was recorded:
 
 ```sh
 boldvideo import dir ./recordings --published-at source --dry-run
 boldvideo import dir ./recordings --published-at source --wait
 ```
 
-`--map meta.csv` sets title, date, type, tags, collection and privacy per file.
-Name the command (`import dir`, `import file`, `import url`) rather than a bare
-path, so the output shape is the one you expect. Shorthands such as `bold v`
-exist for people; use the full names in scripts.
+The dry run shows each file's date and whether it was `recorded` (read from the
+file) or `modified` (the file's timestamp, often just the download date). For
+titles, dates and collections per file, pass `--map meta.csv`.
 
-Ask with cited moments:
+Name the source's command: `import youtube`, `import url`, `import dir`,
+`import file`. A bare path also works, but then the output shape depends on what
+the path turns out to be.
+
+Running an import again is safe. Sources already in the library are skipped, and
+a folder upload continues where it stopped.
+
+## Ask and search
 
 ```sh
 boldvideo ask "What do we say about paid workshops versus free webinars?" --collection paid-workshops
-```
-
-Find relevant content:
-
-```sh
 boldvideo search "pricing a first paid workshop"
 ```
 
-## Five common mistakes
+Cite the timestamps a source carries. A source without one stays untimed.
 
-Provisional contract-based guesses; to be replaced from eval transcripts, BOLD-2049.
+## Recipes
 
-1. Asking before ingest is ready: import with `--wait` first.
-2. Parsing tables: pipe for JSON or pass `--json` instead.
-3. Deleting without preview: use `--dry-run --yes`, review, then confirm.
-4. Assuming a tenant key can perform admin writes: check `boldvideo whoami`.
-5. Inventing citation timestamps: use only timestamps present in sources;
-   leave untimed sources untimed.
+Open the one that matches the job:
 
-Errors: nonterminal stderr is `{code, message, hint, docs, request_id?}`; follow hints, preserve request IDs, branch on code (bulk failures may return partial stdout).
-Exits: 0 success, 1 failure, 2 usage, 3 auth/permission, 4 not found, 5 wait timeout; see `boldvideo help exit-codes`.
+- Moving a course off Kajabi: [Kajabi migration](recipes/kajabi-migration.md)
+- A weekly report of member questions: [weekly questions digest](recipes/weekly-questions-digest.md)
+- Setting up a new customer's library: [customer onboarding](recipes/customer-onboarding.md)
 
-Read `boldvideo docs cli` for the reference. Open only the needed recipe:
-[Kajabi migration](recipes/kajabi-migration.md),
-[weekly questions digest](recipes/weekly-questions-digest.md), or
-[customer onboarding](recipes/customer-onboarding.md). Recipes need the sibling
-commands and stated shell tools; parser checks do not prove backend deployment.
+The recipes use Bash, Python 3 and jq.
