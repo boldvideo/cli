@@ -325,7 +325,7 @@ test("runner resets every repeat, checks answers, saves metrics and gates target
 			join(root, "evals/tasks/00-example.md"),
 		);
 		await cp(resolve("dist"), join(root, "dist"), { recursive: true });
-		await cp(resolve("skill"), join(root, "skill"), { recursive: true });
+		await cp(resolve("skills"), join(root, "skills"), { recursive: true });
 		await Bun.write(
 			join(root, "evals/prices.json"),
 			JSON.stringify({

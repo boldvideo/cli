@@ -1,6 +1,6 @@
 ---
 name: boldvideo
-description: Manages Bold video libraries with the boldvideo CLI when importing recordings, finding answers, migrating courses, reviewing audience questions, or onboarding customers.
+description: Runs a Bold video library from a shell with the boldvideo CLI (also installed as bold). Imports recordings from YouTube, URLs or local folders, answers questions from transcripts with cited timestamps, organizes collections, syncs viewers and reads what members ask. Use when the user mentions Bold, boldvideo or a video library, wants to import, upload or migrate recordings or a course (Kajabi, Vimeo, Zoom exports), or asks what their members are asking.
 ---
 
 # boldvideo
@@ -20,7 +20,8 @@ viewers, ask questions, search, and inspect audience insights.
    preview before applying. Destructive calls need `--yes` with nonterminal
    stdin, even for previews; confirm only after reviewing the action.
 4. Use `--wait` on imports: wait for transcription/indexing, not just upload.
-   Imports deduplicate by source URL; reuse stable URLs on retries.
+   Imports deduplicate by source URL; reuse stable URLs on retries. Folder
+   uploads continue where they stopped when the same command runs again.
 
 ## Check install and auth
 
@@ -36,6 +37,18 @@ Import a channel into an existing collection and wait:
 ```sh
 boldvideo import youtube https://www.youtube.com/@yourchannel --collection paid-workshops --wait
 ```
+
+Upload a folder of recordings, each published on the day it was recorded:
+
+```sh
+boldvideo import dir ./recordings --published-at source --dry-run
+boldvideo import dir ./recordings --published-at source --wait
+```
+
+`--map meta.csv` sets title, date, type, tags, collection and privacy per file.
+Name the command (`import dir`, `import file`, `import url`) rather than a bare
+path, so the output shape is the one you expect. Shorthands such as `bold v`
+exist for people; use the full names in scripts.
 
 Ask with cited moments:
 

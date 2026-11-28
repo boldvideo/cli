@@ -49,7 +49,7 @@ the task's `prompt`.
   search is valid. Unique search tool IDs and provider-reported search totals
   are counted without double-counting. More than one invalidates the attempt
   and exits 1 regardless of targets, even if the answer check would pass.
-- `--mode skill`: copies the repository's `skill/SKILL.md` into `skill/SKILL.md`
+- `--mode skill`: copies the repository's `skills/boldvideo/` into `skill/`
   in the temporary working directory, and includes that file's instructions in
   the prompt so shell-only agents can use it without a separate read tool.
   BOLD-2046 will replace the checked-in placeholder. Web search stays disabled.

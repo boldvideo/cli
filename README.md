@@ -153,7 +153,8 @@ The CLI is built so an agent with a shell and nothing else can run a library.
 - **`--help` is the manual.** Every command carries examples. `boldvideo help --json` returns the whole command tree, and `boldvideo docs cli` prints the reference offline.
 - **Exit codes mean something.** `0` success, `1` failure, `2` usage, `3` sign-in or permission, `4` not found, `5` timeout.
 - **Sign-in works without a terminal.** `boldvideo login` prints the link and code to stderr and waits, so an agent can hand the link to a person.
-- **A skill file ships with it.** [`skill/SKILL.md`](skill/SKILL.md) and three recipes: a Kajabi migration, a weekly questions digest, and onboarding a customer.
+- **A skill for your agent.** `npx skills add boldvideo/cli` installs [`skills/boldvideo`](skills/boldvideo/SKILL.md): the habits that keep an agent out of trouble and three recipes (a Kajabi migration, a weekly questions digest, onboarding a customer).
+- **Docs an agent can read.** `boldvideo docs` lists every docs page and prints any of them as markdown; the site also serves [`llms.txt`](https://docs.boldvideo.com/llms.txt).
 
 ## Servers and CI
 
