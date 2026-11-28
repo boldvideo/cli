@@ -3,6 +3,7 @@ import { realpathSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { version } from "../package.json";
 import { run } from "../test/run";
 import { amp, claude, parseStream } from "./adapters";
 import { execute } from "./process";
@@ -179,7 +180,7 @@ test("cold shell cannot find curl but can execute the built CLI", async () => {
 			AbortSignal.timeout(5000),
 			join(root, "transcript"),
 		);
-		expect(JSON.parse(stdout)).toEqual({ version: "0.1.0" });
+		expect(JSON.parse(stdout)).toEqual({ version });
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -352,7 +353,7 @@ if (skill && !['kajabi-migration', 'weekly-questions-digest', 'customer-onboardi
 const searchAllowed = args.includes('Bash,WebSearch');
 if (searchAllowed && !prompt.includes('You may use web search at most once.')) process.exit(6);
 if (!spawnSync('curl', ['--version']).error) process.exit(3);
-if (JSON.parse(execFileSync('boldvideo', ['--version'], {encoding:'utf8'})).version !== '0.1.0') process.exit(4);
+if (JSON.parse(execFileSync('boldvideo', ['--version'], {encoding:'utf8'})).version !== ${JSON.stringify(version)}) process.exit(4);
 const events = ${JSON.stringify(stream)}.trim().split('\n');
 const searches = prompt.includes('Use two searches') ? 2 : searchAllowed ? 1 : 0;
 const blocks = Array.from({length: searches}, (_, id) => ({type:'tool_use', id:'search-' + id, name:'WebSearch', input:{query:'boldvideo'}}));
