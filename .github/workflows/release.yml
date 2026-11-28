@@ -29,7 +29,7 @@ jobs:
           # What npm compares with the trusted publisher. None of this is secret.
           node -e '
             const claims = JSON.parse(Buffer.from(require("./id.json").value.split(".")[1], "base64url"));
-            for (const name of ["repository", "repository_owner", "repository_visibility", "workflow_ref", "job_workflow_ref", "ref", "event_name", "environment", "runner_environment"])
+            for (const name of ["sub", "repository", "repository_id", "repository_owner", "repository_owner_id", "repository_visibility", "workflow_ref", "job_workflow_ref", "ref", "event_name", "environment", "runner_environment"])
               console.log(name.padEnd(22), claims[name] ?? "(none)");
           '
           failed=0
