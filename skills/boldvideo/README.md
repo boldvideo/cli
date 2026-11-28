@@ -1,14 +1,16 @@
 # Install the boldvideo skill
 
 The skill teaches a coding agent to run a Bold library with the `boldvideo` CLI.
-Install the CLI first (`npm install -g boldvideo`), then the skill:
+Install the CLI first (`npm install -g boldvideo`), then let it set your agent up:
 
 ```sh
-npx skills add boldvideo/cli
+boldvideo agent setup
 ```
 
-That finds `skills/boldvideo/` in this repository and installs it for the agents
-on your machine. To place it by hand, copy the whole directory, recipes included:
+That installs the skill shipped with your CLI version and adds a short section
+to your project's `AGENTS.md`. Without the CLI, `npx skills add boldvideo/cli`
+finds `skills/boldvideo/` in this repository and installs it for the agents on
+your machine. To place it by hand, copy the whole directory, recipes included:
 
 - Claude Code: `mkdir -p ~/.claude/skills/boldvideo && cp -R skills/boldvideo/. ~/.claude/skills/boldvideo/`
 - Codex, Cursor, Gemini CLI, Amp: `mkdir -p ~/.agents/skills/boldvideo && cp -R skills/boldvideo/. ~/.agents/skills/boldvideo/`

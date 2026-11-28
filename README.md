@@ -153,7 +153,7 @@ The CLI is built so an agent with a shell and nothing else can run a library.
 - **`--help` is the manual.** Every command carries examples. `boldvideo help --json` returns the whole command tree, and `boldvideo docs cli` prints the reference offline.
 - **Exit codes mean something.** `0` success, `1` failure, `2` usage, `3` sign-in or permission, `4` not found, `5` timeout.
 - **Sign-in works without a terminal.** `boldvideo login` prints the link and code to stderr and waits, so an agent can hand the link to a person.
-- **A skill for your agent.** `npx skills add boldvideo/cli` installs [`skills/boldvideo`](skills/boldvideo/SKILL.md): the habits that keep an agent out of trouble and three recipes (a Kajabi migration, a weekly questions digest, onboarding a customer).
+- **One command sets your agent up.** `boldvideo agent setup` installs the boldvideo skill for Claude Code, Codex, Cursor, Gemini CLI and Amp, and adds a short section to your project's `AGENTS.md` (and `CLAUDE.md`) so the agent knows the library is there. Run it again after an upgrade. `npx skills add boldvideo/cli` installs the same [skill](skills/boldvideo/SKILL.md) without the CLI.
 - **Docs an agent can read.** `boldvideo docs` lists every docs page and prints any of them as markdown; the site also serves [`llms.txt`](https://docs.boldvideo.com/llms.txt).
 
 ## Servers and CI
