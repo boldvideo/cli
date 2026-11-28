@@ -10,7 +10,7 @@ The rules below govern shipped commands and future additions.
 - Success is one JSON value followed by a newline when stdout is not a terminal,
   or whenever `--json` is passed. No prose, ANSI escapes or progress on stdout in
   JSON mode. This includes help and version: piped `--version` returns
-  `{"version":"0.1.0"}`; piped help returns command metadata.
+  `{"version":"0.2.0"}`; piped help returns command metadata.
 - `insights questions --format md` explicitly selects Markdown even when piped
   for report exports; `--json` still takes precedence. Markdown is a question
   list, so it cannot combine with `--group-by` or `--fields` unless JSON is selected.

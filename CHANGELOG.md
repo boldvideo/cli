@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-28
+
+The first version on npm.
 
 - Tab completion: `completion bash|zsh|fish` prints a script that completes
   commands, flags, flag values, saved workspaces and file names, for `boldvideo`
@@ -36,8 +38,9 @@
 
 ## 0.1.0 — 2026-11-27
 
-First release. Every command below is in the stability baseline
-(`docs/baseline-0.1.0.md`): from here on, commands and flags are only added.
+Tagged and released on GitHub with binaries; never published to npm. Every
+command below is in the stability baseline (`docs/baseline-0.1.0.md`): from
+here on, commands and flags are only added.
 
 - Authentication: `login` signs in with your browser and saves one profile per
   workspace you approve; `-t`/`--tenant` runs one command in another workspace.
