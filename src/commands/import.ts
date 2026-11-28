@@ -43,6 +43,7 @@ const metadataFlags: Flag[] = [
 		type: "string",
 		description:
 			"Read URLs one per line from a file instead of a positional URL or stdin.",
+		complete: "file",
 	},
 	{
 		name: "title",
@@ -70,6 +71,7 @@ const metadataFlags: Flag[] = [
 		type: "string",
 		default: "unlisted",
 		description: "Visibility: public, unlisted or private.",
+		choices: ["public", "unlisted", "private"],
 	},
 	{
 		name: "published-at",
@@ -96,6 +98,7 @@ const metadataFlags: Flag[] = [
 		name: "order",
 		type: "string",
 		description: "Playlist/channel order: latest or oldest.",
+		choices: ["latest", "oldest"],
 	},
 	...waitFlags,
 ];
@@ -451,6 +454,7 @@ type BulkResult =
 function sourceCommand(name: "youtube" | "url"): Command {
 	return {
 		name,
+		...(name === "youtube" ? { aliases: ["yt"] } : {}),
 		summary:
 			name === "youtube"
 				? "Import a YouTube video, playlist or channel."
@@ -581,6 +585,7 @@ function sourceCommand(name: "youtube" | "url"): Command {
 
 export const imports: Command = {
 	name: "import",
+	aliases: ["i"],
 	summary: "Import videos and wait until their content is searchable.",
 	auth: "admin",
 	write: true,
@@ -600,6 +605,7 @@ export const imports: Command = {
 		sourceCommand("url"),
 		{
 			name: "status",
+			aliases: ["st"],
 			summary: "Show a video or import run, or resume waiting for readiness.",
 			auth: "admin",
 			args: [

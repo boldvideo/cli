@@ -7,6 +7,7 @@ import { type AiResult, commandLine, outputAi } from "./ai-results";
 
 export const search: Command = {
 	name: "search",
+	aliases: ["s"],
 	summary: "Search your library with AI or find keyword matches.",
 	description:
 		"AI search shows a summary with cited sources. --limit bounds displayed sources, not retrieval; increasing it regenerates the summary. --keyword uses paginated keyword results instead. --fields selects source or keyword-result fields.",

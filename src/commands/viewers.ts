@@ -375,6 +375,7 @@ async function memory(
 
 export const viewers: Command = {
 	name: "viewers",
+	aliases: ["vw", "viewer"],
 	summary: "Sync members and inspect viewer progress and memory.",
 	examples: [
 		{ cmd: "boldvideo viewers list", note: "List account members." },
@@ -387,6 +388,7 @@ export const viewers: Command = {
 	subcommands: [
 		{
 			name: "list",
+			aliases: ["ls"],
 			summary: "List a bounded page of viewers.",
 			list: true,
 			flags: [
@@ -445,6 +447,7 @@ export const viewers: Command = {
 		},
 		{
 			name: "get",
+			aliases: ["show"],
 			summary: "Get a viewer by UUID, email or external ID.",
 			args: viewerArg,
 			examples: [
@@ -483,6 +486,7 @@ export const viewers: Command = {
 					name: "file",
 					description:
 						"CSV file, JSON array file, or - for stdin (JSON detected by leading [).",
+					complete: "file",
 				},
 			],
 			examples: [

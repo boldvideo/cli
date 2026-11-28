@@ -13,7 +13,14 @@ export interface Flag {
 	description: string;
 	required?: boolean;
 	destructive?: boolean;
+	/** Known values, offered by tab completion. Validation stays with the command or the API. */
+	choices?: string[];
+	/** What tab completion offers when there are no fixed choices. */
+	complete?: Completion;
 }
+
+/** Values tab completion can look up locally, without a network call. */
+export type Completion = "profiles" | "file";
 
 export interface Context {
 	json: boolean;
@@ -25,6 +32,8 @@ export interface Context {
 
 export interface Command {
 	name: string;
+	/** Shorter names that run the same command, such as v for videos. */
+	aliases?: string[];
 	summary: string;
 	description?: string;
 	args?: {
@@ -32,6 +41,8 @@ export interface Command {
 		description: string;
 		required?: boolean;
 		variadic?: boolean;
+		choices?: string[];
+		complete?: Completion;
 	}[];
 	flags?: Flag[];
 	examples: [{ cmd: string; note: string }, { cmd: string; note: string }];
@@ -49,12 +60,14 @@ export function commandFlags(command: Command): Flag[] {
 	return [
 		{
 			name: "help",
+			short: "h",
 			type: "boolean",
 			default: false,
 			description: "Show command help.",
 		},
 		{
 			name: "json",
+			short: "j",
 			type: "boolean",
 			default: false,
 			description: "Print JSON, even on a terminal.",
@@ -68,7 +81,9 @@ export function commandFlags(command: Command): Flag[] {
 		},
 		{
 			name: "profile",
+			short: "p",
 			type: "string",
+			complete: "profiles",
 			description:
 				"Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence.",
 		},
@@ -76,6 +91,7 @@ export function commandFlags(command: Command): Flag[] {
 			name: "tenant",
 			short: "t",
 			type: "string",
+			complete: "profiles",
 			description:
 				"Run this call in another signed-in workspace, by slug. Same as --profile.",
 		},
@@ -83,6 +99,7 @@ export function commandFlags(command: Command): Flag[] {
 			? [
 					{
 						name: "limit",
+						short: "n",
 						type: "number" as const,
 						default: 20,
 						description: "Maximum items to return (positive integer).",
@@ -104,6 +121,7 @@ export function commandFlags(command: Command): Flag[] {
 					},
 					{
 						name: "yes",
+						short: "y",
 						type: "boolean" as const,
 						default: false,
 						description: "Confirm a destructive operation.",
@@ -112,4 +130,20 @@ export function commandFlags(command: Command): Flag[] {
 			: []),
 		...(command.flags ?? []),
 	];
+}
+
+/** A group run without a subcommand lists: `boldvideo videos` is `boldvideo videos list`. */
+export function defaultSubcommand(command: Command): Command | undefined {
+	return command.run
+		? undefined
+		: command.subcommands?.find((child) => child.name === "list");
+}
+
+export function findSubcommand(
+	command: Command,
+	name: string,
+): Command | undefined {
+	return command.subcommands?.find(
+		(child) => child.name === name || child.aliases?.includes(name),
+	);
 }

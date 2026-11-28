@@ -110,6 +110,7 @@ export const api: Command = {
 			name: "method",
 			description:
 				"GET, POST, PUT, PATCH, DELETE, or an optional --list filter.",
+			choices: methods,
 			required: false,
 		},
 		{
@@ -144,6 +145,7 @@ export const api: Command = {
 			name: "input",
 			type: "string",
 			description: "Read the whole JSON body from a file, or - for stdin.",
+			complete: "file",
 		},
 		{
 			name: "paginate",

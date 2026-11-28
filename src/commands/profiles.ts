@@ -69,6 +69,7 @@ export const logout: Command = {
 
 export const profiles: Command = {
 	name: "profiles",
+	aliases: ["p", "profile"],
 	summary: "List, switch and remove stored account profiles.",
 	auth: "none",
 	examples: [
@@ -82,6 +83,7 @@ export const profiles: Command = {
 	subcommands: [
 		{
 			name: "list",
+			aliases: ["ls"],
 			summary: "List saved profile names without exposing keys.",
 			auth: "none",
 			list: true,
@@ -132,12 +134,19 @@ export const profiles: Command = {
 		},
 		{
 			name: "use",
+			aliases: ["switch"],
 			summary: "Make a saved profile the default for future commands.",
 			description:
 				"BOLDVIDEO_API_KEY takes precedence even after switching the stored default.",
 			auth: "none",
 			write: true,
-			args: [{ name: "name", description: "Stored profile name." }],
+			args: [
+				{
+					name: "name",
+					description: "Stored profile name.",
+					complete: "profiles",
+				},
+			],
 			examples: [
 				{
 					cmd: "boldvideo profiles use customer-demo",
@@ -171,10 +180,17 @@ export const profiles: Command = {
 		},
 		{
 			name: "remove",
+			aliases: ["rm"],
 			summary: "Remove a saved profile and its key.",
 			auth: "none",
 			destructive: true,
-			args: [{ name: "name", description: "Stored profile name." }],
+			args: [
+				{
+					name: "name",
+					description: "Stored profile name.",
+					complete: "profiles",
+				},
+			],
 			examples: [
 				{
 					cmd: "boldvideo profiles remove customer-demo --yes",

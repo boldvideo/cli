@@ -1,5 +1,5 @@
 import { output, table } from "./output";
-import { type Command, commandFlags } from "./spec";
+import { type Command, commandFlags, defaultSubcommand } from "./spec";
 
 export function rootCommand(commands: Command[]): Command {
 	return {
@@ -8,6 +8,7 @@ export function rootCommand(commands: Command[]): Command {
 		flags: [
 			{
 				name: "version",
+				short: "v",
 				type: "boolean",
 				default: false,
 				description: "Print the installed version.",
@@ -51,7 +52,7 @@ export function showHelp(command: Command, path: string[], json = false): void {
 		.join(" ");
 	const synopsis = `${invocation}${command.subcommands ? " <command>" : ""}${args ? ` ${args}` : ""} [flags]`;
 	const flags = commandFlags(command).map((flag) => ({
-		flag: `--${flag.name}`,
+		flag: flag.short ? `--${flag.name}, -${flag.short}` : `--${flag.name}`,
 		type: flag.type,
 		default: flag.default === undefined ? "—" : JSON.stringify(flag.default),
 		description: `${flag.description}${flag.required ? " (required)" : ""}`,
@@ -61,17 +62,30 @@ export function showHelp(command: Command, path: string[], json = false): void {
 		`Usage: ${synopsis}`,
 	];
 	if (command.description) sections.push(command.description);
-	if (command.subcommands)
+	if (command.subcommands) {
+		// The shorthand column appears only where a sibling has one.
+		const short = command.subcommands.some((child) => child.aliases?.length);
 		sections.push(
-			`Commands:\n${table(ordered(command.subcommands).map((child) => ({ command: child.name, purpose: child.summary })))}`,
+			`Commands:\n${table(
+				ordered(command.subcommands).map((child) => ({
+					command: child.name,
+					...(short ? { short: child.aliases?.join(", ") ?? "" } : {}),
+					purpose: child.summary,
+				})),
+			)}`,
 		);
+	}
+	if (defaultSubcommand(command))
+		sections.push(`Without a command, ${invocation} runs ${invocation} list.`);
 	if (command.args?.length)
 		sections.push(
 			`Arguments:\n${table(command.args.map((arg) => ({ argument: arg.name, description: arg.description })))}`,
 		);
 	sections.push(`Flags:\n${table(flags)}`);
 	if (root) {
-		sections.push("Run boldvideo <command> --help for command details.");
+		sections.push(
+			"Run boldvideo <command> --help for command details. bold is the same program under a shorter name.",
+		);
 	} else {
 		sections.push(
 			`Examples:\n${command.examples.map((example) => `  ${example.cmd}\n    ${example.note}`).join("\n")}`,

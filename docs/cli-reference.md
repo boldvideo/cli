@@ -59,12 +59,12 @@ boldvideo <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --version | boolean | false | Print the installed version. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --version, -v | boolean | false | Print the installed version. |
 
 ### Examples
 
@@ -84,6 +84,8 @@ boldvideo help --json
 
 Import videos and wait until their content is searchable.
 
+Shorthand: `boldvideo i`.
+
 ```sh
 boldvideo import <command> [flags]
 ```
@@ -92,13 +94,13 @@ boldvideo import <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -118,6 +120,8 @@ boldvideo import url https://cdn.example.com/paid-workshops.mp4 --title "Paid wo
 
 Import a YouTube video, playlist or channel.
 
+Shorthand: `boldvideo import yt`.
+
 ```sh
 boldvideo import youtube [source_url] [flags]
 ```
@@ -132,13 +136,13 @@ boldvideo import youtube [source_url] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --from | string | — | Read URLs one per line from a file instead of a positional URL or stdin. |
 | --title | string | — | Single-video title; required for direct media URLs. |
 | --description | string | — | Single-video description. |
@@ -187,13 +191,13 @@ boldvideo import url [source_url] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --from | string | — | Read URLs one per line from a file instead of a positional URL or stdin. |
 | --title | string | — | Single-video title; required for direct media URLs. |
 | --description | string | — | Single-video description. |
@@ -228,6 +232,8 @@ boldvideo import url https://vimeo.com/76979871 --published-at 2026-10-18 --dry-
 
 Show a video or import run, or resume waiting for readiness.
 
+Shorthand: `boldvideo import st`.
+
 ```sh
 boldvideo import status <id-or-run> [flags]
 ```
@@ -242,11 +248,11 @@ boldvideo import status <id-or-run> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --wait | boolean | false | Wait until imported videos are transcribed and indexed. |
 | --poll-interval | number | 5 | Seconds between polls (positive number). |
 | --timeout | number | 3600 | Maximum seconds to wait (positive number; default 60 minutes). |
@@ -284,13 +290,13 @@ boldvideo import cancel <run_id> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -310,6 +316,8 @@ boldvideo import cancel run_demo_20261019 --dry-run --yes
 
 Ask your library a question and show cited moments.
 
+Shorthand: `boldvideo a`.
+
 Sources keep their original citation numbers. --limit bounds displayed sources, not retrieval; increasing it regenerates the answer.
 
 ```sh
@@ -326,12 +334,12 @@ boldvideo ask <prompt> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --collection | string | — | Restrict the question to this collection ID or slug. |
 | --as | string | — | Personalize for a viewer UUID or external ID. |
@@ -356,6 +364,8 @@ boldvideo ask "What should I try next?" --as customer-1042 --conversation 8f92bc
 
 Search your library with AI or find keyword matches.
 
+Shorthand: `boldvideo s`.
+
 AI search shows a summary with cited sources. --limit bounds displayed sources, not retrieval; increasing it regenerates the summary. --keyword uses paginated keyword results instead. --fields selects source or keyword-result fields.
 
 ```sh
@@ -372,12 +382,12 @@ boldvideo search <query> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --keyword | boolean | false | Search keywords without AI synthesis. |
 | --page | number | 1 | Keyword results page (positive integer; requires --keyword). |
@@ -408,11 +418,11 @@ boldvideo help <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -440,11 +450,11 @@ boldvideo help exit-codes [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -474,13 +484,13 @@ boldvideo login [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --token | string | — | API key to verify and store instead of signing in with the browser; use - to read it from stdin. |
 | --no-browser | boolean | false | Print the sign-in link without opening a browser. |
 
@@ -502,6 +512,8 @@ boldvideo login --token bold_demo_key_2026 --profile customer-demo
 
 Show who is signed in, the account, key kind and profile.
 
+Shorthand: `boldvideo me`.
+
 A null profile means BOLDVIDEO_API_KEY supplied the key. The API base URL comes from BOLDVIDEO_API_URL or the Bold production default.
 
 ```sh
@@ -512,11 +524,11 @@ boldvideo whoami [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -536,6 +548,10 @@ boldvideo whoami --profile customer-demo --json
 
 List, switch and remove stored account profiles.
 
+Shorthand: `boldvideo p`, `boldvideo profile`.
+
+Without a command, `boldvideo profiles` runs `boldvideo profiles list`.
+
 ```sh
 boldvideo profiles <command> [flags]
 ```
@@ -544,11 +560,11 @@ boldvideo profiles <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -568,6 +584,8 @@ boldvideo profiles use customer-demo
 
 List saved profile names without exposing keys.
 
+Shorthand: `boldvideo profiles ls`.
+
 ```sh
 boldvideo profiles list [flags]
 ```
@@ -576,12 +594,12 @@ boldvideo profiles list [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --offset | number | 0 | Start at this profile (nonnegative integer). |
 
@@ -603,6 +621,8 @@ boldvideo profiles list --limit 5 --fields name,active
 
 Make a saved profile the default for future commands.
 
+Shorthand: `boldvideo profiles switch`.
+
 BOLDVIDEO_API_KEY takes precedence even after switching the stored default.
 
 ```sh
@@ -619,13 +639,13 @@ boldvideo profiles use <name> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -645,6 +665,8 @@ boldvideo profiles use production --dry-run
 
 Remove a saved profile and its key.
 
+Shorthand: `boldvideo profiles rm`.
+
 ```sh
 boldvideo profiles remove <name> [flags]
 ```
@@ -659,13 +681,13 @@ boldvideo profiles remove <name> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -695,13 +717,13 @@ boldvideo logout [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -721,6 +743,10 @@ boldvideo logout --profile customer-demo --dry-run --yes
 
 Browse library videos and retrieve transcripts.
 
+Shorthand: `boldvideo v`, `boldvideo video`.
+
+Without a command, `boldvideo videos` runs `boldvideo videos list`.
+
 ```sh
 boldvideo videos <command> [flags]
 ```
@@ -729,11 +755,11 @@ boldvideo videos <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -753,6 +779,8 @@ boldvideo videos get paid-workshops
 
 List a bounded page of library videos.
 
+Shorthand: `boldvideo videos ls`.
+
 ```sh
 boldvideo videos list [flags]
 ```
@@ -761,12 +789,12 @@ boldvideo videos list [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --status | string | — | Filter by video status. |
 | --privacy | string | — | Filter by video privacy. |
@@ -794,6 +822,8 @@ boldvideo videos list --collection paid-workshops --fields internal_id,title --p
 
 Show the full video record by UUID, hashid or slug.
 
+Shorthand: `boldvideo videos show`.
+
 ```sh
 boldvideo videos get <id> [flags]
 ```
@@ -808,11 +838,11 @@ boldvideo videos get <id> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -848,13 +878,13 @@ boldvideo videos transcript <id> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --format | string | — | Transcript format: txt, srt, vtt or json. |
 | --out | string | — | Save the transcript body to this file. |
 
@@ -876,6 +906,8 @@ boldvideo videos transcript paid-workshops --format srt --out paid-workshops.srt
 
 Update metadata and visibility for one or more videos.
 
+Shorthand: `boldvideo videos edit`.
+
 Processes IDs in order and continues on individual failures. Reads one ID per stdin line when no IDs are given. Exit 1 means at least one video failed; stdout still contains every result. --dry-run previews without writing.
 
 ```sh
@@ -892,13 +924,13 @@ boldvideo videos update [id] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --title | string | — | Replace the video title. |
 | --description | string | — | Replace the description; an empty string clears it. |
 | --published-at | string | — | ISO date or datetime (UTC if no timezone), or none to clear. |
@@ -945,13 +977,13 @@ boldvideo videos publish [id] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --published-at | string | — | Publication ISO date or datetime (UTC if no timezone). |
 
 ### Examples
@@ -988,13 +1020,13 @@ boldvideo videos unpublish [id] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -1014,6 +1046,8 @@ boldvideo videos unpublish paid-workshops --dry-run
 
 Delete one or more videos after confirmation.
 
+Shorthand: `boldvideo videos rm`.
+
 Processes IDs in order and continues on individual failures. Reads one ID per stdin line when no IDs are given. Exit 1 means at least one video failed; stdout still contains every result. --dry-run previews without writing. On a terminal, asks once listing video titles unless --yes is given. Piped stdin requires --yes, including with --dry-run.
 
 ```sh
@@ -1030,13 +1064,13 @@ boldvideo videos delete [id] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -1056,6 +1090,10 @@ boldvideo videos delete paid-workshops --dry-run --yes
 
 Organize the video library into collections.
 
+Shorthand: `boldvideo c`, `boldvideo collection`.
+
+Without a command, `boldvideo collections` runs `boldvideo collections list`.
+
 ```sh
 boldvideo collections <command> [flags]
 ```
@@ -1064,11 +1102,11 @@ boldvideo collections <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -1088,6 +1126,8 @@ boldvideo collections create "Customer workshops"
 
 List collections, including empty collections.
 
+Shorthand: `boldvideo collections ls`.
+
 ```sh
 boldvideo collections list [flags]
 ```
@@ -1096,12 +1136,12 @@ boldvideo collections list [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --offset | number | 0 | Start at this result (nonnegative integer). |
 
@@ -1123,6 +1163,8 @@ boldvideo collections list --limit 5 --fields id,name,video_count
 
 Create a collection or return the existing collection by name.
 
+Shorthand: `boldvideo collections new`.
+
 ```sh
 boldvideo collections create <name> [flags]
 ```
@@ -1137,13 +1179,13 @@ boldvideo collections create <name> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --parent | string | — | Parent collection UUID or slug. |
 
 ### Examples
@@ -1164,6 +1206,8 @@ boldvideo collections create "Pricing lessons" --parent customer-workshops --dry
 
 Rename a collection without changing its memberships.
 
+Shorthand: `boldvideo collections mv`.
+
 ```sh
 boldvideo collections rename <id> <name> [flags]
 ```
@@ -1179,13 +1223,13 @@ boldvideo collections rename <id> <name> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -1222,13 +1266,13 @@ boldvideo collections add <collection> [video] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -1248,6 +1292,8 @@ boldvideo collections add customer-workshops aB12cD34 --dry-run
 
 Remove collection memberships without deleting videos.
 
+Shorthand: `boldvideo collections rm`.
+
 When no video arguments are given, read one video UUID, hashid or slug per line from piped stdin.
 
 ```sh
@@ -1265,13 +1311,13 @@ boldvideo collections remove <collection> [video] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -1305,12 +1351,12 @@ boldvideo collections videos <collection> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --offset | number | 0 | Start at this result (nonnegative integer). |
 
@@ -1332,6 +1378,10 @@ boldvideo collections videos customer-workshops --limit 5 --fields id,title
 
 Sync members and inspect viewer progress and memory.
 
+Shorthand: `boldvideo vw`, `boldvideo viewer`.
+
+Without a command, `boldvideo viewers` runs `boldvideo viewers list`.
+
 ```sh
 boldvideo viewers <command> [flags]
 ```
@@ -1340,11 +1390,11 @@ boldvideo viewers <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -1364,6 +1414,8 @@ boldvideo viewers sync members.csv --dry-run
 
 List a bounded page of viewers.
 
+Shorthand: `boldvideo viewers ls`.
+
 ```sh
 boldvideo viewers list [flags]
 ```
@@ -1372,12 +1424,12 @@ boldvideo viewers list [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --page | number | 1 | Page number (positive integer). |
 
@@ -1399,6 +1451,8 @@ boldvideo viewers list --page 2 --fields id,email
 
 Get a viewer by UUID, email or external ID.
 
+Shorthand: `boldvideo viewers show`.
+
 ```sh
 boldvideo viewers get <viewer> [flags]
 ```
@@ -1413,11 +1467,11 @@ boldvideo viewers get <viewer> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -1453,13 +1507,13 @@ boldvideo viewers sync <file> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --prune | boolean | — | Delete viewers absent from the input (requires --yes when piped). |
 
 ### Examples
@@ -1494,11 +1548,11 @@ boldvideo viewers progress <viewer> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --video | string | — | Restrict progress to this video ID. |
 
 ### Examples
@@ -1529,11 +1583,11 @@ boldvideo viewers memory <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -1567,13 +1621,13 @@ boldvideo viewers memory get <viewer> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 | --enable | boolean | — | Enable future memory distillation. |
 | --disable | boolean | — | Disable future memory distillation. |
 
@@ -1609,13 +1663,13 @@ boldvideo viewers memory clear <viewer> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
 
 ### Examples
 
@@ -1635,6 +1689,8 @@ boldvideo viewers memory clear maria@acme.com --dry-run --yes
 
 Explore member questions and content gaps.
 
+Shorthand: `boldvideo ins`.
+
 ```sh
 boldvideo insights <command> [flags]
 ```
@@ -1643,11 +1699,11 @@ boldvideo insights <command> [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 
 ### Examples
 
@@ -1667,6 +1723,8 @@ boldvideo insights questions --collection a31c608a-2ab7-457f-8734-4f8f055d2e08
 
 Read member questions and identify content gaps.
 
+Shorthand: `boldvideo insights q`.
+
 Requires an admin key. Windows are half-open [since, until); dates, ISO 8601 timestamps and Nd/Nh durations are passed through verbatim. Until defaults to the server's now. Results are newest first as served. Grouping counts only the fetched page: video counts each question once per distinct source video (none/unobserved are separate); day uses the date in asked_at. Terminal sources '?' means unobserved, 0 means none; only question text is shortened.
 
 ```sh
@@ -1677,12 +1735,12 @@ boldvideo insights questions [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --since | string | "7d" | Window start: ISO timestamp, date, or Nd/Nh duration. |
 | --until | string | — | Exclusive window end: ISO timestamp, date, or Nd/Nh duration; default now. |
@@ -1736,18 +1794,18 @@ boldvideo api [method] [path] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --dry-run | boolean | false | Preview the write without making changes. |
-| --yes | boolean | false | Confirm a destructive operation. |
-| --field | list | — | String body field (-f key=value), repeatable. |
-| --typed-field | list | — | JSON body field (-F key=value), repeatable. |
-| --query | list | — | Query parameter (-q key=value), repeatable. |
+| --yes, -y | boolean | false | Confirm a destructive operation. |
+| --field, -f | list | — | String body field (-f key=value), repeatable. |
+| --typed-field, -F | list | — | JSON body field (-F key=value), repeatable. |
+| --query, -q | list | — | Query parameter (-q key=value), repeatable. |
 | --input | string | — | Read the whole JSON body from a file, or - for stdin. |
 | --paginate | boolean | false | Follow Link or meta pagination up to --limit items. |
 | --list | boolean | false | Fetch OpenAPI and list methods, paths and summaries. |
@@ -1787,12 +1845,12 @@ boldvideo docs [topic] [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
-| --limit | number | 20 | Maximum items to return (positive integer). |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --limit, -n | number | 20 | Maximum items to return (positive integer). |
 | --fields | list | — | API fields to include, comma-separated or repeated. |
 | --search | string | — | Filter topics, titles and descriptions by substring. |
 | --offset | number | 0 | Start at this topic (nonnegative integer). |
@@ -1811,6 +1869,50 @@ Read the quickstart without leaving the shell.
 boldvideo docs guides/quickstart
 ```
 
+## boldvideo completion
+
+Print a tab-completion script for bash, zsh or fish.
+
+Completes commands, shorthands, flags, flag values, saved workspaces and file names, for both boldvideo and bold. Without a shell it uses $SHELL. Load it from your shell's startup file:
+  zsh:  eval "$(boldvideo completion zsh)"   in ~/.zshrc, after compinit
+  bash: eval "$(boldvideo completion bash)"  in ~/.bashrc
+  fish: boldvideo completion fish | source   in ~/.config/fish/config.fish
+The script prints as text even when piped; --json returns &#123;shell, script&#125;. Completion reads only local files and never calls the API.
+
+```sh
+boldvideo completion [shell] [flags]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| shell | No | bash, zsh or fish; defaults to the shell in $SHELL. |
+
+### Flags
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
+| --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+
+### Examples
+
+Print the zsh completion script.
+
+```sh
+boldvideo completion zsh
+```
+
+Read the fish script as JSON.
+
+```sh
+boldvideo completion fish --json
+```
+
 ## boldvideo upgrade
 
 Show how to upgrade this installation without changing it.
@@ -1825,11 +1927,11 @@ boldvideo upgrade [flags]
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| --help | boolean | false | Show command help. |
-| --json | boolean | false | Print JSON, even on a terminal. |
+| --help, -h | boolean | false | Show command help. |
+| --json, -j | boolean | false | Print JSON, even on a terminal. |
 | --debug | boolean | false | Enable diagnostics on terminal stderr; never print API keys. |
-| --profile | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
-| --tenant | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
+| --profile, -p | string | — | Use a stored profile for this call; BOLDVIDEO_API_KEY takes precedence. |
+| --tenant, -t | string | — | Run this call in another signed-in workspace, by slug. Same as --profile. |
 | --no-check | boolean | false | Skip the optional npm version check (3 second timeout). |
 
 ### Examples

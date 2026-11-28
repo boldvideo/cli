@@ -290,11 +290,15 @@ export const videoWrites: Command[] = [
 	{
 		...bulk,
 		name: "update",
+		aliases: ["edit"],
 		summary: "Update metadata and visibility for one or more videos.",
 		flags: fields.map(([name, , type, description]) => ({
 			name,
 			type,
 			description,
+			...(name === "privacy"
+				? { choices: ["public", "unlisted", "private"] }
+				: {}),
 		})),
 		examples: [
 			{
@@ -357,6 +361,7 @@ export const videoWrites: Command[] = [
 	{
 		...bulk,
 		name: "delete",
+		aliases: ["rm"],
 		summary: "Delete one or more videos after confirmation.",
 		destructive: true,
 		description: `${bulk.description} On a terminal, asks once listing video titles unless --yes is given. Piped stdin requires --yes, including with --dry-run.`,

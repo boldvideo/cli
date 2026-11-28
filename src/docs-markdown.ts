@@ -1,5 +1,5 @@
 import { exitCodes } from "./exit-codes";
-import type { Command } from "./spec";
+import { type Command, defaultSubcommand } from "./spec";
 
 /** Render the serialized command tree returned by `boldvideo help --json`. */
 export function commandTreeToMarkdown(tree: Command): string {
@@ -28,6 +28,14 @@ export function commandTreeToMarkdown(tree: Command): string {
 			.join(" ");
 		const synopsis = `${invocation}${command.subcommands ? " <command>" : ""}${args ? ` ${args}` : ""} [flags]`;
 		sections.push(`### ${invocation}`, command.summary);
+		if (command.aliases?.length)
+			sections.push(
+				`Shorthand: ${command.aliases.map((alias) => `\`${[...path, alias].join(" ")}\``).join(", ")}.`,
+			);
+		if (defaultSubcommand(command))
+			sections.push(
+				`Without a command, \`${invocation}\` runs \`${invocation} list\`.`,
+			);
 		if (command.description) sections.push(command.description);
 		sections.push(`\`\`\`sh\n${synopsis}\n\`\`\``);
 		if (command.args?.length)
@@ -45,7 +53,7 @@ export function commandTreeToMarkdown(tree: Command): string {
 				(command.flags ?? [])
 					.map(
 						(flag) =>
-							`| --${cell(flag.name)} | ${flag.type} | ${cell(flag.default === undefined ? "—" : JSON.stringify(flag.default))} | ${cell(`${flag.description}${flag.required ? " (required)" : ""}`)} |`,
+							`| --${cell(flag.name)}${flag.short ? `, -${flag.short}` : ""} | ${flag.type} | ${cell(flag.default === undefined ? "—" : JSON.stringify(flag.default))} | ${cell(`${flag.description}${flag.required ? " (required)" : ""}`)} |`,
 					)
 					.join("\n"),
 			"#### Examples",

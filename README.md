@@ -41,6 +41,32 @@ npx boldvideo@latest --help
 Installing also gives you `bold`, the same command under a shorter name:
 `bold login`, `bold videos list`. Docs and help say `boldvideo` throughout.
 
+## Type less
+
+Tab completion covers commands, flags, flag values, your workspaces and file names, in zsh, bash and fish. Add one line to your shell's startup file:
+
+```sh
+echo 'eval "$(boldvideo completion zsh)"' >> ~/.zshrc      # after compinit
+echo 'eval "$(boldvideo completion bash)"' >> ~/.bashrc
+echo 'boldvideo completion fish | source' >> ~/.config/fish/config.fish
+```
+
+Everyday commands have shorthands, and a group on its own lists:
+
+```sh
+bold v                           # boldvideo videos list
+bold v --privacy private -n 5    # list flags work without "list"
+bold v show paid-workshops       # videos get
+bold c                           # collections list
+bold vw                          # viewers list
+bold s "paid workshops"          # search
+bold a "What do we say about pricing?"    # ask
+bold me                          # whoami
+bold p switch acme               # profiles use
+```
+
+`-h`, `-j` (`--json`), `-n` (`--limit`), `-y` (`--yes`), `-p` (`--profile`) and `-t` (`--tenant`) work wherever the long flag does. `boldvideo <command> --help` shows each shorthand next to the command it stands for.
+
 ## Sign in
 
 ```sh

@@ -110,6 +110,7 @@ const offsetFlag = {
 
 export const collections: Command = {
 	name: "collections",
+	aliases: ["c", "collection"],
 	summary: "Organize the video library into collections.",
 	examples: [
 		{
@@ -125,6 +126,7 @@ export const collections: Command = {
 	subcommands: [
 		{
 			name: "list",
+			aliases: ["ls"],
 			summary: "List collections, including empty collections.",
 			list: true,
 			flags: [offsetFlag],
@@ -146,6 +148,7 @@ export const collections: Command = {
 		},
 		{
 			name: "create",
+			aliases: ["new"],
 			summary: "Create a collection or return the existing collection by name.",
 			auth: "admin",
 			write: true,
@@ -192,6 +195,7 @@ export const collections: Command = {
 		},
 		{
 			name: "rename",
+			aliases: ["mv"],
 			summary: "Rename a collection without changing its memberships.",
 			auth: "admin",
 			write: true,
@@ -225,6 +229,7 @@ export const collections: Command = {
 		...(["add", "remove"] as const).map(
 			(action): Command => ({
 				name: action,
+				...(action === "remove" ? { aliases: ["rm"] } : {}),
 				summary:
 					action === "add"
 						? "Add videos to a collection without duplicating memberships."

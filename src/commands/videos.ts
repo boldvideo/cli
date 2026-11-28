@@ -69,6 +69,7 @@ export function videoText(video: Record<string, unknown>): string {
 
 export const videos: Command = {
 	name: "videos",
+	aliases: ["v", "video"],
 	summary: "Browse library videos and retrieve transcripts.",
 	examples: [
 		{ cmd: "boldvideo videos list", note: "Browse the first page of videos." },
@@ -81,6 +82,7 @@ export const videos: Command = {
 	subcommands: [
 		{
 			name: "list",
+			aliases: ["ls"],
 			summary: "List a bounded page of library videos.",
 			list: true,
 			flags: [
@@ -91,6 +93,9 @@ export const videos: Command = {
 						name === "since"
 							? "Videos updated since this ISO timestamp."
 							: `Filter by video ${name}.`,
+					...(name === "privacy"
+						? { choices: ["public", "unlisted", "private"] }
+						: {}),
 				})),
 				{
 					name: "page",
@@ -170,6 +175,7 @@ export const videos: Command = {
 		},
 		{
 			name: "get",
+			aliases: ["show"],
 			summary: "Show the full video record by UUID, hashid or slug.",
 			args: [{ name: "id", description: "Video UUID, hashid or slug." }],
 			examples: [
@@ -214,11 +220,13 @@ export const videos: Command = {
 					name: "format",
 					type: "string",
 					description: "Transcript format: txt, srt, vtt or json.",
+					choices: ["txt", "srt", "vtt", "json"],
 				},
 				{
 					name: "out",
 					type: "string",
 					description: "Save the transcript body to this file.",
+					complete: "file",
 				},
 			],
 			examples: [
