@@ -9,6 +9,8 @@ import { run as execute, type RunOptions } from "./run";
 const temporary = mkdtempSync(join(tmpdir(), "boldvideo-video-write-"));
 const calls: { method: string; path: string; body: unknown }[] = [];
 let malformed = false;
+/** Answer as the admin API did before it wrapped the record in data. */
+let bare = false;
 const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 0,
@@ -41,9 +43,10 @@ const server = Bun.serve({
 			);
 		if (!path.startsWith("/admin/videos/"))
 			return new Response(null, { status: 500 });
-		if (malformed) return Response.json({ data: video });
+		if (malformed)
+			return Response.json({ data: { internal_id: video.internal_id } });
 		const id = decodeURIComponent(path.split("/")[3] as string);
-		return Response.json({
+		const record = {
 			...video,
 			...(id === "sales-onboarding"
 				? {
@@ -53,13 +56,16 @@ const server = Bun.serve({
 					}
 				: {}),
 			...(body ? JSON.parse(body) : {}),
-		});
+		};
+		// As in production: the record comes in a data envelope.
+		return Response.json(bare ? record : { data: record });
 	},
 });
 
 beforeEach(() => {
 	calls.length = 0;
 	malformed = false;
+	bare = false;
 });
 afterAll(() => {
 	server.stop(true);
@@ -438,4 +444,16 @@ test("malformed pending backend responses are per-item failures, not false succe
 			},
 		})),
 	);
+});
+
+test("a write is read from the data envelope, and from a bare record as older servers sent it", async () => {
+	for (const legacy of [false, true]) {
+		bare = legacy;
+		const result = await run(["update", video.slug, "--title", "Renamed"]);
+		expect(result.stderr).toBe("");
+		expect(result.status).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject([
+			{ id: video.slug, ok: true, video: { title: "Renamed" } },
+		]);
+	}
 });

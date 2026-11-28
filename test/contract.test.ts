@@ -145,7 +145,7 @@ test("no args and --help agree; the published tree excludes test commands", asyn
 	);
 	expect(names).not.toContain("fixture");
 	expect(JSON.parse((await run(["--version"])).stdout)).toEqual({
-		version: "0.2.1",
+		version: "0.2.2",
 	});
 	expect(readFileSync(built, "utf8")).toStartWith("#!/usr/bin/env node\n");
 });
@@ -376,7 +376,7 @@ test("terminal help is compact, group help lists direct children, and JSON can b
 	expect(help.stdout.trim().split("\n").length).toBeLessThanOrEqual(40);
 	expect(help.stdout).toContain("Run boldvideo <command> --help");
 	expect(help.stdout).not.toContain("\u001b[");
-	expect((await run(["--version"], { tty: true })).stdout).toBe("0.2.1\n");
+	expect((await run(["--version"], { tty: true })).stdout).toBe("0.2.2\n");
 	expect(
 		JSON.parse((await run(["--help", "--json"], { tty: true })).stdout).name,
 	).toBe("boldvideo");

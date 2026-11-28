@@ -1,7 +1,7 @@
 import { open } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { apiError, type CliError, error } from "./errors";
-import { importFetch, importVideo } from "./import-api";
+import { getVideo, importFetch, importVideo } from "./import-api";
 
 // Uploading a local file through the admin API: start (or pick up) an upload,
 // send the parts storage does not hold yet, complete. Every step can be repeated,
@@ -171,9 +171,15 @@ export async function uploadFile(options: UploadOptions): Promise<Uploaded> {
 	const started = await start();
 	const { video, deduplicated } = started;
 	let upload = started.upload;
-	// Nothing left to send: the file is already in.
-	if (!upload) return { video, sent: false, deduplicated };
 	const id = String(video.internal_id);
+	// Nothing left to send: the file is already in. The start answer does not
+	// know whether the video is searchable yet, so read the record itself.
+	if (!upload)
+		return {
+			video: await getVideo(key, id, signal).catch(() => video),
+			sent: false,
+			deduplicated,
+		};
 
 	const file = await open(path, "r");
 	try {

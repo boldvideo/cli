@@ -80,7 +80,8 @@ const server = Bun.serve({
 				(id) => path === `${root}/${id}`,
 			)
 		)
-			return Response.json(admin ? video : publicVideo);
+			// As in production: the admin record comes in a data envelope too.
+			return Response.json(admin ? { data: video } : publicVideo);
 		return Response.json(
 			{ message: "Video not found." },
 			{ status: 404, headers: { "x-request-id": "req_missing_2032" } },
