@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     tags: [v*]
+  # A manual run stages nothing. It only asks npm whether it trusts this workflow
+  # for each package, which is the question a failed staging leaves open.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,7 +15,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  trust:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Ask npm whether it trusts this workflow
+        run: |
+          curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" > id.json
+          # What npm compares with the trusted publisher. None of this is secret.
+          node -e '
+            const claims = JSON.parse(Buffer.from(require("./id.json").value.split(".")[1], "base64url"));
+            for (const name of ["repository", "repository_owner", "repository_visibility", "workflow_ref", "job_workflow_ref", "ref", "event_name", "environment", "runner_environment"])
+              console.log(name.padEnd(22), claims[name] ?? "(none)");
+          '
+          failed=0
+          for package in boldvideo @boldvideo%2fcli; do
+            status=$(node -e '
+              fetch("https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/" + process.argv[1], {
+                method: "POST",
+                headers: { Authorization: "Bearer " + require("./id.json").value },
+              }).then(async (response) => {
+                // A yes comes with a short-lived token. It is dropped here, never printed.
+                const body = await response.json().catch(() => ({}));
+                console.log(response.status + " " + (response.ok ? "trusted" : (body.message ?? "refused")));
+              });
+            ' "$package")
+            echo "$package: $status"
+            case "$status" in 2*) ;; *) failed=1 ;; esac
+          done
+          rm -f id.json
+          exit $failed
+
   version:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
