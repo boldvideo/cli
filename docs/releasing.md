@@ -58,20 +58,22 @@ from a public repository.
    git push origin "v$version"
    ```
 
-5. Watch **Actions → Release**. When it is green, approve `boldvideo` first and
-   `@boldvideo/cli` second on npmjs.com.
-6. Verify:
+5. Watch **Actions → Release**. When it is green, publish what it staged:
 
    ```sh
-   npm view boldvideo version
-   npm view @boldvideo/cli version
-   npx --yes boldvideo@latest --version
+   bun run release:approve
    ```
 
-7. Run **Actions → Smoke** with the version. It installs that version from npm
-   and, when the `BOLDVIDEO_SMOKE_*` secrets point at a non-customer account,
-   runs import, ask and search against it.
-8. Copy `docs/cli-reference.md` to the docs site.
+   It shows the two staged packages and the commit they were built from, waits
+   for Enter, approves `boldvideo` and then `@boldvideo/cli`, checks that npm
+   serves both, and starts the Smoke workflow. `--dry-run` only shows what is
+   staged. You need to be signed in to npm (`npm login`); npm asks for your
+   passkey or a code if the account requires one for publishing. The same two
+   approvals can be given on npmjs.com under **Staged Packages**.
+6. Smoke installs that version from npm and, when the `BOLDVIDEO_SMOKE_*`
+   secrets point at a non-customer account, runs import, ask and search
+   against it.
+7. Copy `docs/cli-reference.md` to the docs site.
 
 ## If something goes wrong
 
