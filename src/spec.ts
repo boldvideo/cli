@@ -53,6 +53,11 @@ export interface Command {
 	/** Defaults to any; local commands explicitly opt out. */
 	auth?: "any" | "admin" | "none";
 	subcommands?: Command[];
+	/**
+	 * For a group: which subcommand a first word means when it is not one itself,
+	 * such as a path or a URL. The word stays the subcommand's first argument.
+	 */
+	route?: (word: string) => string | undefined;
 	run?: (ctx: Context, args: string[], flags: Flags) => void | Promise<void>;
 }
 

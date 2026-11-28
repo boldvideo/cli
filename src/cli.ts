@@ -47,6 +47,7 @@ function distance(a: string, b: string): number {
 export function parse(argv: string[], registry = commands) {
 	let command = rootCommand(registry);
 	const path: string[] = [];
+	let routed = false;
 	const remaining = [...argv];
 	const usage = (message: string) =>
 		error(
@@ -77,7 +78,14 @@ export function parse(argv: string[], registry = commands) {
 				command = fallback;
 				continue;
 			}
-			const child = findSubcommand(command, token.value);
+			let child = findSubcommand(command, token.value);
+			// Not a subcommand, but the group can tell which one a path or URL means.
+			const named = child !== undefined;
+			if (!child) {
+				const name = command.route?.(token.value);
+				child = name === undefined ? undefined : findSubcommand(command, name);
+				routed ||= child !== undefined;
+			}
 			if (!child) {
 				const nearest = [...command.subcommands].sort(
 					(a, b) =>
@@ -94,7 +102,7 @@ export function parse(argv: string[], registry = commands) {
 			}
 			path.push(child.name);
 			command = child;
-			remaining.splice(token.index, 1);
+			if (named) remaining.splice(token.index, 1);
 		}
 		const parsed = parseArgs({
 			args: remaining,
@@ -143,7 +151,7 @@ export function parse(argv: string[], registry = commands) {
 					throw usage(`Missing argument <${arg.name}>.`);
 			}
 		}
-		return { command, path, args: parsed.positionals, flags };
+		return { command, path, args: parsed.positionals, flags, routed };
 	} catch (cause) {
 		if (cause instanceof TypeError) throw usage(cause.message);
 		throw cause;
@@ -177,7 +185,9 @@ export async function cli(argv: string[], registry = commands): Promise<void> {
 		// Help and environment authentication must work with an unreadable file.
 		// Commands that need profiles report the error when they load it.
 	}
-	const { command, path, args, flags } = parse(argv, registry);
+	const { command, path, args, flags, routed } = parse(argv, registry);
+	// Say which command a bare path or URL turned into, for the person watching.
+	if (routed && !flags.help) hint(`boldvideo ${path.join(" ")}`);
 	if (path.length === 0 && flags.version) {
 		output({ version }, version, flags.json === true);
 		return;

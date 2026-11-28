@@ -11,11 +11,14 @@ import {
 	mkdtempSync,
 	readFileSync,
 	rmSync,
+	utimesSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { parse } from "../src/cli";
 import { csvRows } from "../src/csv";
+import { recordedAt } from "../src/media-date";
 import collections from "./fixtures/import-collections.json";
 import me from "./fixtures/me.json";
 import { run as execute, type RunOptions } from "./run";
@@ -978,4 +981,215 @@ test("a terminal shows progress and the result path on stderr, never on stdout",
 	});
 	expect(terminal.stdout).toContain("2/2 b.mp4: already uploaded");
 	expect(terminal.stdout).toContain(`Results: ${results}`);
+});
+
+/** A box as MP4 and QuickTime files nest them: length, type, content. */
+function box(type: string, content: Buffer) {
+	const head = Buffer.alloc(8);
+	head.writeUInt32BE(8 + content.length, 0);
+	head.write(type, 4, "latin1");
+	return Buffer.concat([head, content]);
+}
+/** A file with the shape of a recording: movie data first, the header last. */
+function recording(created: Date | 0, version: 0 | 1 = 0) {
+	const seconds = created === 0 ? 0 : created.getTime() / 1000 + 2_082_844_800;
+	const times = Buffer.alloc(version === 1 ? 20 : 12);
+	times[0] = version;
+	if (version === 1) times.writeBigUInt64BE(BigInt(seconds), 4);
+	else times.writeUInt32BE(seconds, 4);
+	return Buffer.concat([
+		box("ftyp", Buffer.from("isom0000")),
+		box("mdat", Buffer.from("frames")),
+		box(
+			"moov",
+			Buffer.concat([box("udta", Buffer.alloc(3)), box("mvhd", times)]),
+		),
+	]);
+}
+
+test("the recording date is read from the movie header, and nonsense is not a date", async () => {
+	const root = folder({ "notes.mp4": "not a recording at all" });
+	const made = new Date("2024-05-06T07:08:09Z");
+	for (const [name, bytes, expected] of [
+		["old.mp4", recording(made), made],
+		["wide.mov", recording(made, 1), made],
+		["zero.mp4", recording(0), undefined],
+		["future.mp4", recording(new Date(Date.now() + 7 * 86_400_000)), undefined],
+		// The same bytes under a name that is not one of these containers.
+		["old.mkv", recording(made), undefined],
+	] as const) {
+		writeFileSync(join(root, name), bytes);
+		expect(await recordedAt(join(root, name)), name).toEqual(expected);
+	}
+	expect(await recordedAt(join(root, "notes.mp4"))).toBeUndefined();
+	expect(await recordedAt(join(root, "missing.mp4"))).toBeUndefined();
+});
+
+test("--published-at source dates each video from its file; now and none work in the map too", async () => {
+	const root = folder({
+		"plain.mp4": "0123456789",
+		"later.mp4": "abc",
+		"draft.mp4": "abc",
+	});
+	const made = new Date("2024-05-06T07:08:09Z");
+	const touched = new Date("2025-03-21T10:35:02Z");
+	writeFileSync(join(root, "recorded.mp4"), recording(made));
+	utimesSync(join(root, "plain.mp4"), touched, touched);
+	const map = join(root, "meta.csv");
+	writeFileSync(
+		map,
+		"file,published_at\nlater.mp4,2026-11-20\ndraft.mp4,none\n",
+	);
+	const before = Date.now();
+	const plan = await run([
+		"dir",
+		root,
+		"--map",
+		map,
+		"--published-at",
+		"source",
+		"--dry-run",
+	]);
+	expect(plan.stderr).toBe("");
+	const items = Object.fromEntries(
+		JSON.parse(plan.stdout).items.map((item: { file: string }) => [
+			item.file,
+			item,
+		]),
+	);
+	expect(items["recorded.mp4"]).toMatchObject({
+		body: { published_at: made.toISOString() },
+		published_at_from: "recorded",
+	});
+	// No date inside the file: its last-modified time stands in, and says so.
+	expect(items["plain.mp4"]).toMatchObject({
+		body: { published_at: touched.toISOString() },
+		published_at_from: "modified",
+	});
+	// The map wins over the command line, with a date or with none.
+	expect(items["later.mp4"].body.published_at).toBe("2026-11-20T00:00:00.000Z");
+	expect(items["later.mp4"].published_at_from).toBeUndefined();
+	expect("published_at" in items["draft.mp4"].body).toBe(false);
+	expect(calls.filter((call) => call.method !== "GET")).toEqual([]);
+
+	const now = JSON.parse(
+		(
+			await run([
+				"file",
+				join(root, "plain.mp4"),
+				"--published-at",
+				"now",
+				"--dry-run",
+			])
+		).stdout,
+	);
+	expect(Date.parse(now.body.published_at)).toBeGreaterThanOrEqual(before);
+	expect(now.published_at_from).toBeUndefined();
+	const sourced = JSON.parse(
+		(
+			await run([
+				"file",
+				join(root, "recorded.mp4"),
+				"--published-at",
+				"source",
+				"--dry-run",
+			])
+		).stdout,
+	);
+	expect(sourced).toMatchObject({
+		body: { published_at: made.toISOString() },
+		published_at_from: "recorded",
+	});
+	// Without the flag nothing is published, as before.
+	const plain = JSON.parse(
+		(await run(["file", join(root, "recorded.mp4"), "--dry-run"])).stdout,
+	);
+	expect("published_at" in plain.body).toBe(false);
+	const bad = await run([
+		"dir",
+		root,
+		"--published-at",
+		"yesterday",
+		"--dry-run",
+	]);
+	expect(bad.status).toBe(2);
+	expect(JSON.parse(bad.stderr).code).toBe("usage_error");
+
+	// A real run sends the date it showed.
+	expect(
+		(
+			await run([
+				"file",
+				join(root, "recorded.mp4"),
+				"--published-at",
+				"source",
+			])
+		).status,
+	).toBe(0);
+	expect(named("recorded.mp4").body.published_at).toBe(made.toISOString());
+});
+
+test("import with a bare path or URL runs the command that fits it", async () => {
+	const root = folder({
+		"group-call-12.mp4": "0123456789",
+		"intro.mov": "abc",
+	});
+	// A folder runs import dir.
+	const whole = await run([root]);
+	expect(whole.stderr).toBe("");
+	expect(
+		JSON.parse(whole.stdout).items.map((item: { file: string }) => item.file),
+	).toEqual(["group-call-12.mp4", "intro.mov"]);
+	// A file runs import file, flags and all, and returns the single record.
+	const one = await run([
+		join(root, "intro.mov"),
+		"--title",
+		"Intro",
+		"--dry-run",
+	]);
+	expect(JSON.parse(one.stdout)).toMatchObject({
+		dry_run: true,
+		path: "/admin/uploads",
+		body: { filename: "intro.mov", title: "Intro" },
+	});
+	// A URL runs import url.
+	const remote = await run([
+		"https://cdn.example.com/paid-workshops.mp4",
+		"--title",
+		"Paid workshops",
+		"--dry-run",
+	]);
+	expect(JSON.parse(remote.stdout)).toMatchObject({
+		dry_run: true,
+		path: "/admin/videos",
+		body: { source_url: "https://cdn.example.com/paid-workshops.mp4" },
+	});
+	// On a terminal it says which command it chose; a pipe (above) gets none of it.
+	const shown = await run([root, "--dry-run"], { tty: true });
+	expect(shown.stdout).toContain("boldvideo import dir\n");
+
+	// A path that is not there is a path problem; a stray word is still a typo.
+	const gone = await run([join(root, "nope.mp4")]);
+	expect(gone.status).toBe(2);
+	expect(JSON.parse(gone.stderr)).toMatchObject({
+		code: "usage_error",
+		message: expect.stringContaining("Nothing at"),
+	});
+	const typo = await run(["statsu"]);
+	expect(JSON.parse(typo.stderr)).toMatchObject({
+		code: "unknown_command",
+		hint: expect.stringContaining("boldvideo import status --help"),
+	});
+	// Named commands are untouched, and win over a path of the same name.
+	expect(parse(["import", "status", "run_1"]).path).toEqual([
+		"import",
+		"status",
+	]);
+	expect(parse(["import", "dir", root]).routed).toBe(false);
+	expect(parse(["i", root])).toMatchObject({
+		path: ["import", "dir"],
+		args: [root],
+		routed: true,
+	});
+	expect(parse(["import", "--help"]).path).toEqual(["import"]);
 });

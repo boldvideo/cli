@@ -86,6 +86,8 @@ Import videos and wait until their content is searchable.
 
 Shorthand: `boldvideo i`.
 
+Name the source and import picks the command: a folder runs import dir, a file runs import file, and an http(s) URL runs import url, each with that command's flags. Naming the command yourself does the same thing and is the form to use in scripts, where the output shape should not depend on what a path turns out to be. A path that is also a command name (status, dir) needs ./ in front.
+
 ```sh
 boldvideo import <command> [flags]
 ```
@@ -232,7 +234,7 @@ boldvideo import url https://vimeo.com/76979871 --published-at 2026-10-18 --dry-
 
 Upload every video file in a folder.
 
-Takes mp4, m4v, mov, webm, mkv, avi, wmv, mpeg, mpg, ogv, 3gp and 3g2 files; --include names others. A --map CSV sets metadata per file, with the metadata flags as defaults for whatever it leaves out; a file in the map but not in the folder is an error. With --map, a result CSV is written next to it as &lt;map name&gt;.results.csv and rewritten as each file finishes. Running the same command again continues an interrupted run: files already in are left alone, and a file stopped halfway sends only its missing parts. The server finds a file again by its external_id; without one from the map the CLI derives it from the path inside the folder and the file's size, so a renamed, moved or changed file uploads as a new video. One file failing does not stop the rest; the exit code is 1 if any failed.
+Takes mp4, m4v, mov, webm, mkv, avi, wmv, mpeg, mpg, ogv, 3gp and 3g2 files; --include names others. A --map CSV sets metadata per file, with the metadata flags as defaults for whatever it leaves out (its published_at column takes the same values as --published-at, including source); a file in the map but not in the folder is an error. With --map, a result CSV is written next to it as &lt;map name&gt;.results.csv and rewritten as each file finishes. Running the same command again continues an interrupted run: files already in are left alone, and a file stopped halfway sends only its missing parts. The server finds a file again by its external_id; without one from the map the CLI derives it from the path inside the folder and the file's size, so a renamed, moved or changed file uploads as a new video. One file failing does not stop the rest; the exit code is 1 if any failed.
 
 ```sh
 boldvideo import dir <path> [flags]
@@ -263,7 +265,7 @@ boldvideo import dir <path> [flags]
 | --collection | list | — | Collection IDs or exact names, comma-separated or repeated. |
 | --type | string | — | Video type UUID or slug. |
 | --privacy | string | "unlisted" | Visibility: public, unlisted or private. |
-| --published-at | string | — | ISO date or datetime with timezone. |
+| --published-at | string | — | Publication date: an ISO date or datetime with timezone; source for the file's own date (the recording time inside mp4/mov files, otherwise its last-modified time); now; or none. Without it the video stays unpublished. |
 | --language | string | — | Language code. |
 | --map | string | — | CSV with metadata per file. Columns: file, title, published_at, type, tags, collection, privacy, external_id. |
 | --results | string | — | Write the result CSV here: the map's columns plus status, bold_id, error_msg. |
@@ -319,7 +321,7 @@ boldvideo import file <path> [flags]
 | --collection | list | — | Collection IDs or exact names, comma-separated or repeated. |
 | --type | string | — | Video type UUID or slug. |
 | --privacy | string | "unlisted" | Visibility: public, unlisted or private. |
-| --published-at | string | — | ISO date or datetime with timezone. |
+| --published-at | string | — | Publication date: an ISO date or datetime with timezone; source for the file's own date (the recording time inside mp4/mov files, otherwise its last-modified time); now; or none. Without it the video stays unpublished. |
 | --external-id | string | — | Your own ID for the file; the upload resumes by it. |
 | --language | string | — | Language code. |
 | --map | string | — | CSV with metadata per file. Columns: file, title, published_at, type, tags, collection, privacy, external_id. |

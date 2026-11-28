@@ -150,7 +150,8 @@ export function complete(words: string[], registry: Command[]): Completions {
 		// Shorthands stay out of the list until one is the only way to finish the word.
 		return {
 			candidates: names.length ? names : named((child) => child.aliases ?? []),
-			files: false,
+			// A group that takes a bare path in place of a subcommand offers files too.
+			files: Boolean(command.route),
 		};
 	}
 	const args = command.args ?? [];
@@ -238,12 +239,13 @@ _boldvideo() {
 			fi
 		fi
 	done
+	local found=1
+	(( \${#described} )) && _describe 'boldvideo' described && found=0
 	if (( files )); then
 		[[ $PREFIX == --*=* ]] && compset -P '*='
-		_files
-	elif (( \${#described} )); then
-		_describe 'boldvideo' described
+		_files && found=0
 	fi
+	return found
 }
 if [[ $funcstack[1] == _boldvideo ]]; then
 	_boldvideo "$@"

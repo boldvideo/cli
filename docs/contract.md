@@ -108,6 +108,14 @@ per-item failure, not a reason to abandon the rest. Positional single-URL import
 retain their record output and specific failure exit codes. Input/authentication
 and collection-resolution errors before processing remain command-wide failures.
 
+`import <word>` without a subcommand routes by the word: an http(s) URL to
+`import url`, an existing folder to `import dir`, an existing file to
+`import file`; a word written like a path that does not exist goes to the file
+commands, which report it. Output and exit codes are those of the command it
+routed to, so scripts that need one shape name the command. A terminal's stderr
+shows the chosen command; nothing is added to stdout. Subcommand names win over
+a path of the same name.
+
 Folder uploads (`import dir`) follow the same partial-success rule with one
 object on stdout: `items`, one entry per file in map order and then path order,
 and `results`, the result CSV's path when one is written. Each item has `file`
@@ -115,7 +123,9 @@ and `results`, the result CSV's path when one is written. Each item has `file`
 `failed`, `missing` (in the map, not in the folder) or `skipped` (in the map
 and on disk, but not selected). Successes carry `video`, failures `error` with
 the standard fields. Dry-run prints `dry_run: true` and items with `action`
-(`upload`, `missing` or `skipped`), `size` and the start request as `body`. Any
+(`upload`, `missing` or `skipped`), `size` and the start request as `body`. An
+item whose publication date came from the file (`--published-at source`) also
+has `published_at_from`: `recorded` or `modified`. Any
 failed or missing file produces one `bulk_failed` error on stderr and exit 1
 after every file was attempted; its hint is the command to run again. A map
 that cannot be used (unknown column, invalid value) is a `usage_error` before

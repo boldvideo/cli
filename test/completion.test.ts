@@ -225,6 +225,20 @@ describe("completion engine", () => {
 			});
 	});
 
+	test("import offers its commands and files, since a bare path works there", () => {
+		const offered = complete(["import", ""], commands);
+		expect(offered.files).toBe(true);
+		expect(offered.candidates.map((candidate) => candidate.value)).toEqual(
+			expect.arrayContaining(["youtube", "url", "dir", "file", "status"]),
+		);
+		expect(complete(["videos", ""], commands).files).toBe(false);
+		expect(values(["i", "dir", "x", "--published-at", ""])).toEqual([
+			"source",
+			"now",
+			"none",
+		]);
+	});
+
 	test("bash's split words are rejoined and answered without the prefix", () => {
 		expect(
 			completionLines("bash", ["v", "--privacy", "=", "pu"], commands),
