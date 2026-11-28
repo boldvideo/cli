@@ -234,7 +234,10 @@ always work without credentials. Auth requirements are not inherited by children
   `profiles.json` under `$XDG_CONFIG_HOME/boldvideo`, `~/.config/boldvideo`, or
   `%APPDATA%/boldvideo` on Windows. POSIX modes are 0700 for the directory and
   0600 for the file. The shape is `{ active: string | null, profiles: { [name]:
-  { key: string } } }`. Corrupt files fail without being overwritten.
+  { key: string, origin?: string } } }`. Corrupt files fail without being overwritten.
+  `origin` is the API origin the key was saved for; a stored key is refused
+  (`not_authenticated`, exit 3) for any other origin. Profiles without one
+  belong to `https://app.boldvideo.io`. Environment keys are not bound.
 - `identity(key)`: fetch and parse `/me`; its wire-format adapter is isolated
   in `parseIdentity`, which unwraps `data`. The response from BOLD_admin PR #717
   is recorded in `test/fixtures/me.json`; callers still receive `Identity` directly.
@@ -252,7 +255,9 @@ support dry-run; logout and profile removal require `--yes` on piped stdin.
 under the API base URL, refuse redirects, parse JSON (null for empty responses),
 and translate HTTP errors and request IDs through `apiError`. A request times
 out after 30 seconds with exit 5. `BOLDVIDEO_API_URL` overrides
-`https://app.boldvideo.io/api/v1`. OpenAPI is at
+`https://app.boldvideo.io/api/v1`; it must be `https://`, except `http://` to
+`localhost` or `127.0.0.1` (otherwise `usage_error`, exit 2). A host other than
+Bold's and this machine is named once on terminal stderr. OpenAPI is at
 `https://app.boldvideo.io/api/openapi`.
 
 Never log credentials, request headers or SDK error objects. Load

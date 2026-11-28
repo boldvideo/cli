@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import {
 	chmodSync,
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
@@ -110,6 +111,7 @@ const server = Bun.serve({
 	},
 });
 const base = `http://127.0.0.1:${server.port}/api/v1`;
+const origin = `http://127.0.0.1:${server.port}`;
 const profileFile = () => join(home, "boldvideo", "profiles.json");
 const stored = () => JSON.parse(readFileSync(profileFile(), "utf8"));
 
@@ -201,7 +203,7 @@ test("login verifies and activates profiles; env wins over explicit and active s
 	expect((await run(["login", "--token", tenant])).status).toBe(0);
 	expect(stored()).toEqual({
 		active: "acme",
-		profiles: { acme: { key: tenant } },
+		profiles: { acme: { key: tenant, origin } },
 	});
 	expect(
 		(
@@ -413,7 +415,7 @@ test("profile pagination, dry-run, removal and logout preserve unrelated keys", 
 	expect((await run(["profiles", "remove", "acme", "--yes"])).status).toBe(0);
 	expect(stored()).toEqual({
 		active: "customer-demo",
-		profiles: { "customer-demo": { key: admin } },
+		profiles: { "customer-demo": { key: admin, origin } },
 	});
 	expect((await run(["logout"])).status).toBe(2);
 	expect((await run(["logout", "--yes"], { key: tenant })).status).toBe(0);
@@ -453,6 +455,7 @@ test("terminal login signs in through the browser and never prints a key", async
 				key: workspaces[0]?.key,
 				name: "HRT University",
 				user: "dana@example.com",
+				origin,
 			},
 		},
 	});
@@ -595,4 +598,113 @@ test("corrupt storage is not overwritten but does not block env keys or help", a
 	expect(JSON.parse((await run(["whoami"])).stderr).code).toBe("profile_error");
 	expect((await run(["login", "--token", admin])).status).toBe(1);
 	expect(readFileSync(profileFile(), "utf8")).toBe("broken JSON");
+});
+
+// `api --dry-run` resolves the key and the URL without sending anything.
+const preview = (url: string, options: Parameters<typeof run>[1] = {}) =>
+	run(["api", "GET", "/videos", "--dry-run", "--json"], {
+		...options,
+		env: { BOLDVIDEO_API_URL: url, ...options.env },
+	});
+
+test("the API URL must be https, except plain http to this machine", async () => {
+	for (const url of [
+		"http://evil.example/api/v1",
+		"http://localhost.evil.example/api/v1",
+		"app.boldvideo.io/api/v1",
+	]) {
+		const refused = await preview(url, { key: tenant });
+		expect(refused.status).toBe(2);
+		expect(refused.stdout).toBe("");
+		expect(JSON.parse(refused.stderr).code).toBe("usage_error");
+	}
+	for (const url of [
+		"http://localhost:4000/api/v1",
+		"http://127.0.0.1:4000/api/v1",
+		"https://api.staging.example/api/v1",
+	]) {
+		const allowed = await preview(url, { key: tenant });
+		expect(allowed.status).toBe(0);
+		expect(JSON.parse(allowed.stdout).url).toBe(`${url}/videos`);
+	}
+});
+
+test("another host is named once on terminal stderr and never in JSON", async () => {
+	const url = "https://api.staging.example/api/v1";
+	const piped = await preview(url, { key: tenant });
+	expect(piped.stderr).toBe("");
+	const terminal = await preview(url, { key: tenant, tty: true });
+	expect(terminal.status).toBe(0);
+	const [notice, ...json] = terminal.stdout.trim().split("\n");
+	expect(notice).toBe(
+		"Using the Bold API at api.staging.example (BOLDVIDEO_API_URL).",
+	);
+	expect(JSON.parse(json.join("\n"))).toEqual(JSON.parse(piped.stdout));
+	for (const quiet of [base, ""]) {
+		const output = (await preview(quiet, { key: tenant, tty: true })).stdout;
+		expect(output).not.toContain("Using the Bold API");
+		expect(JSON.parse(output).method).toBe("GET");
+	}
+});
+
+test("a stored key is only sent to the host it was saved for", async () => {
+	const other = `http://localhost:${server.port}/api/v1`;
+	mkdirSync(join(home, "boldvideo"));
+	writeFileSync(
+		profileFile(),
+		JSON.stringify({
+			active: "acme",
+			profiles: { acme: { key: tenant, origin }, legacy: { key: admin } },
+		}),
+	);
+	expect((await run(["whoami"])).status).toBe(0);
+	const moved = await run(["whoami"], { env: { BOLDVIDEO_API_URL: other } });
+	expect(moved.status).toBe(3);
+	expect(JSON.parse(moved.stderr)).toMatchObject({
+		code: "not_authenticated",
+		message: `Profile 'acme' was saved for ${origin}, not http://localhost:${server.port}.`,
+	});
+	expect(JSON.parse(moved.stderr).hint).toStartWith(
+		`Run boldvideo login to sign in for http://localhost:${server.port}.`,
+	);
+	expect(moved.stderr).not.toContain(tenant);
+	// Saved before hosts were recorded: Bold's production host and nothing else.
+	const legacy = (url: string) =>
+		run(["api", "GET", "/videos", "--dry-run", "--json", "-p", "legacy"], {
+			env: { BOLDVIDEO_API_URL: url },
+		});
+	const production = await legacy("");
+	expect(production.status).toBe(0);
+	expect(JSON.parse(production.stdout).url).toBe(
+		"https://app.boldvideo.io/api/v1/videos",
+	);
+	for (const url of [base, "https://api.staging.example/api/v1"]) {
+		const refused = await legacy(url);
+		expect(refused.status).toBe(3);
+		expect(JSON.parse(refused.stderr).message).toStartWith(
+			"Profile 'legacy' was saved for https://app.boldvideo.io, not ",
+		);
+	}
+	expect((await preview("")).status).toBe(3);
+	// A key from the environment has no stored host to keep to.
+	expect(
+		(await run(["whoami"], { key: tenant, env: { BOLDVIDEO_API_URL: other } }))
+			.status,
+	).toBe(0);
+	// Logging out elsewhere removes the profile without sending its key there.
+	expect(
+		(await run(["logout", "--yes"], { env: { BOLDVIDEO_API_URL: other } }))
+			.status,
+	).toBe(0);
+	expect(Object.keys(stored().profiles)).toEqual(["legacy"]);
+	// An unusable URL does not stop a key from being removed locally.
+	expect(
+		(
+			await run(["profiles", "remove", "legacy", "--yes"], {
+				env: { BOLDVIDEO_API_URL: "http://evil.example/api/v1" },
+			})
+		).status,
+	).toBe(0);
+	expect(stored().profiles).toEqual({});
+	expect(ended).toEqual([]);
 });

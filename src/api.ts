@@ -1,9 +1,39 @@
 import { apiError, error, registerSecret } from "./errors";
+import { hint } from "./output";
 
+export const defaultOrigin = "https://app.boldvideo.io";
+let announced = false;
+
+/** The API base URL: https only, except plain http to this machine for development. */
 export function apiUrl(): string {
-	return (
-		process.env.BOLDVIDEO_API_URL || "https://app.boldvideo.io/api/v1"
+	const value = (
+		process.env.BOLDVIDEO_API_URL || `${defaultOrigin}/api/v1`
 	).replace(/\/+$/, "");
+	let url: URL | undefined;
+	try {
+		url = new URL(value);
+	} catch {}
+	const local = url?.hostname === "localhost" || url?.hostname === "127.0.0.1";
+	if (
+		!url ||
+		!(url.protocol === "https:" || (url.protocol === "http:" && local))
+	)
+		throw error(
+			"usage_error",
+			"BOLDVIDEO_API_URL must be an https:// URL (plain http:// only for localhost or 127.0.0.1).",
+			"Unset BOLDVIDEO_API_URL to use Bold, then run boldvideo whoami.",
+			2,
+		);
+	// Say where keys go when it is not Bold; this machine needs no warning.
+	if (url.origin !== defaultOrigin && !local && !announced) {
+		announced = true;
+		hint(`Using the Bold API at ${url.host} (BOLDVIDEO_API_URL).`);
+	}
+	return value;
+}
+
+export function apiOrigin(): string {
+	return new URL(apiUrl()).origin;
 }
 
 export async function request(

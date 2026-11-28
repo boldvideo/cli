@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import { request } from "../api";
+import { apiOrigin, request } from "../api";
 import { identity, loadProfiles, saveProfiles } from "../auth";
 import { mint } from "../brand";
 import { browserLogin, type SignIn } from "../browser-login";
@@ -36,7 +36,7 @@ async function tokenLogin(ctx: Context, flags: Flags, key: string) {
 	if (!flags["dry-run"])
 		saveProfiles({
 			active: name,
-			profiles: { ...stored.profiles, [name]: { key } },
+			profiles: { ...stored.profiles, [name]: { key, origin: apiOrigin() } },
 		});
 	output(
 		{
@@ -154,6 +154,7 @@ async function signIn(ctx: Context, flags: Flags) {
 			key: workspace.key,
 			name: workspace.name,
 			user: result.user.email,
+			origin: apiOrigin(),
 		};
 	const signedIn = new Set(names.values());
 	const active =
