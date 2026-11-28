@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { request } from "./api";
+import { apiOrigin, defaultOrigin, request } from "./api";
 import { error, registerSecret } from "./errors";
 
 export interface Profile {
@@ -17,6 +17,8 @@ export interface Profile {
 	/** Set by a browser sign-in: the workspace's name and who signed in. */
 	name?: string;
 	user?: string;
+	/** The API origin the key was issued by; absent on profiles saved by 0.2.2 and earlier. */
+	origin?: string;
 }
 
 export interface Profiles {
@@ -109,7 +111,19 @@ export function resolveKey(profile?: string): Credential {
 		name !== null && Object.hasOwn(stored.profiles, name)
 			? stored.profiles[name]
 			: undefined;
-	if (saved) return { key: saved.key, profile: name };
+	if (saved) {
+		// A stored key only goes back to the host that issued it.
+		const origin = apiOrigin();
+		const owner = saved.origin ?? defaultOrigin;
+		if (owner !== origin)
+			throw error(
+				"not_authenticated",
+				`Profile '${name}' was saved for ${owner}, not ${origin}.`,
+				`Run boldvideo login to sign in for ${origin}.`,
+				3,
+			);
+		return { key: saved.key, profile: name };
+	}
 	throw error(
 		"not_authenticated",
 		profile === undefined

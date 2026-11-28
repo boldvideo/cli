@@ -1,16 +1,19 @@
-import { apiUrl } from "../api";
-import { loadProfiles, saveProfiles } from "../auth";
+import { apiOrigin, apiUrl, defaultOrigin } from "../api";
+import { loadProfiles, type Profile, saveProfiles } from "../auth";
 import { error } from "../errors";
 import { output, outputList } from "../output";
 import type { Command, Context, Flags } from "../spec";
 
 // Ends a browser sign-in on the server too. Other keys answer 403 and stay valid;
 // offline or not, the local profile is removed either way.
-async function endSession(key: string): Promise<void> {
+async function endSession(profile: Profile): Promise<void> {
 	try {
+		// The key only goes back to the host that issued it.
+		if ((profile.origin ?? defaultOrigin) !== apiOrigin()) return;
 		await fetch(`${apiUrl()}/cli/session`, {
 			method: "DELETE",
-			headers: { Authorization: `Bearer ${key}` },
+			headers: { Authorization: `Bearer ${profile.key}` },
+			redirect: "error",
 			signal: AbortSignal.timeout(10_000),
 		});
 	} catch {
@@ -34,8 +37,8 @@ async function remove(
 			4,
 		);
 	if (!flags["dry-run"]) {
-		const key = stored.profiles[name]?.key;
-		if (key) await endSession(key);
+		const saved = stored.profiles[name];
+		if (saved?.key) await endSession(saved);
 		delete stored.profiles[name];
 		if (stored.active === name) stored.active = null;
 		saveProfiles(stored);
