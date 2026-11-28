@@ -28,6 +28,7 @@
 		"ci:lint": "biome ci .",
 		"baseline:generate": "bun run build && node scripts/baseline.mjs",
 		"release:check": "node scripts/release-check.mjs",
+		"release:approve": "node scripts/release-approve.mjs",
 		"prepack": "bun run build"
 	},
 	"publishConfig": {
