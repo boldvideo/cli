@@ -91,12 +91,23 @@ export function parse(argv: string[], registry = commands) {
 					(a, b) =>
 						distance(token.value, a.name) - distance(token.value, b.name),
 				)[0];
+				// "list videos" is "videos list" said the other way round: name it.
+				const [, following] = scan.tokens.filter(
+					(other) => other.kind === "positional",
+				);
+				const group =
+					following?.kind === "positional"
+						? findSubcommand(command, following.value)
+						: undefined;
+				const verb = group && findSubcommand(group, token.value);
 				throw error(
 					"unknown_command",
 					`Unknown command '${token.value}'.`,
-					nearest && distance(token.value, nearest.name) <= 2
-						? `boldvideo ${[...path, nearest.name].join(" ")} --help`
-						: "boldvideo --help",
+					group && verb
+						? `boldvideo ${[...path, group.name, verb.name].join(" ")}`
+						: nearest && distance(token.value, nearest.name) <= 2
+							? `boldvideo ${[...path, nearest.name].join(" ")} --help`
+							: "boldvideo --help",
 					2,
 				);
 			}

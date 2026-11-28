@@ -124,4 +124,4 @@ are tuned by evals: subsequent wording changes need a failing eval transcript.
 Run `bun run build`, `bun run typecheck`, `bun test`, `bun run check`, then
 `bun run ci:lint`. Inspect `node dist/boldvideo.js <command> --help` in a terminal
 and with `--json`; pack and smoke-test with `npm pack` and
-`npx ./boldvideo-0.2.0.tgz --version` before shipping packaging changes.
+`npx ./boldvideo-0.2.1.tgz --version` before shipping packaging changes.

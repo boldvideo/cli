@@ -174,6 +174,8 @@ export async function importFetch(
 			method,
 			headers: {
 				Authorization: `Bearer ${key}`,
+				// The admin API reads the key from this header, not from Authorization.
+				...(path.startsWith("/admin") ? { "X-Bold-Admin-Api-Key": key } : {}),
 				Accept: "application/json",
 				"Content-Type": "application/json",
 			},

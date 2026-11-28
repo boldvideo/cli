@@ -34,6 +34,17 @@ const server = Bun.serve({
 			path: path + url.search,
 			body: body ? JSON.parse(body) : undefined,
 		});
+		// As in production: the admin API takes the key from its own header and
+		// answers 401 to a request that only carries it as a Bearer token.
+		if (
+			path.startsWith("/admin") &&
+			request.headers.get("x-bold-admin-api-key") !==
+				request.headers.get("authorization")?.replace("Bearer ", "")
+		)
+			return Response.json(
+				{ error: "Unauthorized", status: 401 },
+				{ status: 401 },
+			);
 		if (path === "/me")
 			return Response.json({
 				data: {
